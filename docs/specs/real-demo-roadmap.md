@@ -9,16 +9,30 @@ Already built:
 - React/Vite/TypeScript app.
 - Single BILLY-style manifest.
 - 9-step walkthrough.
-- 3D primitive viewer with command API.
+- Manifest-driven GLB viewer with command API.
+- Generated `/public/models/billy.glb` asset and `npm run model:billy`.
+- Mesh-node mapping, early step offsets, camera debug, and mesh debug helpers.
+- Primitive model fallback and WebGL fallback.
 - Web Speech STT and browser TTS wrappers.
 - Preset intent parser for demo-critical utterances.
 - Orange Sync state event.
-- WebGL fallback.
-- Tests for manifest, intent, and Orange Sync.
+- Tests for manifest, intent, viewer mapping, step poses, and Orange Sync.
 
 Main gap:
 
-The app is a strong interactive prototype, not yet a true AI/3D assembly demo. The 3D model, intent parser, voice stack, and validation loop need production-grade replacements.
+The app is now past the primitive-viewer prototype, but it is not yet a true agentic assembly demo. The included GLB is generated from simple geometry, the intent parser still defaults to deterministic presets, voice still depends on browser APIs, and the photo-validation loop is not implemented.
+
+## Remaining Functional Gaps After PR #3
+
+- Real structured-output agent backend with schema validation and part disambiguation.
+- Server-side secret boundary for LLM, STT, TTS, VLM, logging, and storage keys.
+- Hosted or recorded-audio STT path that works outside Chrome Web Speech.
+- Hosted TTS/audio playback path with browser `speechSynthesis` fallback.
+- Photo-based "Did I do this right?" validation and viewer highlighting.
+- Presenter mode, reset/rehearsal controls, debug event log, and copyable debug bundle.
+- Browser smoke tests, CI, manifest schema validation, and visual regression screenshots.
+- Production-modeled furniture GLB, full step pose coverage, and bundle/code-splitting polish.
+- Manual ingestion, multi-product catalog, persistence, accounts, and analytics.
 
 ## Three-Person Parallel Work Plan
 
@@ -51,6 +65,11 @@ First deliverables:
 - A mesh mapping utility or manifest extension.
 - Real mesh highlighting for at least steps 1-3.
 - A camera authoring helper or documented camera capture workflow.
+
+Status after PR #3:
+
+- Landed: generated GLB, manifest model path, mesh aliases, GLB loader, mapping helpers, early step offsets, real mesh highlighting, camera helper, mesh helper, and fallback safety.
+- Remaining: production-quality modeled asset, full step pose coverage, performance polish, and browser smoke coverage.
 
 Independent until:
 
@@ -139,12 +158,12 @@ If a contract must change, all three people should agree first and land the cont
 
 ### Merge Order
 
-Recommended merge order:
+Recommended remaining merge order:
 
 1. Person C lands presenter/reset/QA scaffolding first, because it improves demo safety without blocking other work.
-2. Person A lands GLB viewer behind the existing `ViewerAPI`.
-3. Person B lands the structured intent endpoint behind `VITE_INTENT_ENDPOINT`.
-4. Person C lands photo-check UI and operations tooling.
+2. Person B lands the structured intent endpoint behind `VITE_INTENT_ENDPOINT`.
+3. Person C lands photo-check UI and operations tooling.
+4. Person A lands production asset polish and full step animation coverage.
 5. Final integration PR connects real model, real intent endpoint, voice provider settings, and final demo copy.
 
 ### Daily Sync Checklist
@@ -182,6 +201,8 @@ Exit criteria:
 Target: 1-3 days
 
 Goal: replace primitive geometry with a real optimized BILLY-style model.
+
+Status: PR #3 implements the GLB pipeline, generated model asset, node mapping, debug helpers, and early step offsets. Treat the remaining work as asset-quality and coverage polish rather than a full viewer rewrite.
 
 Tasks:
 

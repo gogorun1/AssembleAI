@@ -14,19 +14,21 @@ export const intentTypes = [
   'unknown'
 ] as const satisfies readonly IntentType[];
 
+// OpenAI structured outputs require every property key to appear in `required`.
+// Optional fields use nullable types and are stripped to undefined before runtime validation.
 export const resolvedIntentJsonSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['type', 'language', 'reply'],
+  required: ['type', 'language', 'reply', 'partQuery', 'stepNumber', 'viewQuery', 'partIds', 'viewKey'],
   properties: {
     type: { enum: intentTypes },
-    partQuery: { type: 'string' },
-    stepNumber: { type: 'integer', minimum: 1 },
-    viewQuery: { type: 'string' },
+    partQuery: { type: ['string', 'null'] },
+    stepNumber: { type: ['integer', 'null'], minimum: 1 },
+    viewQuery: { type: ['string', 'null'] },
     language: { enum: ['en', 'fr'] },
     reply: { type: 'string', minLength: 1 },
-    partIds: { type: 'array', items: { type: 'string' } },
-    viewKey: { type: 'string' }
+    partIds: { type: ['array', 'null'], items: { type: 'string' } },
+    viewKey: { type: ['string', 'null'] }
   }
 } as const;
 

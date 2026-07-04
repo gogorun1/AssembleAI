@@ -112,6 +112,7 @@ async function parseIntentWithEndpoint(
     try {
       return await fetchIntentAttempt(endpoint, utterance, context, deadline);
     } catch (error) {
+      // AbortError means the single 8-second endpoint budget is already exhausted, so retrying would only delay local fallback.
       if (attempt === 1 || !shouldRetryIntentEndpoint(error) || Date.now() >= deadline) {
         return parsePresetIntent(utterance, context);
       }
@@ -159,7 +160,7 @@ async function fetchIntentAttempt(
 
 export function parsePresetIntent(utterance: string, context: IntentContext): ResolvedIntent {
   const phrase = normalizeText(utterance);
-  const language = detectLanguage(utterance);
+  const language = inferIntentLocale(utterance);
   const step = getStep(context);
 
   if (isNextStepRequest(phrase)) {
@@ -323,7 +324,7 @@ export function normalizeIntent(
   const isUnknown = type === 'unknown';
   const candidate = {
     type,
-    language: value.language ?? detectLanguage(utterance),
+    language: value.language ?? inferIntentLocale(utterance),
     reply: trimToTwoSentences(String(value.reply ?? '')),
     partQuery: isUnknown ? undefined : value.partQuery,
     stepNumber: isUnknown ? undefined : value.stepNumber,
@@ -457,7 +458,7 @@ function clampStep(value: number, maxStep: number): number | undefined {
   return Math.max(1, Math.min(Math.trunc(value), maxStep));
 }
 
-function detectLanguage(utterance: string): 'en' | 'fr' {
+export function inferIntentLocale(utterance: string): 'en' | 'fr' {
   const text = ` ${utterance.toLocaleLowerCase()} `;
   const folded = foldText(text);
   if (/[àâçéèêëîïôûùüÿæœ]/i.test(text)) {
@@ -481,7 +482,7 @@ function labelParts(partIds: string[], manifest: AssemblyManifest): string {
 }
 
 function clarificationIntent(utterance: string, candidates: string[], manifest: AssemblyManifest): ResolvedIntent {
-  const language = detectLanguage(utterance);
+  const language = inferIntentLocale(utterance);
   const candidateList = labelParts(candidates, manifest);
   return unknownIntent(
     utterance,
@@ -492,7 +493,7 @@ function clarificationIntent(utterance: string, candidates: string[], manifest: 
 }
 
 function unknownIntent(utterance: string, reply?: string): ResolvedIntent {
-  const language = detectLanguage(utterance);
+  const language = inferIntentLocale(utterance);
   return {
     type: 'unknown',
     language,

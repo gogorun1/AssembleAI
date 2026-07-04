@@ -89,7 +89,6 @@ describe('createSTTService', () => {
 
   it('selects the remote provider only when configured', () => {
     vi.stubGlobal('window', { SpeechRecognition: FakeSpeechRecognition });
-    vi.stubEnv('VITE_OPENAI_API_KEY', '');
 
     expect(createSTTService().state).toBe('available');
     expect(createSTTService('en-US', { provider: 'remote' }).state).toBe('unavailable');

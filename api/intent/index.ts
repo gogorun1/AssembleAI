@@ -1,5 +1,5 @@
 import type { AssemblyManifest, CameraView, Part, ResolvedIntent, Step, TranscriptLine } from '../../src/types/assembly';
-import { validateResolvedIntent } from '../../src/services/intent.schema';
+import { resolvedIntentJsonSchema, validateResolvedIntent } from '../../src/services/intent.schema';
 
 export interface IntentEndpointRequest {
   utterance: string;
@@ -70,7 +70,7 @@ export async function handleIntentRequest(request: Request): Promise<Response> {
     const modelIntent = await callStructuredIntentModel(payload);
     return jsonResponse(normalizeEndpointIntent(modelIntent, payload, manifest), 200);
   } catch {
-    return jsonResponse(FALLBACK_INTENT, 200);
+    return jsonResponse({ error: 'Intent model unavailable' }, 502);
   }
 }
 
@@ -88,23 +88,7 @@ async function callStructuredIntentModel(request: IntentEndpointRequest): Promis
       format: {
         type: 'json_schema',
         name: 'resolved_intent',
-        schema: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['type', 'language', 'reply'],
-          properties: {
-            type: {
-              enum: ['next_step', 'prev_step', 'goto_step', 'which_part', 'where_does_it_go', 'show_angle', 'repeat', 'how_many_left', 'common_mistake', 'help', 'unknown']
-            },
-            partQuery: { type: 'string' },
-            stepNumber: { type: 'integer', minimum: 1 },
-            viewQuery: { type: 'string' },
-            language: { enum: ['en', 'fr'] },
-            reply: { type: 'string', minLength: 1 },
-            partIds: { type: 'array', items: { type: 'string' } },
-            viewKey: { type: 'string' }
-          }
-        }
+        schema: resolvedIntentJsonSchema
       }
     }
   };

@@ -6,7 +6,7 @@ import { StepCard } from './components/StepCard';
 import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
-import { parseIntent } from './services/intent';
+import { inferIntentLocale, parseIntent } from './services/intent';
 import { applyResolvedIntentAction } from './services/intentActions';
 import { createSTTService } from './services/stt';
 import { createTTSService } from './services/tts';
@@ -63,7 +63,9 @@ export default function App() {
       try {
         const intent = await parseIntent(text, {
           manifest: liveStore.manifest,
-          currentStep: liveStore.currentStep
+          currentStep: liveStore.currentStep,
+          recentTranscript: liveStore.transcript.slice(-6),
+          locale: inferIntentLocale(text)
         });
 
         await executeIntent(intent);

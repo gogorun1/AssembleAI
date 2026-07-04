@@ -17,6 +17,7 @@ The demo is optimized for a laptop or projector in a 16:9 layout:
 - Deterministic preset intent coverage for the hackathon script.
 - Optional intent endpoint behind `VITE_INTENT_ENDPOINT`.
 - Web Speech TTS through `speechSynthesis`.
+- Remote STT/TTS browser providers are placeholders until server-side speech endpoints exist.
 - WebGL fallback line drawing so the UI still works when 3D context creation fails.
 
 ## Demo Script
@@ -142,6 +143,8 @@ See `src/styles/tokens.css` for the token source of truth.
 VITE_INTENT_ENDPOINT=https://example.com/intent
 VITE_STT_PROVIDER=web-speech
 VITE_TTS_PROVIDER=web-speech
+# Server-side only; never expose this as VITE_OPENAI_API_KEY.
+OPENAI_API_KEY=sk-...
 ```
 
 If `VITE_INTENT_ENDPOINT` is present, `src/services/intent.ts` posts the utterance, current step, manifest parts, steps, camera views, recent transcript, and locale hint to that endpoint. The endpoint should return the `ResolvedIntent` shape described in `src/types/assembly.ts`; responses are schema-validated before the app acts on them.
@@ -150,9 +153,9 @@ Remote intent calls have an 8-second budget. Network failures and 5xx responses 
 
 If no endpoint is configured, the app uses deterministic local intent handling for the hackathon script.
 
-`VITE_STT_PROVIDER` defaults to `web-speech`. Set it to `remote` only when wiring a hosted speech-to-text provider behind `src/services/stt.remote.ts`; the current placeholder is an unavailable no-op so demos fail safely without secrets.
+`VITE_STT_PROVIDER` defaults to `web-speech`. Set it to `remote` only after wiring a hosted speech-to-text provider through a server-side endpoint behind `src/services/stt.remote.ts`; the current browser placeholder is unavailable so demos fail safely without secrets.
 
-`VITE_TTS_PROVIDER` defaults to `web-speech`. Set it to `remote` only when wiring a hosted text-to-speech provider behind `src/services/tts.remote.ts`; the current placeholder is a no-op provider so visual actions still run.
+`VITE_TTS_PROVIDER` defaults to `web-speech`. Set it to `remote` only after wiring a hosted text-to-speech provider through a server-side endpoint behind `src/services/tts.remote.ts`; the current browser placeholder is a no-op provider so visual actions still run.
 
 ## Fallback Order
 
@@ -160,7 +163,7 @@ The demo is designed to stay usable when network or browser voice features fail:
 
 1. Click, keyboard, and presenter controls are the primary hard fallback.
 2. With no `VITE_INTENT_ENDPOINT`, deterministic local intent handling resolves the supported demo utterances.
-3. With remote providers configured, remote intent/STT/TTS are optional upgrades; failures fall back to local intent behavior or visible recoverable messages.
+3. With remote intent configured, failures fall back to local intent behavior; remote STT/TTS stay as safe placeholders until server-side endpoints are added.
 
 ## Supported Browsers
 
@@ -171,7 +174,7 @@ Use a current Chromium browser, preferably Chrome, for the full Web Speech STT a
 - The "model" is a purpose-built three.js primitive scene, not an imported CAD/GLTF asset.
 - Intent parsing is deterministic by default, with optional endpoint support but no production LLM backend included.
 - Voice input depends on browser Web Speech support, strongest in Chrome.
-- TTS uses browser voices unless replaced by a real provider.
+- TTS uses browser voices unless replaced by a real server-backed provider.
 - No photo checking, VLM validation, manual ingestion, catalog, persistence, or analytics.
 - The demo is designed for desktop/projector, not mobile.
 

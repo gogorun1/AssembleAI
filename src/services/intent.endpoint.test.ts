@@ -3,6 +3,8 @@ import { buildIntentEndpointPrompt, handleIntentRequest } from '../../api/intent
 import manifest from '../data/manifest';
 import type { ResolvedIntent } from '../types/assembly';
 import { INTENT_ENDPOINT_TIMEOUT_MS, parseIntent } from './intent';
+import { goldenIntentFixtures } from './intent.fixtures';
+import { resolvedIntentJsonSchema } from './intent.schema';
 
 const context = {
   manifest,
@@ -76,6 +78,24 @@ describe('parseIntent endpoint integration', () => {
 
     expect(intent.type).toBe('which_part');
     expect(intent.partIds).toEqual(['cam-screw-washer']);
+  });
+
+  it('keeps all demo-critical utterances deterministic when the endpoint returns 502', async () => {
+    vi.stubEnv('VITE_INTENT_ENDPOINT', 'https://example.com/intent');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('model unavailable', { status: 502 })));
+
+    for (const fixture of goldenIntentFixtures.slice(0, 6)) {
+      const intent = await parseIntent(fixture.utterance, {
+        manifest,
+        currentStep: fixture.currentStep
+      });
+
+      expect(intent.type).toBe(fixture.expectedType);
+      expect(intent.partIds).toEqual(fixture.expectedPartIds);
+      expect(intent.viewKey).toBe(fixture.expectedViewKey);
+      expect(intent.stepNumber).toBe(fixture.expectedStepNumber);
+      expect(intent.language).toBe(fixture.expectedLanguage);
+    }
   });
 
   it('falls back to the preset parser when endpoint JSON is invalid', async () => {
@@ -225,27 +245,27 @@ describe('intent endpoint handler', () => {
     expect(intent.stepNumber).toBeUndefined();
   });
 
-  it('falls back gracefully when the structured model returns non-2xx', async () => {
+  it('returns 502 when the structured model returns non-2xx so clients fall back locally', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('unavailable', { status: 503 })));
 
     const response = await handleIntentRequest(endpointRequest('Which one is the screw with the washer?'));
-    const intent = await response.json() as ResolvedIntent;
+    const body = await response.json() as { error: string };
 
-    expect(response.status).toBe(200);
-    expect(intent.type).toBe('unknown');
+    expect(response.status).toBe(502);
+    expect(body.error).toBe('Intent model unavailable');
   });
 
-  it('falls back gracefully when the structured model returns invalid JSON', async () => {
+  it('returns 502 when the structured model returns invalid JSON so clients fall back locally', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ output_text: 'not-json' })));
 
     const response = await handleIntentRequest(endpointRequest('Which one is the screw with the washer?'));
-    const intent = await response.json() as ResolvedIntent;
+    const body = await response.json() as { error: string };
 
-    expect(response.status).toBe(200);
-    expect(intent.type).toBe('unknown');
+    expect(response.status).toBe(502);
+    expect(body.error).toBe('Intent model unavailable');
   });
 
-  it('falls back gracefully when the structured model response fails schema validation', async () => {
+  it('returns 502 when the structured model response fails schema validation so clients fall back locally', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
       output_text: JSON.stringify({
         type: 'which_part',
@@ -256,10 +276,22 @@ describe('intent endpoint handler', () => {
     })));
 
     const response = await handleIntentRequest(endpointRequest('Which one is the screw with the washer?'));
-    const intent = await response.json() as ResolvedIntent;
+    const body = await response.json() as { error: string };
 
-    expect(response.status).toBe(200);
-    expect(intent.type).toBe('unknown');
+    expect(response.status).toBe(502);
+    expect(body.error).toBe('Intent model unavailable');
+  });
+
+  it('sends the shared ResolvedIntent schema to the structured model', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      output_text: JSON.stringify(endpointIntent)
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await handleIntentRequest(endpointRequest('Which one is the screw with the washer?'));
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+
+    expect(body.text.format.schema).toEqual(resolvedIntentJsonSchema);
   });
 });
 

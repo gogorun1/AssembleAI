@@ -253,8 +253,8 @@
       "label": "Base cam detail"
     },
     "screw-detail": {
-      "position": [-2.7, 1.4, 2.2],
-      "target": [-0.75, 0.85, 0.22],
+      "position": [-2.9, 2.15, 3.7],
+      "target": [-0.45, 1.15, 0.1],
       "label": "Cam screw detail"
     },
     "cam-lock-detail": {

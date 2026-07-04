@@ -1,0 +1,55 @@
+:root {
+  /* surfaces */
+  --paper: #F2F1EA;
+  --paper-raised: #FBFAF6;
+  --paper-sunken: #E7E6DD;
+
+  /* ink */
+  --ink: #22303A;
+  --ink-soft: #5C6B74;
+  --line: #C9C8BC;
+
+  /* the one electric ingredient */
+  --accent: #EE5A0E;
+  --accent-ink: #B03F00;
+  --accent-wash: #FBE3D2;
+
+  /* semantic */
+  --ok: #3E7A4C;
+  --warn-wash: #F6ECD3;
+
+  --font-display: 'Archivo', sans-serif;
+  --font-body: 'Archivo', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --step-numeral: 4.5rem;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  --r-sm: 3px;
+  --r-md: 6px;
+  --r-lg: 10px;
+
+  --t-fast: 140ms;
+  --t-med: 260ms;
+  --t-slow: 800ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --rail-width: 400px;
+  --orb-size: 72px;
+  --grid-size: 48px;
+  --control-size: 44px;
+  --viewer-min: 760px;
+}

@@ -1,0 +1,92 @@
+.card {
+  display: grid;
+  grid-template-columns: minmax(var(--s-8), auto) 1fr;
+  gap: var(--s-4);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper-raised);
+}
+
+.numeral {
+  align-self: start;
+  padding: var(--s-4) 0 0 var(--s-4);
+  color: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--step-numeral);
+  font-weight: 600;
+  line-height: 0.9;
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+.body {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-4) 0;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent-ink);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-stretch: 125%;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.action {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-md);
+  line-height: 1.45;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.mistake {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s-2);
+  width: 100%;
+  padding: var(--s-3) var(--s-4);
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: var(--warn-wash);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  text-align: left;
+}
+
+.mistake svg {
+  color: var(--accent-ink);
+}
+
+.mistake:hover span {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: var(--s-1);
+}

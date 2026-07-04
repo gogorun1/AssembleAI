@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import manifestData from '../data/billy.manifest.json';
+import manifest from '../data/manifest';
 import type {
   AssemblyManifest,
   TranscriptLine,
@@ -43,7 +43,6 @@ interface AppState {
   markVoiceInteraction(): void;
 }
 
-const manifest = manifestData as AssemblyManifest;
 const mentionTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export const useAppStore = create<AppState>((set, get) => ({

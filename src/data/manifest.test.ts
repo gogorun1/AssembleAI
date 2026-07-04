@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import manifest from './billy.manifest.json';
+import manifest from './manifest';
 
 describe('billy assembly manifest', () => {
   it('contains the demo-sized BILLY bookcase walkthrough', () => {

@@ -1,0 +1,45 @@
+.rail {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper-raised);
+}
+
+.track {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: var(--s-1);
+  padding: var(--s-1);
+  border-radius: var(--r-sm);
+  background: var(--paper-sunken);
+}
+
+.tick {
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  cursor: pointer;
+}
+
+.done {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.current {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.fraction {
+  min-inline-size: var(--s-7);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-align: right;
+}

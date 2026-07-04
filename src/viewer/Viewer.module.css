@@ -1,0 +1,174 @@
+.wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.wrap canvas {
+  cursor: grab;
+}
+
+.wrap canvas:active {
+  cursor: grabbing;
+}
+
+.caption {
+  position: absolute;
+  inset-block-start: var(--s-5);
+  inset-inline-start: var(--s-5);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.eyebrow {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.title {
+  margin-block-start: var(--s-2);
+  max-inline-size: 22rem;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-stretch: 125%;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.annotation {
+  pointer-events: none;
+}
+
+.annotation > div {
+  min-inline-size: 11rem;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+
+.annotationCode {
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.annotationLabel {
+  margin-block-start: var(--s-1);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-stretch: 125%;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(to right, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
+    var(--paper);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+.fallbackModel {
+  position: relative;
+  inline-size: min(28vi, 26rem);
+  aspect-ratio: 0.72;
+  transform: perspective(58rem) rotateX(8deg) rotateY(-12deg);
+}
+
+.fallbackPart,
+.hardwareDot {
+  position: absolute;
+  border: 2px solid var(--ink);
+  background: color-mix(in srgb, var(--paper-raised) 82%, transparent);
+}
+
+.fallbackPart {
+  transition:
+    background var(--t-med) var(--ease),
+    border-color var(--t-med) var(--ease);
+}
+
+.hot {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.sideLeft,
+.sideRight {
+  inset-block: 0;
+  inline-size: var(--s-5);
+}
+
+.sideLeft {
+  inset-inline-start: 0;
+}
+
+.sideRight {
+  inset-inline-end: 0;
+}
+
+.topPanel,
+.bottomPanel,
+.fixedShelf,
+.adjustableLow,
+.adjustableHigh {
+  inset-inline: var(--s-5);
+  block-size: var(--s-4);
+}
+
+.topPanel {
+  inset-block-start: 0;
+}
+
+.bottomPanel {
+  inset-block-end: 0;
+}
+
+.fixedShelf {
+  inset-block-start: 48%;
+}
+
+.adjustableLow {
+  inset-block-start: 28%;
+}
+
+.adjustableHigh {
+  inset-block-start: 68%;
+}
+
+.backPanel {
+  inset: var(--s-4) var(--s-5);
+  z-index: -1;
+  border-style: dashed;
+  background: color-mix(in srgb, var(--paper-sunken) 72%, transparent);
+}
+
+.hardwareDot {
+  inline-size: var(--s-3);
+  block-size: var(--s-3);
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+.dotOne {
+  inset-block-start: 18%;
+  inset-inline-start: 8%;
+}
+
+.dotTwo {
+  inset-block-start: 50%;
+  inset-inline-end: 8%;
+}
+
+.dotThree {
+  inset-block-start: 66%;
+  inset-inline-start: 12%;
+}

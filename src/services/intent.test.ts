@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import manifest from '../data/billy.manifest.json';
+import manifest from '../data/manifest';
 import { parseIntent } from './intent';
 
 describe('parseIntent demo utterances', () => {

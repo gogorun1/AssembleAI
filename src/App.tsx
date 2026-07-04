@@ -6,6 +6,7 @@ import { StepCard } from './components/StepCard';
 import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
+import { CommandPanel, type CommandLanguage } from './components/CommandPanel';
 import { PresenterPanel } from './components/PresenterPanel';
 import { PhotoCheckPanel } from './components/PhotoCheckPanel';
 import { DebugOverlay } from './components/DebugOverlay';
@@ -45,6 +46,19 @@ function cameraViewForPart(
   return key && key in cameraViews ? key : undefined;
 }
 
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
+}
+
 export default function App() {
   const manifest = useAppStore((state) => state.manifest);
   const currentStep = useAppStore((state) => state.currentStep);
@@ -71,6 +85,7 @@ export default function App() {
   const noSpeechTimer = useRef<ReturnType<typeof setTimeout>>();
   const [ready, setReady] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  const [commandLanguage, setCommandLanguage] = useState<CommandLanguage>('en');
 
   const step = manifest.steps[currentStep - 1];
   const partsById = useMemo(
@@ -261,7 +276,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const stt = createSTTService();
+    sttRef.current?.abort();
+    const stt = createSTTService(commandLanguage === 'fr' ? 'fr-FR' : 'en-US');
     sttRef.current = stt;
     stt.onResult((text) => {
       clearTimeout(noSpeechTimer.current);
@@ -277,7 +293,13 @@ export default function App() {
       useAppStore.getState().showToast('Voice capture stopped - click steps and parts instead.');
       useAppStore.getState().setVoiceState('idle');
     });
-  }, [runUtterance]);
+    return () => {
+      if (sttRef.current === stt) {
+        stt.abort();
+        sttRef.current = undefined;
+      }
+    };
+  }, [runUtterance, commandLanguage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -298,6 +320,9 @@ export default function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
       if (event.repeat) {
         return;
       }
@@ -319,6 +344,9 @@ export default function App() {
       }
     };
     const onKeyUp = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
       if (event.code === 'Space') {
         event.preventDefault();
         endPushToTalk();
@@ -378,6 +406,12 @@ export default function App() {
             onRunUtterance={runUtterance}
             onFullReset={fullReset}
             onRehearsalReset={rehearsalReset}
+            disabled={voiceState !== 'idle'}
+          />
+          <CommandPanel
+            language={commandLanguage}
+            onLanguageChange={setCommandLanguage}
+            onSubmit={runUtterance}
             disabled={voiceState !== 'idle'}
           />
           <PhotoCheckPanel

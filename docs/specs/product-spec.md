@@ -28,8 +28,8 @@ The current implementation is a single-furniture hackathon demo for the IKEA BIL
 1. User opens the demo on a laptop or projector.
 2. Splash screen clears after voices are preloaded.
 3. User sees the 3D bookcase and the right-side agent rail.
-4. User holds space or the VoiceOrb and asks a question.
-5. STT captures the utterance.
+4. User holds space/the VoiceOrb or types a command in the right rail.
+5. STT captures the utterance, or the typed command is submitted directly.
 6. Intent service resolves the command.
 7. Viewer/step state updates immediately.
 8. Transcript logs the user question and agent answer.
@@ -150,6 +150,7 @@ Rules:
 - `ProgressRail`: step ticks and current fraction.
 - `TranscriptPanel`: user/agent log and underlined part mentions.
 - `VoiceOrb`: push-to-talk state and first-use hint.
+- `CommandPanel`: typed command fallback plus EN/FR language toggle.
 - `Toast`: system fallback messages.
 - `Viewer`: 3D scene or WebGL fallback.
 
@@ -176,7 +177,8 @@ Current demo acceptance:
 - `npm test` passes.
 - `npm run build` passes.
 - Six demo utterances map to the expected intents.
-- Full walkthrough works with click/keyboard controls.
+- Full walkthrough works with typed, click, and keyboard controls.
+- Global shortcuts do not fire while the typed command input is focused.
 - WebGL failure does not blank the UI.
 - Part mention triggers store-level Orange Sync.
 - Component CSS does not hardcode color hex values outside token definitions.

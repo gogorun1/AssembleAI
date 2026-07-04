@@ -16,7 +16,7 @@ Already built:
 - Web Speech STT and browser TTS wrappers.
 - Preset intent parser for demo-critical utterances.
 - Orange Sync state event.
-- Presenter mode, reset/rehearsal controls, debug overlay, event log, and demo checklist.
+- Presenter mode, typed command fallback, EN/FR language toggle, reset/rehearsal controls, debug overlay, event log, and demo checklist.
 - Photo Check UI shell with manifest-aware offline mock and `VITE_PHOTO_CHECK_ENDPOINT` boundary.
 - GitHub Actions CI and Playwright smoke tests.
 - Tests for manifest, intent, viewer mapping, step poses, Orange Sync, reset/event logging, and photo-check mock.
@@ -128,6 +128,7 @@ Primary files:
 Responsibilities:
 
 - Add presenter mode with buttons for all critical utterances.
+- Add typed command fallback that reuses the same intent path as voice.
 - Add reset/rehearsal controls.
 - Add photo upload and VLM result UI for "Did I do this right?"
 - Add debug overlay and local event log.
@@ -144,6 +145,7 @@ First deliverables:
 Status after PR #4:
 
 - Landed: presenter buttons, full/rehearsal reset, event log, debug overlay, copy debug bundle, demo checklist, Photo Check UI shell, offline photo mock, Playwright smoke tests, and CI workflow.
+- Rescue branch adds: typed command panel, EN/FR language toggle, shortcut guard while typing, and smoke coverage for both paths.
 - Remaining: real VLM endpoint, richer visual regression assets, and integration polish with Person A/B final services.
 
 Independent until:
@@ -190,6 +192,7 @@ Goal: make the existing prototype stable for repeated live demos.
 Tasks:
 
 - Add a presenter mode with text buttons for all six critical utterances.
+- Add a typed command fallback for no-microphone demos.
 - Add a reset button that clears transcript, step, highlights, selected part, and TTS.
 - Add browser smoke tests for desktop viewport, fallback viewport, step navigation, and part clicks.
 - Add a small `DemoChecklist.md` for rehearsal.
@@ -202,7 +205,7 @@ Exit criteria:
 - Presenter can recover from STT failure in one click.
 - `npm test`, `npm run build`, and browser smoke test pass.
 
-Status: PR #4 covers the presenter controls, reset paths, debug overlay, checklist, CI, and browser smoke scaffolding. Remaining Phase 0 work is mainly rehearsal evidence and visual regression screenshots.
+Status: PR #4 covers the presenter controls, reset paths, debug overlay, checklist, CI, and browser smoke scaffolding. The rescue branch adds typed command and EN/FR fallback coverage. Remaining Phase 0 work is mainly rehearsal evidence and visual regression screenshots.
 
 ## Phase 1: Real 3D Asset Pipeline
 

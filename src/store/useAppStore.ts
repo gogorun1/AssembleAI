@@ -63,6 +63,11 @@ interface AppState {
 
 const mentionTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+// Auto-clears the "selected" part so it stops spinning / hides its annotation
+// after a short beat instead of spinning forever.
+let selectTimer: ReturnType<typeof setTimeout> | undefined;
+const SELECT_DURATION_MS = 3000;
+
 function createWelcomeTranscript(): TranscriptLine {
   return {
     id: 'welcome',
@@ -81,7 +86,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   mentionedPartIds: [],
   highlightedPartIds: manifest.steps[0].highlightParts,
   activeViewKey: manifest.steps[0].cameraView,
-  explodeLevel: 1,
+  explodeLevel: 0,
   firstVoiceInteraction: false,
   eventLog: [],
   resetDemoState() {
@@ -89,6 +94,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       clearTimeout(timer);
     }
     mentionTimers.clear();
+    if (selectTimer) {
+      clearTimeout(selectTimer);
+      selectTimer = undefined;
+    }
     set({
       currentStep: 1,
       voiceState: 'idle',
@@ -96,7 +105,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       mentionedPartIds: [],
       highlightedPartIds: manifest.steps[0].highlightParts,
       activeViewKey: manifest.steps[0].cameraView,
-      explodeLevel: 1,
+      explodeLevel: 0,
       selectedPartId: undefined,
       toast: undefined,
       firstVoiceInteraction: false,
@@ -109,15 +118,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   goToStep(index) {
     const stepIndex = Math.max(1, Math.min(index, manifest.steps.length));
     const step = manifest.steps[stepIndex - 1];
+    // The <Viewer /> subscribes to these fields directly, so a single set()
+    // drives the camera + highlights; the imperative ViewerAPI calls were
+    // redundant double-writes. Explode level is left to the user's control.
     set({
       currentStep: stepIndex,
       activeViewKey: step.cameraView,
-      highlightedPartIds: step.highlightParts,
-      explodeLevel: stepIndex === manifest.steps.length ? 0 : 1
+      highlightedPartIds: step.highlightParts
     });
-    get().viewer?.goToStep(stepIndex);
-    get().viewer?.setCamera(step.cameraView, 800);
-    get().viewer?.highlight(step.highlightParts, 'pulse');
     get().logEvent({ type: 'step_change', label: `Step ${stepIndex}`, payload: { step: stepIndex } });
   },
   nextStep() {
@@ -146,12 +154,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       clearTimeout(mentionTimers.get(partId));
     }
 
+    // Only track the ephemeral "mention" flash here. Persistent highlighting is
+    // driven separately by highlightedPartIds so mentions don't accumulate.
     set((state) => ({
-      mentionedPartIds: Array.from(new Set([...state.mentionedPartIds, partId])),
-      highlightedPartIds: Array.from(new Set([...state.highlightedPartIds, partId]))
+      mentionedPartIds: Array.from(new Set([...state.mentionedPartIds, partId]))
     }));
-
-    get().viewer?.highlight([partId], 'pulse');
 
     mentionTimers.set(
       partId,
@@ -180,7 +187,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().viewer?.explode(level);
   },
   selectPart(partId) {
+    if (selectTimer) {
+      clearTimeout(selectTimer);
+      selectTimer = undefined;
+    }
     set({ selectedPartId: partId });
+    if (partId) {
+      selectTimer = setTimeout(() => {
+        set({ selectedPartId: undefined });
+        selectTimer = undefined;
+      }, SELECT_DURATION_MS);
+    }
   },
   showToast(message) {
     set({ toast: { id: crypto.randomUUID(), message } });

@@ -38,10 +38,10 @@ describe('Phase 0B — reset semantics', () => {
     expect(useAppStore.getState().voiceState).toBe('idle');
   });
 
-  it('resets explodeLevel to 1', () => {
+  it('resets explodeLevel to 0 (assembled)', () => {
     useAppStore.getState().setExplodeLevel(2);
     useAppStore.getState().resetDemoState();
-    expect(useAppStore.getState().explodeLevel).toBe(1);
+    expect(useAppStore.getState().explodeLevel).toBe(0);
   });
 
   it('resets activeViewKey to first step camera view', () => {

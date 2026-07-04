@@ -254,7 +254,7 @@ export function derivePartPose(
 
   const assembled = currentStep >= layout.unlockStep;
   const pendingMultiplier = assembled ? 0 : 1.25;
-  const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.28 : 0.82;
+  const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
   const multiplier = pendingMultiplier + explodedMultiplier;
   const stepOffset = layout.stepOffsets?.[currentStep] ?? [0, 0, 0];
 
@@ -265,6 +265,10 @@ export function derivePartPose(
       layout.explodedOffset[1] * multiplier + stepOffset[1],
       layout.explodedOffset[2] * multiplier + stepOffset[2]
     ],
-    visible: assembled || explodeLevel > 0 || currentStep + 1 >= layout.unlockStep
+    // Only show a part once it belongs in the build (its unlock step is
+    // reached), unless the user explicitly requested an exploded overview.
+    // This keeps the model looking assembled instead of scattering unplaced
+    // parts (and floating hardware) across the scene.
+    visible: assembled || explodeLevel > 0
   };
 }

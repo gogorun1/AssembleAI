@@ -18,6 +18,30 @@ import { useAppStore } from './store/useAppStore';
 import type { Part, ResolvedIntent } from './types/assembly';
 import { Viewer } from './viewer/Viewer';
 
+const PART_VIEW_KEYS: Record<string, string> = {
+  'side-panel-left': 'front',
+  'side-panel-right': 'front',
+  'bottom-panel': 'base-detail',
+  'top-panel': 'top-detail',
+  'fixed-shelf': 'shelf-detail',
+  'adjustable-shelf': 'shelf-pin-detail',
+  'back-panel': 'back-panel',
+  'cam-screw-washer': 'screw-detail',
+  'cam-lock': 'cam-lock-detail',
+  'wood-dowel': 'shelf-detail',
+  'shelf-pin': 'shelf-pin-detail',
+  'back-screw': 'back-panel',
+  'safety-strap': 'wall-anchor'
+};
+
+function cameraViewForPart(
+  partId: string,
+  cameraViews: Record<string, unknown>
+): string | undefined {
+  const key = PART_VIEW_KEYS[partId];
+  return key && key in cameraViews ? key : undefined;
+}
+
 export default function App() {
   const manifest = useAppStore((state) => state.manifest);
   const currentStep = useAppStore((state) => state.currentStep);
@@ -28,7 +52,17 @@ export default function App() {
   const explodeLevel = useAppStore((state) => state.explodeLevel);
   const toast = useAppStore((state) => state.toast);
   const firstVoiceInteraction = useAppStore((state) => state.firstVoiceInteraction);
-  const store = useAppStore();
+  // Select actions individually (stable references) instead of subscribing to
+  // the whole store, which previously re-rendered App on every state change.
+  const previousStep = useAppStore((state) => state.previousStep);
+  const nextStep = useAppStore((state) => state.nextStep);
+  const goToStep = useAppStore((state) => state.goToStep);
+  const setExplodeLevel = useAppStore((state) => state.setExplodeLevel);
+  const clearHighlights = useAppStore((state) => state.clearHighlights);
+  const clearToast = useAppStore((state) => state.clearToast);
+  const resetDemoState = useAppStore((state) => state.resetDemoState);
+  const logEvent = useAppStore((state) => state.logEvent);
+  const showToast = useAppStore((state) => state.showToast);
   const ttsRef = useRef(createTTSService());
   const sttRef = useRef<STTService>();
   const noSpeechTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -71,7 +105,6 @@ export default function App() {
         break;
       case 'which_part':
         if (partIds[0]) {
-          liveStore.viewer?.spinPart(partIds[0]);
           liveStore.selectPart(partIds[0]);
         }
         break;
@@ -128,12 +161,16 @@ export default function App() {
         speaker: 'user',
         text: `Show me ${part.label}.`
       });
+      // Frame the camera on the requested part so the highlight/spin is actually
+      // visible, falling back to the current step view when there's no mapping.
+      const viewKey = cameraViewForPart(part.id, liveStore.manifest.cameraViews)
+        ?? activeStep.cameraView;
       await executeIntent({
         type: 'which_part',
         language: 'en',
         partQuery: part.label,
         partIds: [part.id],
-        viewKey: part.id === 'cam-screw-washer' ? 'screw-detail' : activeStep.cameraView,
+        viewKey,
         reply: `Use ${part.code}, ${part.label}. I am flashing it in the model and the parts rail.`
       });
     },
@@ -148,21 +185,21 @@ export default function App() {
     ttsRef.current.cancel();
     sttRef.current?.abort();
     clearTimeout(noSpeechTimer.current);
-    store.resetDemoState();
-    store.logEvent({ type: 'reset', label: 'Full reset' });
-    store.showToast('Demo reset to opening state.');
-  }, [store]);
+    resetDemoState();
+    logEvent({ type: 'reset', label: 'Full reset' });
+    showToast('Demo reset to opening state.');
+  }, [resetDemoState, logEvent, showToast]);
 
   const rehearsalReset = useCallback(() => {
     ttsRef.current.cancel();
     sttRef.current?.abort();
     clearTimeout(noSpeechTimer.current);
-    store.goToStep(1);
-    store.clearHighlights();
-    store.setExplodeLevel(1);
-    store.logEvent({ type: 'reset', label: 'Rehearsal reset' });
-    store.showToast('Rehearsal reset complete.');
-  }, [store]);
+    goToStep(1);
+    clearHighlights();
+    setExplodeLevel(0);
+    logEvent({ type: 'reset', label: 'Rehearsal reset' });
+    showToast('Rehearsal reset complete.');
+  }, [goToStep, clearHighlights, setExplodeLevel, logEvent, showToast]);
 
   const mentionParts = useCallback((partIds: string[]) => {
     const liveStore = useAppStore.getState();
@@ -266,13 +303,13 @@ export default function App() {
         beginPushToTalk();
       }
       if (event.key === 'ArrowRight') {
-        store.nextStep();
+        nextStep();
       }
       if (event.key === 'ArrowLeft') {
-        store.previousStep();
+        previousStep();
       }
       if (/^[1-9]$/.test(event.key)) {
-        store.goToStep(Number(event.key));
+        goToStep(Number(event.key));
       }
       if (event.key === 'd' || event.key === 'D') {
         setDebugOpen((open) => !open);
@@ -291,7 +328,7 @@ export default function App() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [beginPushToTalk, endPushToTalk, store]);
+  }, [beginPushToTalk, endPushToTalk, nextStep, previousStep, goToStep]);
 
   return (
     <>
@@ -299,7 +336,7 @@ export default function App() {
         <main className="viewerStage" aria-label="3D assembly viewport">
           <Viewer />
           <div className="bottomControls">
-            <button className="iconButton" type="button" onClick={store.previousStep} aria-label="Previous step" title="Previous step">
+            <button className="iconButton" type="button" onClick={previousStep} aria-label="Previous step" title="Previous step">
               <ChevronLeft size={20} aria-hidden />
             </button>
             <VoiceOrb
@@ -308,19 +345,19 @@ export default function App() {
               onPointerDown={beginPushToTalk}
               onPointerUp={endPushToTalk}
             />
-            <button className="iconButton" type="button" onClick={store.nextStep} aria-label="Next step" title="Next step">
+            <button className="iconButton" type="button" onClick={nextStep} aria-label="Next step" title="Next step">
               <ChevronRight size={20} aria-hidden />
             </button>
             <button
               className="iconButton"
               type="button"
-              onClick={() => store.setExplodeLevel(((explodeLevel + 1) % 3) as 0 | 1 | 2)}
-              aria-label="Cycle exploded view"
-              title="Cycle exploded view"
+              onClick={() => setExplodeLevel(((explodeLevel + 1) % 3) as 0 | 1 | 2)}
+              aria-label={explodeLevel === 0 ? 'Explode view' : 'Collapse view'}
+              title={explodeLevel === 0 ? 'Explode view' : `Exploded ${explodeLevel}/2 — click to cycle`}
             >
               <Box size={19} aria-hidden />
             </button>
-            <button className="iconButton" type="button" onClick={() => store.goToStep(1)} aria-label="Reset to first step" title="Reset to first step">
+            <button className="iconButton" type="button" onClick={() => goToStep(1)} aria-label="Reset to first step" title="Reset to first step">
               <RotateCcw size={18} aria-hidden />
             </button>
           </div>
@@ -330,7 +367,7 @@ export default function App() {
           <ProgressRail
             steps={manifest.steps}
             currentStep={currentStep}
-            onSelectStep={store.goToStep}
+            onSelectStep={goToStep}
           />
           <StepCard step={step} onCommonMistake={triggerMistakeIntent} />
           <PresenterPanel
@@ -350,7 +387,7 @@ export default function App() {
           <section className="partRail" aria-label="Parts needed">
             <div className="partRailHeader">
               <span>PARTS IN HAND</span>
-              <span>{step.partsNeeded.length} GROUPS</span>
+              <span>{step.partsNeeded.length} {step.partsNeeded.length === 1 ? 'GROUP' : 'GROUPS'}</span>
             </div>
             <div className="partRailList">
               {step.partsNeeded.map((needed) => {
@@ -375,7 +412,7 @@ export default function App() {
           <TranscriptPanel transcript={transcript} parts={manifest.parts} />
         </aside>
       </div>
-      <Toast toast={toast} onDismiss={store.clearToast} />
+      <Toast toast={toast} onDismiss={clearToast} />
       <DebugOverlay enabled={debugOpen} onClose={() => setDebugOpen(false)} />
       <div className={`splash ${ready ? 'splashHidden' : ''}`} aria-hidden={ready}>
         <div className="splashInner">

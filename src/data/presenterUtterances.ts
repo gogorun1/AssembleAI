@@ -41,5 +41,11 @@ export const presenterUtterances: PresenterUtterance[] = [
     label: 'Repeat',
     utterance: 'Repeat that.',
     description: 'Repeat current step instruction.'
+  },
+  {
+    id: 'fr-screw',
+    label: 'Français',
+    utterance: 'Et cette vis, elle va où ?',
+    description: 'Ask in French where the screw goes (the agent replies in French).'
   }
 ];

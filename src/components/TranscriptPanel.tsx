@@ -27,7 +27,7 @@ export function TranscriptPanel({ transcript, parts }: TranscriptPanelProps) {
     <section className={styles.panel} aria-label="Conversation transcript">
       <div className={styles.header}>
         <span>AGENT LOG</span>
-        <span>{transcript.length} LINES</span>
+        <span>{transcript.length} {transcript.length === 1 ? 'LINE' : 'LINES'}</span>
       </div>
       <div className={styles.scroller} ref={scrollerRef}>
         {transcript.map((line) => {

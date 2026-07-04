@@ -1,0 +1,285 @@
+{
+  "id": "billy-bookcase",
+  "name": "BILLY Bookcase",
+  "parts": [
+    {
+      "id": "side-panel-left",
+      "code": "101532",
+      "label": "Side panel (left)",
+      "meshName": "side_panel_left",
+      "quantity": 1
+    },
+    {
+      "id": "side-panel-right",
+      "code": "101533",
+      "label": "Side panel (right)",
+      "meshName": "side_panel_right",
+      "quantity": 1
+    },
+    {
+      "id": "bottom-panel",
+      "code": "101534",
+      "label": "Bottom panel",
+      "meshName": "bottom_panel",
+      "quantity": 1
+    },
+    {
+      "id": "top-panel",
+      "code": "101535",
+      "label": "Top panel",
+      "meshName": "top_panel",
+      "quantity": 1
+    },
+    {
+      "id": "fixed-shelf",
+      "code": "101536",
+      "label": "Fixed center shelf",
+      "meshName": "fixed_shelf",
+      "quantity": 1
+    },
+    {
+      "id": "adjustable-shelf",
+      "code": "101537",
+      "label": "Adjustable shelf",
+      "meshName": "adjustable_shelf",
+      "quantity": 2
+    },
+    {
+      "id": "back-panel",
+      "code": "101538",
+      "label": "Back panel",
+      "meshName": "back_panel",
+      "quantity": 1
+    },
+    {
+      "id": "cam-screw-washer",
+      "code": "117327",
+      "label": "Cam screw with washer",
+      "meshName": "cam_screw_washer",
+      "quantity": 12
+    },
+    {
+      "id": "cam-lock",
+      "code": "119030",
+      "label": "Cam lock",
+      "meshName": "cam_lock",
+      "quantity": 12
+    },
+    {
+      "id": "wood-dowel",
+      "code": "100674",
+      "label": "Wood dowel",
+      "meshName": "wood_dowel",
+      "quantity": 10
+    },
+    {
+      "id": "shelf-pin",
+      "code": "101339",
+      "label": "Shelf pin",
+      "meshName": "shelf_pin",
+      "quantity": 8
+    },
+    {
+      "id": "back-screw",
+      "code": "M3.5x16",
+      "label": "Short back screw",
+      "meshName": "back_screw",
+      "quantity": 12
+    },
+    {
+      "id": "safety-strap",
+      "code": "110789",
+      "label": "Wall safety strap",
+      "meshName": "safety_strap",
+      "quantity": 1
+    }
+  ],
+  "steps": [
+    {
+      "index": 1,
+      "title": "Prep the side panels",
+      "action": "Lay both side panels flat and thread the cam screws with washers into the marked holes.",
+      "partsNeeded": [
+        { "partId": "side-panel-left", "quantity": 1 },
+        { "partId": "side-panel-right", "quantity": 1 },
+        { "partId": "cam-screw-washer", "quantity": 8 }
+      ],
+      "cameraView": "screw-detail",
+      "highlightParts": ["side-panel-left", "side-panel-right", "cam-screw-washer"],
+      "commonMistake": "Do not drive the cam screws flush; leave the washer proud so the cam lock can grab it.",
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 4
+    },
+    {
+      "index": 2,
+      "title": "Attach the base",
+      "action": "Stand the left side panel up, align the bottom panel, and lock the first two cam locks.",
+      "partsNeeded": [
+        { "partId": "side-panel-left", "quantity": 1 },
+        { "partId": "bottom-panel", "quantity": 1 },
+        { "partId": "cam-lock", "quantity": 2 }
+      ],
+      "cameraView": "base-detail",
+      "highlightParts": ["bottom-panel", "cam-lock"],
+      "commonMistake": "The finished edge of the bottom panel faces forward; if the raw edge faces you, rotate it before locking.",
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 3
+    },
+    {
+      "index": 3,
+      "title": "Add the fixed shelf",
+      "action": "Slide the fixed center shelf onto the dowels and tighten the two visible cam locks.",
+      "partsNeeded": [
+        { "partId": "fixed-shelf", "quantity": 1 },
+        { "partId": "wood-dowel", "quantity": 4 },
+        { "partId": "cam-lock", "quantity": 2 }
+      ],
+      "cameraView": "shelf-detail",
+      "highlightParts": ["fixed-shelf", "wood-dowel"],
+      "toolNeeded": "Rubber mallet",
+      "estMinutes": 3
+    },
+    {
+      "index": 4,
+      "title": "Close the frame",
+      "action": "Bring the right side panel in from above, seat it on the dowels, and tighten all remaining cam locks.",
+      "partsNeeded": [
+        { "partId": "side-panel-right", "quantity": 1 },
+        { "partId": "wood-dowel", "quantity": 4 },
+        { "partId": "cam-lock", "quantity": 4 }
+      ],
+      "cameraView": "front",
+      "highlightParts": ["side-panel-right", "cam-lock"],
+      "commonMistake": "Tighten opposite corners first; tightening one side fully can rack the frame out of square.",
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 4
+    },
+    {
+      "index": 5,
+      "title": "Set the top panel",
+      "action": "Lower the top panel onto the side pins with the smooth face upward, then lock the front cams.",
+      "partsNeeded": [
+        { "partId": "top-panel", "quantity": 1 },
+        { "partId": "cam-lock", "quantity": 2 }
+      ],
+      "cameraView": "top-detail",
+      "highlightParts": ["top-panel", "cam-lock"],
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 3
+    },
+    {
+      "index": 6,
+      "title": "Check the square",
+      "action": "Measure both diagonals and gently nudge the frame until the two measurements match.",
+      "partsNeeded": [
+        { "partId": "side-panel-left", "quantity": 1 },
+        { "partId": "side-panel-right", "quantity": 1 },
+        { "partId": "top-panel", "quantity": 1 },
+        { "partId": "bottom-panel", "quantity": 1 }
+      ],
+      "cameraView": "square-check",
+      "highlightParts": ["side-panel-left", "side-panel-right", "top-panel", "bottom-panel"],
+      "commonMistake": "If the frame is not square before the back panel goes on, the shelves will look twisted later.",
+      "toolNeeded": "Tape measure",
+      "estMinutes": 2
+    },
+    {
+      "index": 7,
+      "title": "Fasten the back panel",
+      "action": "Place the back panel on the rear groove, smooth white face inward, and fix it with the short screws.",
+      "partsNeeded": [
+        { "partId": "back-panel", "quantity": 1 },
+        { "partId": "back-screw", "quantity": 12 }
+      ],
+      "cameraView": "back-panel",
+      "highlightParts": ["back-panel", "back-screw"],
+      "commonMistake": "The smooth white face points inward toward the shelves; the unfinished side faces the wall.",
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 5
+    },
+    {
+      "index": 8,
+      "title": "Drop in the shelves",
+      "action": "Insert shelf pins at matching heights on both sides, then lower the two adjustable shelves onto them.",
+      "partsNeeded": [
+        { "partId": "shelf-pin", "quantity": 8 },
+        { "partId": "adjustable-shelf", "quantity": 2 }
+      ],
+      "cameraView": "shelf-pin-detail",
+      "highlightParts": ["shelf-pin", "adjustable-shelf"],
+      "commonMistake": "Pins must mirror each other left to right; one hole off will make the shelf rock.",
+      "toolNeeded": "Hands",
+      "estMinutes": 3
+    },
+    {
+      "index": 9,
+      "title": "Anchor and final tighten",
+      "action": "Attach the wall safety strap, tighten the remaining screws, and check that every shelf is seated.",
+      "partsNeeded": [
+        { "partId": "safety-strap", "quantity": 1 },
+        { "partId": "back-screw", "quantity": 2 }
+      ],
+      "cameraView": "wall-anchor",
+      "highlightParts": ["safety-strap"],
+      "toolNeeded": "Drill",
+      "estMinutes": 6
+    }
+  ],
+  "cameraViews": {
+    "front": {
+      "position": [3.2, 2.1, 5.2],
+      "target": [0, 1.1, 0],
+      "label": "Front assembly view"
+    },
+    "base-detail": {
+      "position": [2.5, 1.1, 2.6],
+      "target": [0, 0.32, 0.2],
+      "label": "Base cam detail"
+    },
+    "screw-detail": {
+      "position": [-2.7, 1.4, 2.2],
+      "target": [-0.75, 0.85, 0.22],
+      "label": "Cam screw detail"
+    },
+    "cam-lock-detail": {
+      "position": [2.6, 1.35, 2.2],
+      "target": [0.72, 0.82, 0.2],
+      "label": "Cam lock close-up"
+    },
+    "shelf-detail": {
+      "position": [3.1, 1.9, 3.1],
+      "target": [0, 1.15, 0],
+      "label": "Shelf alignment"
+    },
+    "top-detail": {
+      "position": [2.8, 3.5, 2.7],
+      "target": [0, 2.15, 0],
+      "label": "Top panel angle"
+    },
+    "square-check": {
+      "position": [0.05, 2.5, 5.6],
+      "target": [0, 1.15, 0],
+      "label": "Square check"
+    },
+    "back-panel": {
+      "position": [-3.2, 2.0, -4.8],
+      "target": [0, 1.1, -0.25],
+      "label": "Back panel view"
+    },
+    "shelf-pin-detail": {
+      "position": [2.2, 1.8, 2.0],
+      "target": [0.82, 1.45, 0.18],
+      "label": "Shelf pin detail"
+    },
+    "wall-anchor": {
+      "position": [0.0, 2.4, -5.2],
+      "target": [0, 2.1, -0.28],
+      "label": "Wall anchor view"
+    },
+    "exploded": {
+      "position": [4.5, 2.8, 5.4],
+      "target": [0, 1.1, 0],
+      "label": "Exploded overview"
+    }
+  }
+}

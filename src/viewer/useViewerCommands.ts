@@ -13,10 +13,23 @@ export interface PartPrimitive {
 export interface PartLayout {
   partId: string;
   unlockStep: number;
+  /**
+   * Step at which the part should first become visible in the scene. Defaults to
+   * unlockStep. Used to keep hardware "in the bin" until the structure it
+   * attaches to exists, so parts never hang exploded in mid-air before use.
+   */
+  visibleStep?: number;
   explodedOffset: Vec3;
   role: 'panel' | 'hardware' | 'back' | 'strap';
   stepOffsets?: Record<number, Vec3>;
   primitives: PartPrimitive[];
+}
+
+/** The step at which a part first appears (falls back to its unlock step). */
+export function partRevealStep(partId: string): number {
+  const layout = partLayouts[partId];
+  if (!layout) return 1;
+  return layout.visibleStep ?? layout.unlockStep;
 }
 
 export interface PartPose {
@@ -102,6 +115,9 @@ export const partLayouts: Record<string, PartLayout> = {
   'cam-screw-washer': {
     partId: 'cam-screw-washer',
     unlockStep: 1,
+    // Screws span both side panels, so only reveal them once the right panel
+    // closes the frame (step 4); before that they'd float where no panel is yet.
+    visibleStep: 4,
     explodedOffset: [-1.0, 0.42, 0.84],
     role: 'hardware',
     stepOffsets: {
@@ -117,6 +133,9 @@ export const partLayouts: Record<string, PartLayout> = {
   'cam-lock': {
     partId: 'cam-lock',
     unlockStep: 2,
+    // Cam locks sit at the bottom and top joints; reveal once the box is fully
+    // framed (top panel on at step 5) so none float in empty space.
+    visibleStep: 5,
     explodedOffset: [1.04, 0.28, 0.82],
     role: 'hardware',
     stepOffsets: {
@@ -132,6 +151,8 @@ export const partLayouts: Record<string, PartLayout> = {
   'wood-dowel': {
     partId: 'wood-dowel',
     unlockStep: 3,
+    // Dowels join the shelf to both sides — reveal once the right panel is on.
+    visibleStep: 4,
     explodedOffset: [0.92, 0.48, 0.62],
     role: 'hardware',
     stepOffsets: {
@@ -252,7 +273,8 @@ export function derivePartPose(
     return { primitives: [], offset: [0, 0, 0], visible: false };
   }
 
-  const assembled = currentStep >= layout.unlockStep;
+  const reveal = layout.visibleStep ?? layout.unlockStep;
+  const assembled = currentStep >= reveal;
   const pendingMultiplier = assembled ? 0 : 1.25;
   const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
   const multiplier = pendingMultiplier + explodedMultiplier;

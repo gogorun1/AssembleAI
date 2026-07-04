@@ -16,6 +16,7 @@ import type { Part, ViewerAPI } from '../types/assembly';
 import {
   derivePartPose,
   partLayouts,
+  partRevealStep,
   resolvePartIdForNode,
   type PartLayout,
   type PartPrimitive
@@ -384,7 +385,7 @@ function GlbModel({
       );
 
       const bin = binForPart[binding.partId];
-      const installed = layout ? currentStep >= layout.unlockStep : true;
+      const installed = layout ? currentStep >= partRevealStep(binding.partId) : true;
       let visible = pose.visible;
       let grow = 1;
 

@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useAppStore } from '../store/useAppStore';
 import { partBins, slotPositions } from './bins';
-import { partLayouts } from './useViewerCommands';
+import { partLayouts, partRevealStep } from './useViewerCommands';
 import type { TokenColors } from './colors';
 
 interface GhostProps {
@@ -37,8 +37,8 @@ export function SlotGhosts({ colors }: GhostProps) {
   for (const partId of bin.partIds) {
     const layout = partLayouts[partId];
     if (!layout) continue;
-    // Only show ghosts for parts not yet placed (their step hasn't arrived).
-    if (currentStep >= layout.unlockStep) continue;
+    // Only show ghosts for parts not yet placed (their reveal step hasn't arrived).
+    if (currentStep >= partRevealStep(partId)) continue;
     for (const pos of slotPositions(partId)) {
       markers.push(pos);
     }

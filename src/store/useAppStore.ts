@@ -37,6 +37,7 @@ interface AppState {
   activeViewKey: string;
   explodeLevel: 0 | 1 | 2;
   selectedPartId?: string;
+  selectedBinId?: string;
   toast?: ToastState;
   viewer?: ViewerAPI;
   firstVoiceInteraction: boolean;
@@ -54,6 +55,7 @@ interface AppState {
   setActiveView(viewKey: string): void;
   setExplodeLevel(level: 0 | 1 | 2): void;
   selectPart(partId?: string): void;
+  selectBin(binId?: string): void;
   showToast(message: string): void;
   clearToast(): void;
   markVoiceInteraction(): void;
@@ -107,6 +109,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeViewKey: manifest.steps[0].cameraView,
       explodeLevel: 0,
       selectedPartId: undefined,
+      selectedBinId: undefined,
       toast: undefined,
       firstVoiceInteraction: false,
       eventLog: []
@@ -198,6 +201,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectTimer = undefined;
       }, SELECT_DURATION_MS);
     }
+  },
+  selectBin(binId) {
+    set({ selectedBinId: binId });
   },
   showToast(message) {
     set({ toast: { id: crypto.randomUUID(), message } });

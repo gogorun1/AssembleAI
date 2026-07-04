@@ -113,6 +113,54 @@
   }
 }
 
+.binLabel {
+  pointer-events: none;
+}
+
+.binCard {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.binCard:hover {
+  border-color: var(--accent);
+}
+
+.binCardActive {
+  border-color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.binNumber {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.binName {
+  font-family: var(--font-display);
+  font-stretch: 118%;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
 .annotation {
   pointer-events: none;
 }

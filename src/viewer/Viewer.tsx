@@ -21,16 +21,9 @@ import {
   type PartPrimitive
 } from './useViewerCommands';
 import styles from './Viewer.module.css';
-
-interface TokenColors {
-  paperRaised: string;
-  paperSunken: string;
-  ink: string;
-  inkSoft: string;
-  line: string;
-  accent: string;
-  ok: string;
-}
+import { useTokenColors, type TokenColors } from './colors';
+import { binForPart } from './bins';
+import { PartsBench, SlotGhosts } from './PartsBench';
 
 interface CameraSnapshot {
   viewKey: string;
@@ -43,6 +36,21 @@ interface MappingReport {
   totalNodes: number;
   matchedParts: number;
   missingPartIds: string[];
+}
+
+interface FlightState {
+  seeded: boolean;
+  prev: boolean;
+  flying: boolean;
+  t: number;
+  from: THREE.Vector3;
+}
+
+const FLIGHT_SECONDS = 1.5;
+const FLIGHT_ARC_LIFT = 1.1;
+
+function easeInOutCubic(x: number): number {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 }
 
 interface PartBinding {
@@ -212,6 +220,8 @@ function Scene({
         <PrimitiveModel colors={colors} />
       )}
       <GridPlate colors={colors} />
+      <PartsBench colors={colors} />
+      <SlotGhosts colors={colors} />
       <ContactShadows position={[0, -0.02, 0]} opacity={0.28} scale={5} blur={2.4} far={3} />
       <CameraRig controlsRef={controlsRef} onCameraSnapshot={onCameraSnapshot} />
       <OrbitControls
@@ -314,29 +324,92 @@ function GlbModel({
   }, [bindings.length, modelPath, onMappingReport, unmatchedPartIds]);
 
   const scratch = useRef(new THREE.Vector3());
+  const binVec = useRef(new THREE.Vector3());
+  const flight = useRef(new Map<string, FlightState>());
 
   useFrame((state, delta) => {
     const alpha = 1 - Math.exp(-delta * 8);
     for (const binding of bindings) {
+      const layout = partLayouts[binding.partId];
       const pose = derivePartPose(binding.partId, currentStep, explodeLevel);
-      const target = scratch.current.set(
+      const slot = scratch.current.set(
         binding.basePosition.x + pose.offset[0],
         binding.basePosition.y + pose.offset[1],
         binding.basePosition.z + pose.offset[2]
       );
-      binding.node.position.lerp(target, alpha);
-      binding.node.visible = pose.visible;
 
+      const bin = binForPart[binding.partId];
+      const installed = layout ? currentStep >= layout.unlockStep : true;
+      let visible = pose.visible;
+      let grow = 1;
+
+      if (bin && explodeLevel === 0) {
+        // Binned hardware: sits in its tray until its step arrives, then flies
+        // into the slot along an arc with a scale-up "install" pop.
+        let fs = flight.current.get(binding.partId);
+        if (!fs) {
+          fs = { seeded: false, prev: installed, flying: false, t: 1, from: new THREE.Vector3() };
+          flight.current.set(binding.partId, fs);
+        }
+        if (!fs.seeded) {
+          fs.seeded = true;
+          fs.prev = installed;
+          fs.t = 1;
+          if (installed) binding.node.position.copy(slot);
+        } else if (installed && !fs.prev) {
+          fs.flying = true;
+          fs.t = 0;
+          fs.from.set(bin.position[0], bin.position[1], bin.position[2]);
+        }
+        fs.prev = installed;
+        visible = installed || fs.flying;
+
+        if (fs.flying) {
+          fs.t = Math.min(1, fs.t + delta / FLIGHT_SECONDS);
+          const e = easeInOutCubic(fs.t);
+          const inv = 1 - e;
+          // quadratic bezier from bin -> lifted control point -> slot
+          const cx = (fs.from.x + slot.x) / 2;
+          const cy = Math.max(fs.from.y, slot.y) + FLIGHT_ARC_LIFT;
+          const cz = (fs.from.z + slot.z) / 2;
+          binVec.current.set(
+            inv * inv * fs.from.x + 2 * inv * e * cx + e * e * slot.x,
+            inv * inv * fs.from.y + 2 * inv * e * cy + e * e * slot.y,
+            inv * inv * fs.from.z + 2 * inv * e * cz + e * e * slot.z
+          );
+          binding.node.position.copy(binVec.current);
+          grow = 0.5 + 0.5 * e;
+          if (fs.t >= 1) {
+            fs.flying = false;
+            binding.node.position.copy(slot);
+            grow = 1;
+          }
+        } else {
+          binding.node.position.lerp(slot, alpha);
+        }
+      } else {
+        const fs = flight.current.get(binding.partId);
+        if (fs) {
+          fs.flying = false;
+          fs.t = 1;
+          fs.prev = installed;
+        }
+        binding.node.position.lerp(slot, alpha);
+        visible = pose.visible;
+      }
+
+      binding.node.visible = visible;
       // Selected state is highlight-only — the part stays axis-aligned and does
       // not spin. Any residual rotation eases back to zero.
       binding.node.rotation.y = THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
 
       const mentioned = mentionedPartIds.includes(binding.partId);
       const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.03 : 1;
+      const s = grow * pulse;
       binding.node.scale.set(
-        binding.baseScale.x * pulse,
-        binding.baseScale.y * pulse,
-        binding.baseScale.z * pulse
+        binding.baseScale.x * s,
+        binding.baseScale.y * s,
+        binding.baseScale.z * s
       );
 
       const highlight = highlightedPartIds.includes(binding.partId) || mentioned;
@@ -710,34 +783,6 @@ function getDebugFlag(flag: string): boolean {
     return false;
   }
   return new URLSearchParams(window.location.search).get(flag) === '1';
-}
-
-function useTokenColors(): TokenColors {
-  return useMemo(() => {
-    if (typeof window === 'undefined') {
-      return {
-        paperRaised: 'white',
-        paperSunken: 'beige',
-        ink: 'black',
-        inkSoft: 'gray',
-        line: 'gray',
-        accent: 'orange',
-        ok: 'green'
-      };
-    }
-
-    const style = getComputedStyle(document.documentElement);
-    const read = (name: string) => style.getPropertyValue(name).trim();
-    return {
-      paperRaised: read('--paper-raised'),
-      paperSunken: read('--paper-sunken'),
-      ink: read('--ink'),
-      inkSoft: read('--ink-soft'),
-      line: read('--line'),
-      accent: read('--accent'),
-      ok: read('--ok')
-    };
-  }, []);
 }
 
 function useReducedMotion(): boolean {

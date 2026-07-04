@@ -1,0 +1,139 @@
+.overlay {
+  position: fixed;
+  top: var(--s-4);
+  left: var(--s-4);
+  z-index: 40;
+  width: 320px;
+  max-height: calc(100vh - var(--s-7));
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border: 1px solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--paper-raised);
+  box-shadow: 0 6px 24px rgba(34, 48, 58, 0.18);
+  font-family: var(--font-mono);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-sunken);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.iconButton:hover {
+  border-color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.stateGrid {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: var(--s-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-sunken);
+}
+
+.stateRow {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: var(--s-2);
+}
+
+.stateKey {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.stateValue {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.logActions {
+  display: flex;
+  gap: var(--s-1);
+}
+
+.copied {
+  font-size: var(--text-xs);
+  color: var(--ok);
+}
+
+.log {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.logEmpty {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.logItem {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: var(--s-2);
+  padding: 2px var(--s-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.logType {
+  font-size: 0.65rem;
+  color: var(--accent-ink);
+  text-transform: uppercase;
+}
+
+.logType[data-type='error'] {
+  color: #b00020;
+}
+
+.logLabel {
+  font-size: var(--text-xs);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

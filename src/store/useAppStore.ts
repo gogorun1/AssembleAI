@@ -12,6 +12,21 @@ interface ToastState {
   message: string;
 }
 
+export interface DemoEvent {
+  id: string;
+  type:
+    | 'utterance'
+    | 'intent'
+    | 'step_change'
+    | 'reset'
+    | 'photo_check'
+    | 'viewer_command'
+    | 'error';
+  label: string;
+  timestamp: number;
+  payload?: Record<string, unknown>;
+}
+
 interface AppState {
   manifest: AssemblyManifest;
   currentStep: number;
@@ -25,6 +40,7 @@ interface AppState {
   toast?: ToastState;
   viewer?: ViewerAPI;
   firstVoiceInteraction: boolean;
+  eventLog: DemoEvent[];
   resetDemoState(): void;
   setViewer(viewer: ViewerAPI): void;
   goToStep(index: number): void;
@@ -41,28 +57,33 @@ interface AppState {
   showToast(message: string): void;
   clearToast(): void;
   markVoiceInteraction(): void;
+  logEvent(event: Omit<DemoEvent, 'id' | 'timestamp'>): void;
+  clearEventLog(): void;
 }
 
 const mentionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function createWelcomeTranscript(): TranscriptLine {
+  return {
+    id: 'welcome',
+    speaker: 'agent',
+    text: 'I have the BILLY bookcase loaded. Hold space and ask which part to use, where it goes, or what is next.',
+    timestamp: Date.now(),
+    mentionedPartIds: []
+  };
+}
 
 export const useAppStore = create<AppState>((set, get) => ({
   manifest,
   currentStep: 1,
   voiceState: 'idle',
-  transcript: [
-    {
-      id: 'welcome',
-      speaker: 'agent',
-      text: 'I have the BILLY bookcase loaded. Hold space and ask which part to use, where it goes, or what is next.',
-      timestamp: Date.now(),
-      mentionedPartIds: []
-    }
-  ],
+  transcript: [createWelcomeTranscript()],
   mentionedPartIds: [],
   highlightedPartIds: manifest.steps[0].highlightParts,
   activeViewKey: manifest.steps[0].cameraView,
   explodeLevel: 1,
   firstVoiceInteraction: false,
+  eventLog: [],
   resetDemoState() {
     for (const timer of mentionTimers.values()) {
       clearTimeout(timer);
@@ -71,14 +92,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       currentStep: 1,
       voiceState: 'idle',
-      transcript: [],
+      transcript: [createWelcomeTranscript()],
       mentionedPartIds: [],
       highlightedPartIds: manifest.steps[0].highlightParts,
       activeViewKey: manifest.steps[0].cameraView,
       explodeLevel: 1,
       selectedPartId: undefined,
       toast: undefined,
-      firstVoiceInteraction: false
+      firstVoiceInteraction: false,
+      eventLog: []
     });
   },
   setViewer(viewer) {
@@ -96,6 +118,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().viewer?.goToStep(stepIndex);
     get().viewer?.setCamera(step.cameraView, 800);
     get().viewer?.highlight(step.highlightParts, 'pulse');
+    get().logEvent({ type: 'step_change', label: `Step ${stepIndex}`, payload: { step: stepIndex } });
   },
   nextStep() {
     get().goToStep(get().currentStep + 1);
@@ -167,5 +190,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   markVoiceInteraction() {
     set({ firstVoiceInteraction: true });
+  },
+  logEvent(event) {
+    set((state) => ({
+      eventLog: [
+        ...state.eventLog,
+        { ...event, id: crypto.randomUUID(), timestamp: Date.now() }
+      ].slice(-100)
+    }));
+  },
+  clearEventLog() {
+    set({ eventLog: [] });
   }
 }));

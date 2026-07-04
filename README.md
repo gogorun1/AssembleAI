@@ -19,6 +19,14 @@ The demo is optimized for a laptop or projector in a 16:9 layout:
 - Web Speech TTS through `speechSynthesis`.
 - Model generation script for `/public/models/billy.glb`.
 - WebGL fallback line drawing so the UI still works when 3D context creation fails.
+- Presenter Mode controls for the six critical demo utterances plus reset/rehearsal controls.
+- Full Reset / Rehearsal Reset buttons to restore the opening state or rehearse from step 1.
+- Photo Check panel with a manifest-aware mock for "Did I do this right?" (swaps to a real VLM endpoint via `VITE_PHOTO_CHECK_ENDPOINT`).
+- Debug overlay (press `D`) showing live app state, the recent event log, and a copy-debug-bundle button.
+- In-memory event log support for utterances, intents, step changes, resets, and photo checks.
+- DemoChecklist.md — read-through verification checklist for presenters.
+- GitHub Actions CI running unit tests, build, and Playwright smoke tests.
+- Playwright smoke tests covering the core flow, presenter controls, reset, photo check, debug overlay, and viewer fallback.
 
 ## Demo Script
 
@@ -38,9 +46,11 @@ Every voice action also has a click or keyboard fallback:
 - Space: hold to talk
 - Left/Right arrows: previous/next step
 - 1-9: jump to a step
+- D: toggle the debug overlay
 - Progress ticks: jump to a step
 - Part chips: highlight and identify that part
 - Warning strip: ask for the common mistake
+- Presenter Mode buttons: Next step, Which screw, Where does it go, Back view, Common mistake, Repeat, Full Reset, Rehearsal Reset
 
 ## Quick Start
 
@@ -66,14 +76,14 @@ npm run dev -- --host 127.0.0.1 --port 5323
 ```bash
 npm test
 npm run build
+npm run test:e2e
 ```
 
-Current tests cover:
+Current tests pass:
 
-- Manifest integrity: step count, common mistakes, camera/part references, visible part codes.
-- Preset intent coverage for the six critical demo utterances.
-- Orange Sync store behavior for the two-second part mention flash.
-- Viewer mesh mapping and step pose helpers.
+- `npm test`: unit tests cover manifest integrity, preset intents, Orange Sync store behavior, reset semantics, event log behavior, viewer mesh mapping, step poses, and the photo-check mock.
+- `npm run build`: production build completes without errors.
+- `npm run test:e2e`: 7 Playwright smoke tests (app load, presenter controls, reset flow, photo check, debug overlay, and viewer canvas/fallback). Requires `npx playwright install chromium` first.
 
 ## Tech Stack
 
@@ -96,6 +106,7 @@ src/
   components/                     Step card, part chips, transcript, orb, toast
   data/billy.manifest.json        Hand-authored bookcase manifest
   services/intent.ts              Intent parser facade and preset demo parser
+  services/photoCheck.ts          Photo-validation facade with offline mock
   services/stt.ts                 Web Speech STT wrapper
   services/tts.ts                 speechSynthesis wrapper
   store/useAppStore.ts            Zustand state and Orange Sync event
@@ -135,11 +146,14 @@ See `src/styles/tokens.css` for the token source of truth.
 ```bash
 cp .env.example .env.local
 VITE_INTENT_ENDPOINT=https://example.com/intent
+VITE_PHOTO_CHECK_ENDPOINT=https://example.com/photo-check
 ```
 
 If `VITE_INTENT_ENDPOINT` is present, `src/services/intent.ts` posts the utterance, current step, parts, and steps to that endpoint. The endpoint should return the `ResolvedIntent` shape described in `src/types/assembly.ts`.
 
-If no endpoint is configured, the app uses deterministic local intent handling for the hackathon script.
+If `VITE_PHOTO_CHECK_ENDPOINT` is present, `src/services/photoCheck.ts` posts the uploaded photo and current step as multipart form data and expects a `PhotoCheckResult` in response. Without it, the panel returns a deterministic manifest-aware mock.
+
+If no endpoint is configured, the app uses deterministic local intent handling and the offline photo-check mock for the hackathon script.
 
 Server-side API keys must stay out of `VITE_*` variables. See `.env.example` for the real-agent backend, hosted STT/TTS, photo-check, and observability keys expected by the next implementation phase.
 
@@ -149,7 +163,8 @@ Server-side API keys must stay out of `VITE_*` variables. See `.env.example` for
 - Intent parsing is deterministic by default, with optional endpoint support but no production LLM backend included.
 - Voice input depends on browser Web Speech support, strongest in Chrome.
 - TTS uses browser voices unless replaced by a real provider.
-- No photo checking, VLM validation, hosted STT/TTS, manual ingestion, catalog, persistence, presenter mode, browser smoke test, CI, or analytics yet.
+- Photo checking currently uses a manifest-aware mock unless `VITE_PHOTO_CHECK_ENDPOINT` points to a real VLM service.
+- No real VLM validation, hosted STT/TTS, manual ingestion, catalog, persistence, accounts, or analytics yet.
 - The demo is designed for desktop/projector, not mobile.
 
 ## Specs
@@ -177,3 +192,32 @@ For parallel execution, split the next build into three workstreams:
 - Person C: demo UX, photo validation, QA, and operations.
 
 The detailed plan is in `docs/specs/real-demo-roadmap.md`.
+
+### Person C Progress
+
+The full Person C track (demo UX, photo validation, QA, and operations) is complete.
+
+Implementation plan at `.hermes/plans/2026-07-04_194700-person-c-demo-ux-plan.md`.
+
+Phase 0 — Demo UX foundation:
+
+- Presenter Mode with buttons for the six critical demo utterances.
+- Full Reset and Rehearsal Reset buttons for opening-state recovery and rehearsal.
+- In-memory event log support for utterances, intents, step changes, and resets.
+- DemoChecklist.md — read-through verification checklist for presenters.
+- Playwright smoke tests for core flow, presenter paths, reset, and viewer fallback.
+
+Phase 1 — Photo Validation UI shell:
+
+- `src/services/photoCheck.ts` facade with a manifest-aware offline mock and a `VITE_PHOTO_CHECK_ENDPOINT` boundary for the real VLM.
+- `PhotoCheckPanel` with upload, preview, result badge, findings, part highlighting, and follow-up utterance.
+- Unit tests for the mock service.
+
+Phase 2 — QA and operations:
+
+- Debug overlay (press `D`) with live state, recent event log, copy-debug-bundle, and clear-log.
+- `photo_check` events wired into the event log.
+- GitHub Actions CI workflow for tests, build, and smoke tests.
+- Additional smoke tests for photo check and the debug overlay.
+
+**Status:** Person C track done. Remaining work depends on Person A (real model) and Person B (real intent/VLM endpoints).

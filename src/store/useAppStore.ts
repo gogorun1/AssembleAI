@@ -35,6 +35,9 @@ interface AppState {
   mentionedPartIds: string[];
   highlightedPartIds: string[];
   activeViewKey: string;
+  /** Bumped whenever a camera preset is (re)requested, so the rig animates once
+   *  and then hands control back to the user's orbit/zoom. */
+  cameraNonce: number;
   explodeLevel: 0 | 1 | 2;
   selectedPartId?: string;
   selectedBinId?: string;
@@ -88,6 +91,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   mentionedPartIds: [],
   highlightedPartIds: manifest.steps[0].highlightParts,
   activeViewKey: manifest.steps[0].cameraView,
+  cameraNonce: 0,
   explodeLevel: 0,
   firstVoiceInteraction: false,
   eventLog: [],
@@ -107,6 +111,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       mentionedPartIds: [],
       highlightedPartIds: manifest.steps[0].highlightParts,
       activeViewKey: manifest.steps[0].cameraView,
+      cameraNonce: get().cameraNonce + 1,
       explodeLevel: 0,
       selectedPartId: undefined,
       selectedBinId: undefined,
@@ -124,11 +129,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     // The <Viewer /> subscribes to these fields directly, so a single set()
     // drives the camera + highlights; the imperative ViewerAPI calls were
     // redundant double-writes. Explode level is left to the user's control.
-    set({
+    set((state) => ({
       currentStep: stepIndex,
       activeViewKey: step.cameraView,
-      highlightedPartIds: step.highlightParts
-    });
+      highlightedPartIds: step.highlightParts,
+      cameraNonce: state.cameraNonce + 1
+    }));
     get().logEvent({ type: 'step_change', label: `Step ${stepIndex}`, payload: { step: stepIndex } });
   },
   nextStep() {
@@ -182,8 +188,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().viewer?.clearHighlights();
   },
   setActiveView(viewKey) {
-    set({ activeViewKey: viewKey });
-    get().viewer?.setCamera(viewKey, 800);
+    set((state) => ({ activeViewKey: viewKey, cameraNonce: state.cameraNonce + 1 }));
   },
   setExplodeLevel(level) {
     set({ explodeLevel: level });

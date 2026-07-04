@@ -57,6 +57,7 @@ export default function App() {
   const previousStep = useAppStore((state) => state.previousStep);
   const nextStep = useAppStore((state) => state.nextStep);
   const goToStep = useAppStore((state) => state.goToStep);
+  const setActiveView = useAppStore((state) => state.setActiveView);
   const setExplodeLevel = useAppStore((state) => state.setExplodeLevel);
   const clearHighlights = useAppStore((state) => state.clearHighlights);
   const clearToast = useAppStore((state) => state.clearToast);
@@ -335,6 +336,21 @@ export default function App() {
       <div className="appShell">
         <main className="viewerStage" aria-label="3D assembly viewport">
           <Viewer />
+          <div className="viewControls" role="group" aria-label="Camera views">
+            <span className="viewControlsLabel">VIEW</span>
+            <button className="viewButton" type="button" onClick={() => setActiveView('front')} title="Recenter (front view)">
+              Front
+            </button>
+            <button className="viewButton" type="button" onClick={() => setActiveView('side')} title="Side view">
+              Side
+            </button>
+            <button className="viewButton" type="button" onClick={() => setActiveView('top')} title="Top view">
+              Top
+            </button>
+            <button className="viewButton" type="button" onClick={() => setActiveView('iso')} title="Isometric (3D) view">
+              3D
+            </button>
+          </div>
           <div className="bottomControls">
             <button className="iconButton" type="button" onClick={previousStep} aria-label="Previous step" title="Previous step">
               <ChevronLeft size={20} aria-hidden />

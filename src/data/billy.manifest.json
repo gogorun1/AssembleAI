@@ -296,6 +296,21 @@
       "position": [4.5, 2.8, 5.4],
       "target": [0, 1.1, 0],
       "label": "Exploded overview"
+    },
+    "side": {
+      "position": [6.6, 1.5, 0.2],
+      "target": [0, 1.1, 0],
+      "label": "Side view"
+    },
+    "top": {
+      "position": [0.1, 7.4, 0.25],
+      "target": [0, 1.1, 0],
+      "label": "Top view"
+    },
+    "iso": {
+      "position": [4.4, 3.4, 4.4],
+      "target": [0, 1.1, 0],
+      "label": "Isometric view"
     }
   }
 }

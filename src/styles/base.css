@@ -140,6 +140,48 @@ button:focus-visible,
   transform: translateY(var(--s-1));
 }
 
+.viewControls {
+  position: absolute;
+  inset-block-start: var(--s-5);
+  inset-inline-end: var(--s-5);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--paper-raised) 90%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.viewControlsLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  padding-inline-start: var(--s-1);
+}
+
+.viewButton {
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.viewButton:hover {
+  border-color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
 .splash {
   position: fixed;
   inset: 0;

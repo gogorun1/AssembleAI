@@ -39,7 +39,7 @@ describe('photoCheck mock service', () => {
     const finding = result.findings.find((f) => f.partIds && f.partIds.length > 0);
 
     expect(finding).toBeDefined();
-    expect(finding?.partIds).toContain('cam-screw-washer');
+    expect(finding?.partIds).toContain('wood-dowel');
   });
 
   it('clamps out-of-range steps without throwing', () => {

@@ -11,7 +11,8 @@ describe('mesh node mapping', () => {
 
   it('resolves exact GLB node names to part ids', () => {
     expect(resolvePartIdForNode('side_panel_left', manifest.parts)).toBe('side-panel-left');
-    expect(resolvePartIdForNode('cam_screw_washer', manifest.parts)).toBe('cam-screw-washer');
+    expect(resolvePartIdForNode('cam_screw', manifest.parts)).toBe('cam-screw');
+    expect(resolvePartIdForNode('back_nail', manifest.parts)).toBe('back-nail');
     expect(resolvePartIdForNode('back_panel', manifest.parts)).toBe('back-panel');
   });
 
@@ -24,6 +25,39 @@ describe('mesh node mapping', () => {
   it('returns undefined for unrelated node names', () => {
     expect(resolvePartIdForNode('Light', manifest.parts)).toBeUndefined();
     expect(resolvePartIdForNode('', manifest.parts)).toBeUndefined();
+  });
+
+  it('keeps obsolete demo part names out of the viewer map', () => {
+    expect(partLayouts['cam-screw-washer']).toBeUndefined();
+    expect(partLayouts['assembly-screw']).toBeUndefined();
+    expect(partLayouts['back-clip']).toBeUndefined();
+  });
+});
+
+describe('official hardware quantities', () => {
+  it('visualizes the hardware counts from the IKEA parts page', () => {
+    expect(partLayouts['wood-dowel'].primitives).toHaveLength(16);
+    expect(partLayouts['cam-screw'].primitives).toHaveLength(12);
+    expect(partLayouts['cam-lock'].primitives).toHaveLength(12);
+    expect(partLayouts['back-nail'].primitives).toHaveLength(18);
+    expect(partLayouts['shelf-pin'].primitives).toHaveLength(16);
+    expect(partLayouts['bracket-screw'].primitives).toHaveLength(2);
+    expect(partLayouts.washer.primitives).toHaveLength(4);
+  });
+
+  it('adds realistic detail meshes without changing official item counts', () => {
+    expect(partLayouts['side-panel-left'].details?.map((detail) => detail.id)).toEqual(
+      expect.arrayContaining(['left-back-groove', 'left-shelf-pin-holes'])
+    );
+    expect(partLayouts['cam-screw'].details?.map((detail) => detail.id)).toEqual(
+      expect.arrayContaining(['cam-screw-heads', 'cam-screw-slots'])
+    );
+    expect(partLayouts['cam-lock'].details?.map((detail) => detail.id)).toEqual(
+      expect.arrayContaining(['cam-lock-slots'])
+    );
+    expect(partLayouts['back-nail'].details?.map((detail) => detail.id)).toEqual(
+      expect.arrayContaining(['back-nail-heads'])
+    );
   });
 });
 

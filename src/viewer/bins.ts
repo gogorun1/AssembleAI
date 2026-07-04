@@ -24,7 +24,7 @@ export const partBins: PartBin[] = [
     id: 'bin-cam-screws',
     index: 1,
     name: 'Cam screws',
-    partIds: ['cam-screw-washer'],
+    partIds: ['cam-screw'],
     position: [-1.85, 0.06, 1.15],
     icons: 6,
     iconShape: 'screw'
@@ -50,8 +50,8 @@ export const partBins: PartBin[] = [
   {
     id: 'bin-back-screws',
     index: 4,
-    name: 'Back screws',
-    partIds: ['back-screw'],
+    name: 'Back nails',
+    partIds: ['back-nail'],
     position: [1.05, 0.06, 1.75],
     icons: 6,
     iconShape: 'screw'
@@ -59,10 +59,10 @@ export const partBins: PartBin[] = [
   {
     id: 'bin-wall-strap',
     index: 5,
-    name: 'Wall strap',
-    partIds: ['safety-strap'],
+    name: 'Wall hardware',
+    partIds: ['wall-bracket', 'bracket-screw', 'washer'],
     position: [1.85, 0.06, 1.15],
-    icons: 2,
+    icons: 4,
     iconShape: 'strap'
   }
 ];

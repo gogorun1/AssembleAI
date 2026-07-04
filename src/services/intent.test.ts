@@ -4,25 +4,26 @@ import { parseIntent } from './intent';
 
 describe('parseIntent demo utterances', () => {
   it('resolves the washer screw question to a which_part action', async () => {
-    const intent = await parseIntent('Which one is the screw with the washer?', {
+    const intent = await parseIntent('Which cam screw should I use?', {
       manifest,
       currentStep: 1
     });
 
     expect(intent.type).toBe('which_part');
-    expect(intent.partIds).toEqual(['cam-screw-washer']);
+    expect(intent.partIds).toEqual(['cam-screw']);
     expect(intent.language).toBe('en');
+    expect(intent.reply).toMatch(/118331/);
   });
 
   it('shows where the current panel goes', async () => {
     const intent = await parseIntent('Where does this panel go?', {
       manifest,
-      currentStep: 2
+      currentStep: 3
     });
 
     expect(intent.type).toBe('where_does_it_go');
     expect(intent.partIds).toContain('bottom-panel');
-    expect(intent.viewKey).toBe('base-detail');
+    expect(intent.viewKey).toBe('first-side-assembly');
   });
 
   it('maps the back view request to the back camera preset', async () => {
@@ -48,12 +49,22 @@ describe('parseIntent demo utterances', () => {
   it('surfaces the current common mistake', async () => {
     const intent = await parseIntent('Did people mess this step up before?', {
       manifest,
-      currentStep: 7
+      currentStep: 9
     });
 
     expect(intent.type).toBe('common_mistake');
     expect(intent.partIds).toEqual(['back-panel']);
-    expect(intent.reply).toMatch(/smooth white face/i);
+    expect(intent.reply).toMatch(/smooth face/i);
+  });
+
+  it('jumps to a two-digit step by word', async () => {
+    const intent = await parseIntent('Go to step fourteen.', {
+      manifest,
+      currentStep: 1
+    });
+
+    expect(intent.type).toBe('goto_step');
+    expect(intent.stepNumber).toBe(14);
   });
 
   it('answers the French screw placement question in French', async () => {
@@ -64,7 +75,7 @@ describe('parseIntent demo utterances', () => {
 
     expect(intent.type).toBe('where_does_it_go');
     expect(intent.language).toBe('fr');
-    expect(intent.partIds).toEqual(['cam-screw-washer']);
+    expect(intent.partIds).toEqual(['cam-screw']);
     expect(intent.reply).toMatch(/va/i);
   });
 });

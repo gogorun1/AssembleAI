@@ -2,14 +2,14 @@
 
 Voice-first assembly assistance for furniture builders. AssembleAI turns a hand-authored assembly manifest into a spatial copilot: users can ask what part to use, where a panel goes, what the next step is, or what mistake to avoid, and the app responds by moving/highlighting the model plus speaking a short reply.
 
-This repository currently contains a hackathon-grade single-page demo for a BILLY-style bookcase. It is intentionally honest about scope: the app does not parse PDF manuals at runtime, does not support multiple products, and does not include user accounts.
+This repository currently contains a hackathon-grade single-page demo for the IKEA BILLY 40x28x202 bookcase. It is intentionally honest about scope: the app does not parse PDF manuals at runtime, does not support multiple products, and does not include user accounts.
 
 ## Current Demo
 
 The demo is optimized for a laptop or projector in a 16:9 layout:
 
 - 3D viewport with a manifest-driven GLB bookcase model plus primitive/WebGL fallbacks.
-- Nine-step BILLY-style assembly manifest in `src/data/billy.manifest.json`.
+- Fourteen-step BILLY 40x28x202 assembly manifest in `src/data/billy.manifest.json`, aligned to IKEA manual `AA-1823127-9-2`.
 - Step engine with next/previous/goto-step actions.
 - Part chips with manual-style codes and quantities.
 - Conversation transcript and current step card.
@@ -33,7 +33,7 @@ The demo is optimized for a laptop or projector in a 16:9 layout:
 Run the app, hold space, and try these prompts:
 
 ```text
-Which one is the screw with the washer?
+Which cam screw should I use?
 Where does this panel go?
 Show me from the back.
 What's next?
@@ -45,7 +45,7 @@ Every voice action also has a click or keyboard fallback:
 
 - Space: hold to talk
 - Left/Right arrows: previous/next step
-- 1-9: jump to a step
+- 1-9: jump to one of the first nine steps
 - D: toggle the debug overlay
 - Progress ticks: jump to a step
 - Part chips: highlight and identify that part
@@ -130,13 +130,13 @@ The model response happens before speech starts. Speech confirms what the model 
 
 ## Design Direction
 
-The visual style is "the printed manual, electrified":
+The visual style is a clean product assembly bench:
 
-- Drafting paper surfaces.
-- Blue-black ink linework.
+- Neutral worktable surfaces.
+- White board material and low-saturation metal hardware.
 - Mono part codes.
 - Squarish cards and controls.
-- Safety orange as the single active/highlight color.
+- Muted safety orange as the active/highlight color.
 - Borders instead of heavy shadows, with the VoiceOrb as the only elevated control.
 
 See `src/styles/tokens.css` for the token source of truth.

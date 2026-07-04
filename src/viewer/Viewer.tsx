@@ -17,6 +17,7 @@ import {
   derivePartPose,
   partLayouts,
   resolvePartIdForNode,
+  type DetailMaterial,
   type PartLayout,
   type PartPrimitive
 } from './useViewerCommands';
@@ -24,6 +25,7 @@ import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
 import { PartsBench, SlotGhosts } from './PartsBench';
+import { resolvePickablePartId } from './picking';
 
 interface CameraSnapshot {
   viewKey: string;
@@ -114,7 +116,7 @@ export function Viewer() {
         <Canvas
           shadows
           dpr={[1, 2]}
-          camera={{ position: [3.2, 2.1, 5.2], fov: 32, near: 0.1, far: 80 }}
+          camera={{ position: [2.3, 2.5, 7.0], fov: 38, near: 0.1, far: 80 }}
         >
           <Scene
             modelPath={modelPath}
@@ -124,8 +126,8 @@ export function Viewer() {
         </Canvas>
       </WebGLErrorBoundary>
       <div className={styles.caption} aria-hidden>
-        <div className={styles.eyebrow}>ASSEMBLY MANIFEST · {manifest.id.toUpperCase()}</div>
-        <div className={styles.title}>Voice + 3D assembly copilot</div>
+        <div className={styles.eyebrow}>IKEA ASSEMBLY · {manifest.id.toUpperCase()}</div>
+        <div className={styles.title}>{manifest.name}</div>
         {showCameraHelper && cameraSnapshot ? <CameraHelperPanel snapshot={cameraSnapshot} /> : null}
         {showMeshHelper && mappingReport ? <MeshHelperPanel report={mappingReport} /> : null}
       </div>
@@ -176,12 +178,16 @@ function ViewerFallback() {
         <div className={`${styles.fallbackPart} ${styles.topPanel} ${active.has('top-panel') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.bottomPanel} ${active.has('bottom-panel') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.fixedShelf} ${active.has('fixed-shelf') ? styles.hot : ''}`} />
+        <div className={`${styles.fallbackPart} ${styles.adjustableBottom} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.adjustableLow} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.adjustableHigh} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
+        <div className={`${styles.fallbackPart} ${styles.adjustableTop} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
+        <div className={`${styles.fallbackPart} ${styles.frontRail} ${active.has('front-rail') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.backPanel} ${active.has('back-panel') ? styles.hot : ''}`} />
-        <div className={`${styles.hardwareDot} ${styles.dotOne} ${active.has('cam-screw-washer') ? styles.hot : ''}`} />
-        <div className={`${styles.hardwareDot} ${styles.dotTwo} ${active.has('cam-lock') ? styles.hot : ''}`} />
+        <div className={`${styles.hardwareDot} ${styles.dotOne} ${active.has('cam-screw') ? styles.hot : ''}`} />
+        <div className={`${styles.hardwareDot} ${styles.dotTwo} ${active.has('back-nail') ? styles.hot : ''}`} />
         <div className={`${styles.hardwareDot} ${styles.dotThree} ${active.has('shelf-pin') ? styles.hot : ''}`} />
+        <div className={`${styles.hardwareDot} ${styles.dotFour} ${active.has('wall-bracket') ? styles.hot : ''}`} />
       </div>
     </div>
   );
@@ -202,14 +208,14 @@ function Scene({
   return (
     <>
       <color attach="background" args={[colors.paperSunken]} />
-      <ambientLight intensity={0.62} />
+      <ambientLight intensity={0.74} />
       <directionalLight
         castShadow
-        position={[3.4, 5.2, 3.2]}
-        intensity={1.35}
+        position={[3.2, 6.2, 3.8]}
+        intensity={1.2}
         shadow-mapSize={[2048, 2048]}
       />
-      <directionalLight position={[-3, 2.2, -2]} intensity={0.34} />
+      <directionalLight position={[-2.8, 3.2, -2.6]} intensity={0.28} />
       {modelPath ? (
         <ModelErrorBoundary fallback={<PrimitiveModel colors={colors} />}>
           <Suspense fallback={<LoadingModel colors={colors} />}>
@@ -230,7 +236,7 @@ function Scene({
         enableDamping
         dampingFactor={0.08}
         minDistance={2.2}
-        maxDistance={8}
+        maxDistance={8.5}
         maxPolarAngle={Math.PI * 0.48}
       />
     </>
@@ -421,7 +427,7 @@ function GlbModel({
 
   const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
-    const partId = findPartId(event.object);
+    const partId = resolvePickablePartId(event.object);
     if (!partId) {
       return;
     }
@@ -552,6 +558,10 @@ function PartGroup({
 
   const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
+    const partId = resolvePickablePartId(event.object);
+    if (partId !== part.id) {
+      return;
+    }
     const store = useAppStore.getState();
     store.selectPart(part.id);
     store.mentionPart(part.id);
@@ -568,12 +578,28 @@ function PartGroup({
       {pose.primitives.map((primitive) => (
         <PrimitiveMesh
           key={primitive.id}
+          partId={part.id}
           primitive={primitive}
           layout={layout}
           colors={colors}
           highlighted={highlighted || mentioned}
+          pickable
         />
       ))}
+      {layout.details?.flatMap((detail) =>
+        detail.primitives.map((primitive) => (
+          <PrimitiveMesh
+            key={`${detail.id}-${primitive.id}`}
+            partId={part.id}
+            primitive={primitive}
+            layout={layout}
+            colors={colors}
+            highlighted={highlighted || mentioned}
+            detailMaterial={detail.material}
+            pickable={false}
+          />
+        ))
+      )}
       {selected ? (
         <Html position={annotationPosition(layout)} center distanceFactor={5.4} className={styles.annotation}>
           <div className={styles.annotationCode}>{part.code}</div>
@@ -585,22 +611,38 @@ function PartGroup({
 }
 
 function PrimitiveMesh({
+  partId,
   primitive,
   layout,
   colors,
-  highlighted
+  highlighted,
+  detailMaterial,
+  pickable
 }: {
+  partId: string;
   primitive: PartPrimitive;
   layout: PartLayout;
   colors: TokenColors;
   highlighted: boolean;
+  detailMaterial?: DetailMaterial;
+  pickable: boolean;
 }) {
-  const materialColor = highlighted ? colors.accent : colorForRole(layout.role, colors);
+  const materialColor = highlighted
+    ? colors.accent
+    : detailMaterial
+      ? colorForDetail(detailMaterial, colors)
+      : colorForRole(layout.role, colors);
   const emissive = highlighted ? colors.accent : colors.ink;
-  const emissiveIntensity = highlighted ? 0.8 : 0;
+  const emissiveIntensity = highlighted ? 0.42 : 0;
 
   return (
-    <mesh castShadow receiveShadow position={primitive.position} rotation={primitive.rotation}>
+    <mesh
+      castShadow
+      receiveShadow
+      position={primitive.position}
+      rotation={primitive.rotation}
+      userData={{ partId, pickable, isDetail: !pickable }}
+    >
       {primitive.shape === 'box' ? (
         <boxGeometry args={primitive.size} />
       ) : (
@@ -608,12 +650,12 @@ function PrimitiveMesh({
       )}
       <meshStandardMaterial
         color={materialColor}
-        roughness={0.72}
-        metalness={layout.role === 'hardware' ? 0.18 : 0.02}
+        roughness={layout.role === 'hardware' ? 0.38 : layout.role === 'back' ? 0.86 : 0.68}
+        metalness={layout.role === 'hardware' ? 0.48 : 0.02}
         emissive={emissive}
         emissiveIntensity={emissiveIntensity}
       />
-      {primitive.shape === 'box' ? <Edges color={colors.ink} threshold={18} /> : null}
+      {primitive.shape === 'box' ? <Edges color={colors.line} threshold={18} /> : null}
     </mesh>
   );
 }
@@ -677,12 +719,41 @@ function colorForRole(role: PartLayout['role'], colors: TokenColors): string {
     return colors.inkSoft;
   }
   if (role === 'back') {
-    return colors.paperSunken;
+    return '#ECEBE6';
   }
   if (role === 'strap') {
     return colors.ok;
   }
-  return colors.paperRaised;
+  return '#FAFAF6';
+}
+
+function colorForDetail(material: DetailMaterial, colors: TokenColors): string {
+  if (material === 'metal') {
+    return '#6F767D';
+  }
+  if (material === 'slot' || material === 'shadow') {
+    return colors.ink;
+  }
+  if (material === 'wood') {
+    return '#C8A97A';
+  }
+  return colors.line;
+}
+
+function isDetailMesh(mesh: THREE.Mesh): boolean {
+  return mesh.name.includes('_detail_') || mesh.userData?.isDetail === true;
+}
+
+function isDecorativeMesh(mesh: THREE.Mesh): boolean {
+  return isDetailMesh(mesh) || mesh.userData?.isOutline === true;
+}
+
+function detailMaterialForMesh(mesh: THREE.Mesh): DetailMaterial | undefined {
+  if (typeof mesh.userData?.detailMaterial === 'string') {
+    return mesh.userData.detailMaterial as DetailMaterial;
+  }
+  const match = mesh.name.match(/_detail_(edge|shadow|metal|slot|wood)_/);
+  return match?.[1] as DetailMaterial | undefined;
 }
 
 function buildBindings(
@@ -715,6 +786,8 @@ function buildBindings(
     const role = partLayouts[partId]?.role ?? 'panel';
     for (const mesh of meshes) {
       mesh.userData.partId = partId;
+      mesh.userData.pickable = !isDecorativeMesh(mesh);
+      mesh.userData.isDetail = isDetailMesh(mesh);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       applyRoleMaterial(mesh, role, colors);
@@ -741,19 +814,21 @@ function buildBindings(
 }
 
 function applyRoleMaterial(mesh: THREE.Mesh, role: PartLayout['role'], colors: TokenColors): void {
+  const detailMaterial = detailMaterialForMesh(mesh);
   const material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(colorForRole(role, colors)),
-    roughness: 0.72,
-    metalness: role === 'hardware' ? 0.2 : 0.02
+    color: new THREE.Color(detailMaterial ? colorForDetail(detailMaterial, colors) : colorForRole(role, colors)),
+    roughness: role === 'hardware' ? 0.38 : role === 'back' ? 0.86 : 0.68,
+    metalness: role === 'hardware' ? 0.48 : 0.02
   });
   mesh.material = material;
 
   if ((role === 'panel' || role === 'back') && mesh.geometry) {
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(mesh.geometry, 18),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(colors.ink) })
+      new THREE.LineBasicMaterial({ color: new THREE.Color(colors.line) })
     );
     edges.userData.isOutline = true;
+    edges.userData.pickable = false;
     mesh.add(edges);
   }
 }
@@ -764,18 +839,7 @@ function setMeshHighlight(mesh: THREE.Mesh, on: boolean, accent: string): void {
     return;
   }
   material.emissive.set(on ? accent : '#000000');
-  material.emissiveIntensity = on ? 0.7 : 0;
-}
-
-function findPartId(object: THREE.Object3D | null): string | undefined {
-  let cursor: THREE.Object3D | null = object;
-  while (cursor) {
-    if (typeof cursor.userData?.partId === 'string') {
-      return cursor.userData.partId as string;
-    }
-    cursor = cursor.parent;
-  }
-  return undefined;
+  material.emissiveIntensity = on ? 0.42 : 0;
 }
 
 function getDebugFlag(flag: string): boolean {

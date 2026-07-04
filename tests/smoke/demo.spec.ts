@@ -23,11 +23,11 @@ test.describe('Demo smoke tests', () => {
 
     // Welcome transcript should be shown
     await expect(
-      page.getByText(/I have the BILLY bookcase loaded/i)
+      page.getByText(/I have the BILLY 40x28x202 bookcase loaded/i)
     ).toBeVisible();
 
-    // Progress rail shows step fraction 1/9 at start
-    await expect(page.getByText('1/9')).toBeVisible();
+    // Progress rail shows step fraction 1/14 at start
+    await expect(page.getByText('1/14')).toBeVisible();
   });
 
   test('presenter Next step button advances or updates transcript', async ({ page }) => {
@@ -35,7 +35,7 @@ test.describe('Demo smoke tests', () => {
     await page.getByTestId('presenter-button-next-step').click();
 
     // Progress should advance to step 2
-    await expect(page.getByText('2/9')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('2/14')).toBeVisible({ timeout: 10_000 });
 
     // Transcript should contain the agent reply with step 2 info
     await expect(
@@ -47,31 +47,33 @@ test.describe('Demo smoke tests', () => {
     // Click the Which screw? presenter button
     await page.getByTestId('presenter-button-which-screw').click();
 
-    // Transcript should mention cam screw with washer
+    const transcript = page.getByLabel('Conversation transcript');
+
+    // Transcript should mention the official cam screw code.
     await expect(
-      page.getByText(/cam screw with the washer/i)
+      transcript.getByText(/Use 118331, the cam screw/i)
     ).toBeVisible({ timeout: 10_000 });
 
-    // Part number 117327 should appear in transcript
+    // The manifest hardware code should appear in transcript
     await expect(
-      page.getByText(/Use part 117327/i)
+      transcript.getByText(/Use 118331/i)
     ).toBeVisible();
   });
 
   test('full reset returns to welcome state', async ({ page }) => {
     // First advance to step 2 to create non-initial state
     await page.getByTestId('presenter-button-next-step').click();
-    await expect(page.getByText('2/9')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('2/14')).toBeVisible({ timeout: 10_000 });
 
     // Click Full reset
     await page.getByTestId('presenter-button-full-reset').click();
 
     // Should return to step 1
-    await expect(page.getByText('1/9')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('1/14')).toBeVisible({ timeout: 10_000 });
 
     // Welcome transcript should be restored
     await expect(
-      page.getByText(/I have the BILLY bookcase loaded/i)
+      page.getByText(/I have the BILLY 40x28x202 bookcase loaded/i)
     ).toBeVisible();
   });
 

@@ -42,11 +42,7 @@ button:focus-visible,
   display: grid;
   grid-template-columns: minmax(var(--viewer-min), 1fr) var(--rail-width);
   block-size: 100%;
-  background:
-    linear-gradient(to right, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
-    var(--paper);
-  background-size: var(--grid-size) var(--grid-size);
+  background: var(--paper);
 }
 
 .viewerStage {
@@ -64,7 +60,7 @@ button:focus-visible,
   min-block-size: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  margin: var(--s-5) var(--s-5) var(--s-5) 0;
+  margin: var(--s-4) var(--s-4) var(--s-4) 0;
 }
 
 .rightRail > * {
@@ -80,7 +76,7 @@ button:focus-visible,
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: var(--paper-raised);
+  background: color-mix(in srgb, var(--paper-raised) 92%, var(--paper));
 }
 
 .partRailHeader {
@@ -122,7 +118,7 @@ button:focus-visible,
   block-size: var(--control-size);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
   color: var(--ink);
   cursor: pointer;
   transition:
@@ -164,12 +160,11 @@ button:focus-visible,
 }
 
 .splashNumeral {
-  color: transparent;
+  color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--step-numeral);
   font-weight: 600;
   line-height: 1;
-  -webkit-text-stroke: 2px var(--ink);
 }
 
 .splashText {
@@ -182,6 +177,27 @@ button:focus-visible,
 @media (max-aspect-ratio: 14 / 9) {
   .appShell {
     grid-template-columns: minmax(0, 1fr) minmax(320px, var(--rail-width));
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(360px, 52svh) minmax(0, 1fr);
+  }
+
+  .viewerStage {
+    min-block-size: 360px;
+  }
+
+  .rightRail {
+    margin: 0 var(--s-3) var(--s-3);
+    padding-block-start: var(--s-3);
+  }
+
+  .bottomControls {
+    inset-block-end: var(--s-3);
+    gap: var(--s-2);
   }
 }
 

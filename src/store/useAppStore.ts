@@ -74,7 +74,7 @@ function createWelcomeTranscript(): TranscriptLine {
   return {
     id: 'welcome',
     speaker: 'agent',
-    text: 'I have the BILLY bookcase loaded. Hold space and ask which part to use, where it goes, or what is next.',
+    text: 'I have the BILLY 40x28x202 bookcase loaded. Hold space and ask which part to use, where it goes, or what is next.',
     timestamp: Date.now(),
     mentionedPartIds: []
   };

@@ -7,8 +7,8 @@ This roadmap upgrades the current hackathon demo into a convincing live demo tha
 Already built:
 
 - React/Vite/TypeScript app.
-- Single BILLY-style manifest.
-- 9-step walkthrough.
+- Single BILLY 40x28x202 manifest aligned to IKEA manual `AA-1823127-9-2`.
+- 14-step official walkthrough with manual hardware codes.
 - Manifest-driven GLB viewer with command API.
 - Generated `/public/models/billy.glb` asset and `npm run model:billy`.
 - Mesh-node mapping, early step offsets, camera debug, and mesh debug helpers.
@@ -208,7 +208,7 @@ Status: PR #4 covers the presenter controls, reset paths, debug overlay, checkli
 
 Target: 1-3 days
 
-Goal: replace primitive geometry with a real optimized BILLY-style model.
+Goal: replace generated geometry with a production-quality optimized BILLY model.
 
 Status: PR #3 implements the GLB pipeline, generated model asset, node mapping, debug helpers, and early step offsets. Treat the remaining work as asset-quality and coverage polish rather than a full viewer rewrite.
 

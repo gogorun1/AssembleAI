@@ -39,7 +39,7 @@ function TrayIcons({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
         const pos: [number, number, number] = [x + jitter, 0.05, z - jitter];
         if (bin.iconShape === 'dowel') {
           return (
-            <mesh key={i} position={pos} rotation={[Math.PI / 2, 0, (i % 2) * 0.5]} castShadow>
+            <mesh key={i} position={pos} rotation={[Math.PI / 2, 0, (i % 2) * 0.5]} castShadow userData={{ pickable: false }}>
               <cylinderGeometry args={[0.02, 0.02, 0.16, 12]} />
               <meshStandardMaterial color={color} roughness={0.7} metalness={0.1} />
             </mesh>
@@ -47,7 +47,7 @@ function TrayIcons({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
         }
         if (bin.iconShape === 'strap') {
           return (
-            <mesh key={i} position={[x, 0.04, z]} castShadow>
+            <mesh key={i} position={[x, 0.04, z]} castShadow userData={{ pickable: false }}>
               <boxGeometry args={[0.24, 0.03, 0.1]} />
               <meshStandardMaterial color={color} roughness={0.6} metalness={0.1} />
             </mesh>
@@ -56,7 +56,7 @@ function TrayIcons({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
         const h = bin.iconShape === 'lock' ? 0.05 : 0.11;
         const r = bin.iconShape === 'lock' ? 0.05 : 0.028;
         return (
-          <mesh key={i} position={[pos[0], h / 2 + 0.01, pos[2]]} castShadow>
+          <mesh key={i} position={[pos[0], h / 2 + 0.01, pos[2]]} castShadow userData={{ pickable: false }}>
             <cylinderGeometry args={[r, r, h, 14]} />
             <meshStandardMaterial color={color} roughness={0.4} metalness={0.55} />
           </mesh>
@@ -93,9 +93,9 @@ function Tray({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
   const baseColor = selected ? colors.accent : colors.paperRaised;
 
   return (
-    <group position={bin.position} onPointerDown={onSelect}>
+    <group position={bin.position}>
       {/* tray floor */}
-      <mesh position={[0, 0.015, 0]} receiveShadow castShadow>
+      <mesh position={[0, 0.015, 0]} receiveShadow castShadow onPointerDown={onSelect} userData={{ binId: bin.id, pickable: false }}>
         <boxGeometry args={[TRAY_W, 0.03, TRAY_D]} />
         <meshStandardMaterial
           color={baseColor}
@@ -105,19 +105,19 @@ function Tray({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
         />
       </mesh>
       {/* four low walls */}
-      <mesh position={[0, WALL_H / 2, TRAY_D / 2]} castShadow>
+      <mesh position={[0, WALL_H / 2, TRAY_D / 2]} castShadow onPointerDown={onSelect} userData={{ binId: bin.id, pickable: false }}>
         <boxGeometry args={[TRAY_W, WALL_H, WALL_T]} />
         <meshStandardMaterial color={wallColor} roughness={0.8} />
       </mesh>
-      <mesh position={[0, WALL_H / 2, -TRAY_D / 2]} castShadow>
+      <mesh position={[0, WALL_H / 2, -TRAY_D / 2]} castShadow onPointerDown={onSelect} userData={{ binId: bin.id, pickable: false }}>
         <boxGeometry args={[TRAY_W, WALL_H, WALL_T]} />
         <meshStandardMaterial color={wallColor} roughness={0.8} />
       </mesh>
-      <mesh position={[TRAY_W / 2, WALL_H / 2, 0]} castShadow>
+      <mesh position={[TRAY_W / 2, WALL_H / 2, 0]} castShadow onPointerDown={onSelect} userData={{ binId: bin.id, pickable: false }}>
         <boxGeometry args={[WALL_T, WALL_H, TRAY_D]} />
         <meshStandardMaterial color={wallColor} roughness={0.8} />
       </mesh>
-      <mesh position={[-TRAY_W / 2, WALL_H / 2, 0]} castShadow>
+      <mesh position={[-TRAY_W / 2, WALL_H / 2, 0]} castShadow onPointerDown={onSelect} userData={{ binId: bin.id, pickable: false }}>
         <boxGeometry args={[WALL_T, WALL_H, TRAY_D]} />
         <meshStandardMaterial color={wallColor} roughness={0.8} />
       </mesh>
@@ -125,21 +125,14 @@ function Tray({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
       <TrayIcons bin={bin} colors={colors} />
 
       <Html position={[0, 0.42, 0]} center distanceFactor={6} className={styles.binLabel} zIndexRange={[8, 0]}>
-        <button
-          type="button"
+        <div
           className={`${styles.binCard} ${selected ? styles.binCardActive : ''}`}
           data-testid={`bin-${bin.id}`}
-          onPointerDown={(domEvent) => {
-            domEvent.stopPropagation();
-            selectBin(bin.id);
-            setHighlightedParts(bin.partIds);
-            bin.partIds.forEach((partId) => mentionPart(partId));
-            setActiveView('front');
-          }}
+          aria-hidden
         >
           <span className={styles.binNumber}>{bin.index}</span>
           <span className={styles.binName}>{bin.name}</span>
-        </button>
+        </div>
       </Html>
     </group>
   );
@@ -193,7 +186,7 @@ export function SlotGhosts({ colors }: BenchProps) {
   return (
     <group ref={groupRef}>
       {markers.map((pos, i) => (
-        <mesh key={i} position={pos}>
+        <mesh key={i} position={pos} userData={{ isSlotGhost: true, pickable: false }}>
           <sphereGeometry args={[0.06, 16, 16]} />
           <meshBasicMaterial color={colors.accent} transparent opacity={0.45} />
         </mesh>

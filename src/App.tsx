@@ -19,19 +19,22 @@ import type { Part, ResolvedIntent } from './types/assembly';
 import { Viewer } from './viewer/Viewer';
 
 const PART_VIEW_KEYS: Record<string, string> = {
-  'side-panel-left': 'front',
-  'side-panel-right': 'front',
-  'bottom-panel': 'base-detail',
-  'top-panel': 'top-detail',
-  'fixed-shelf': 'shelf-detail',
-  'adjustable-shelf': 'shelf-pin-detail',
+  'side-panel-left': 'first-side-assembly',
+  'side-panel-right': 'second-side-panel',
+  'bottom-panel': 'first-side-assembly',
+  'top-panel': 'first-side-assembly',
+  'fixed-shelf': 'first-side-assembly',
+  'front-rail': 'front-rail',
+  'adjustable-shelf': 'complete',
   'back-panel': 'back-panel',
-  'cam-screw-washer': 'screw-detail',
+  'cam-screw': 'side-screw-detail',
   'cam-lock': 'cam-lock-detail',
-  'wood-dowel': 'shelf-detail',
+  'wood-dowel': 'dowel-prep',
+  'back-nail': 'back-nails',
   'shelf-pin': 'shelf-pin-detail',
-  'back-screw': 'back-panel',
-  'safety-strap': 'wall-anchor'
+  'wall-bracket': 'wall-anchor',
+  'bracket-screw': 'wall-anchor',
+  washer: 'wall-anchor'
 };
 
 function cameraViewForPart(

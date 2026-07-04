@@ -9,15 +9,15 @@ describe('useAppStore Orange Sync event', () => {
   });
 
   it('marks the part as mentioned and clears it after the flash window', () => {
-    useAppStore.getState().mentionPart('cam-screw-washer');
+    useAppStore.getState().mentionPart('cam-screw');
 
-    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw-washer');
+    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw');
 
     vi.advanceTimersByTime(1999);
-    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw-washer');
+    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw');
 
     vi.advanceTimersByTime(1);
-    expect(useAppStore.getState().mentionedPartIds).not.toContain('cam-screw-washer');
+    expect(useAppStore.getState().mentionedPartIds).not.toContain('cam-screw');
   });
 });
 

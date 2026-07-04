@@ -15,8 +15,8 @@ export const presenterUtterances: PresenterUtterance[] = [
   {
     id: 'which-screw',
     label: 'Which screw?',
-    utterance: 'Which screw with the washer should I use?',
-    description: 'Highlight the correct screw/washer part.'
+    utterance: 'Which cam screw should I use?',
+    description: 'Highlight the correct cam screw.'
   },
   {
     id: 'where-goes',

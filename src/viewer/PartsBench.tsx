@@ -6,6 +6,7 @@ import { useAppStore } from '../store/useAppStore';
 import { partBins, slotPositions, type PartBin } from './bins';
 import { partLayouts } from './useViewerCommands';
 import type { TokenColors } from './colors';
+import { isTap } from './pointer';
 import styles from './Viewer.module.css';
 
 interface BenchProps {
@@ -75,8 +76,7 @@ function Tray({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
   const addTranscript = useAppStore((state) => state.addTranscript);
   const selected = selectedBinId === bin.id;
 
-  const onSelect = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation();
+  const selectThisBin = () => {
     selectBin(bin.id);
     setHighlightedParts(bin.partIds);
     bin.partIds.forEach((partId) => mentionPart(partId));
@@ -89,11 +89,20 @@ function Tray({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
     });
   };
 
+  const onSelect = (event: ThreeEvent<MouseEvent>) => {
+    // Ignore if the pointer was dragged (orbit gesture rather than a tap).
+    if (!isTap(event.nativeEvent.clientX, event.nativeEvent.clientY)) {
+      return;
+    }
+    event.stopPropagation();
+    selectThisBin();
+  };
+
   const wallColor = selected ? colors.accent : colors.line;
   const baseColor = selected ? colors.accent : colors.paperRaised;
 
   return (
-    <group position={bin.position} onPointerDown={onSelect}>
+    <group position={bin.position} onClick={onSelect}>
       {/* tray floor */}
       <mesh position={[0, 0.015, 0]} receiveShadow castShadow>
         <boxGeometry args={[TRAY_W, 0.03, TRAY_D]} />
@@ -129,12 +138,9 @@ function Tray({ bin, colors }: { bin: PartBin; colors: TokenColors }) {
           type="button"
           className={`${styles.binCard} ${selected ? styles.binCardActive : ''}`}
           data-testid={`bin-${bin.id}`}
-          onPointerDown={(domEvent) => {
+          onClick={(domEvent) => {
             domEvent.stopPropagation();
-            selectBin(bin.id);
-            setHighlightedParts(bin.partIds);
-            bin.partIds.forEach((partId) => mentionPart(partId));
-            setActiveView('front');
+            selectThisBin();
           }}
         >
           <span className={styles.binNumber}>{bin.index}</span>

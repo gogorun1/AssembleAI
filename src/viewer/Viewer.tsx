@@ -24,6 +24,7 @@ import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
 import { PartsBench, SlotGhosts } from './PartsBench';
+import { isTap, markPointerDown } from './pointer';
 
 interface CameraSnapshot {
   viewKey: string;
@@ -115,6 +116,7 @@ export function Viewer() {
           shadows
           dpr={[1, 2]}
           camera={{ position: [3.2, 2.1, 5.2], fov: 32, near: 0.1, far: 80 }}
+          onPointerDown={(event) => markPointerDown(event.clientX, event.clientY)}
         >
           <Scene
             modelPath={modelPath}
@@ -463,7 +465,11 @@ function GlbModel({
     }
   });
 
-  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
+  const onSelect = (event: ThreeEvent<MouseEvent>) => {
+    // Ignore selection if the pointer was dragged (an orbit gesture).
+    if (!isTap(event.nativeEvent.clientX, event.nativeEvent.clientY)) {
+      return;
+    }
     event.stopPropagation();
     const partId = findPartId(event.object);
     if (!partId) {
@@ -489,7 +495,7 @@ function GlbModel({
 
   return (
     <group>
-      <primitive object={root} onPointerDown={onPointerDown} />
+      <primitive object={root} onClick={onSelect} />
 
       {unmatchedPartIds.map((partId) => {
         const layout = partLayouts[partId];
@@ -594,7 +600,10 @@ function PartGroup({
     group.scale.setScalar(pulse);
   });
 
-  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
+  const onSelect = (event: ThreeEvent<MouseEvent>) => {
+    if (!isTap(event.nativeEvent.clientX, event.nativeEvent.clientY)) {
+      return;
+    }
     event.stopPropagation();
     const store = useAppStore.getState();
     store.selectPart(part.id);
@@ -608,7 +617,7 @@ function PartGroup({
   };
 
   return (
-    <group ref={groupRef} onPointerDown={onPointerDown}>
+    <group ref={groupRef} onClick={onSelect}>
       {pose.primitives.map((primitive) => (
         <PrimitiveMesh
           key={primitive.id}

@@ -58,11 +58,22 @@ button:focus-visible,
 .rightRail {
   position: relative;
   z-index: 10;
-  display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: var(--s-4);
   min-block-size: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   margin: var(--s-5) var(--s-5) var(--s-5) 0;
+}
+
+.rightRail > * {
+  flex: 0 0 auto;
+}
+
+.rightRail > :last-child {
+  flex: 1 1 auto;
+  min-block-size: 220px;
 }
 
 .partRail {

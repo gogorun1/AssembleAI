@@ -25,11 +25,16 @@ export function Viewer() {
       goToStep(index) {
         const store = useAppStore.getState();
         const step = store.manifest.steps[Math.max(0, Math.min(index - 1, store.manifest.steps.length - 1))];
-        useAppStore.setState({
+        useAppStore.setState((state) => ({
           currentStep: step.index,
           activeViewKey: step.cameraView,
+          cameraMove: {
+            viewKey: step.cameraView,
+            requestId: state.cameraMove.requestId + 1,
+            animateMs: 800
+          },
           highlightedPartIds: step.highlightParts
-        });
+        }));
       },
       highlight(partIds) {
         useAppStore.setState({ highlightedPartIds: partIds });
@@ -37,8 +42,15 @@ export function Viewer() {
       clearHighlights() {
         useAppStore.setState({ highlightedPartIds: [] });
       },
-      setCamera(viewKey) {
-        useAppStore.setState({ activeViewKey: viewKey });
+      setCamera(viewKey, animateMs = 800) {
+        useAppStore.setState((state) => ({
+          activeViewKey: viewKey,
+          cameraMove: {
+            viewKey,
+            requestId: state.cameraMove.requestId + 1,
+            animateMs
+          }
+        }));
       },
       explode(level) {
         useAppStore.setState({ explodeLevel: level });
@@ -136,7 +148,6 @@ function Scene() {
         blur={2.4}
         far={3}
       />
-      <CameraRig controlsRef={controlsRef} />
       <OrbitControls
         ref={controlsRef}
         makeDefault
@@ -146,6 +157,7 @@ function Scene() {
         maxDistance={8}
         maxPolarAngle={Math.PI * 0.48}
       />
+      <CameraRig controlsRef={controlsRef} />
     </>
   );
 }
@@ -158,16 +170,70 @@ function CameraRig({
   const camera = useThree((state) => state.camera);
   const manifest = useAppStore((state) => state.manifest);
   const activeViewKey = useAppStore((state) => state.activeViewKey);
+  const cameraMove = useAppStore((state) => state.cameraMove);
   const reducedMotion = useReducedMotion();
-  const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
+  const view = manifest.cameraViews[cameraMove.viewKey] ?? manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
   const targetPosition = useMemo(() => new THREE.Vector3(...view.position), [view.position]);
   const targetLookAt = useMemo(() => new THREE.Vector3(...view.target), [view.target]);
+  const animationRef = useRef({
+    requestId: -1,
+    elapsed: 0,
+    duration: 0,
+    active: false,
+    startPosition: new THREE.Vector3(),
+    startTarget: new THREE.Vector3(),
+    currentTarget: new THREE.Vector3()
+  });
+
+  useEffect(() => {
+    const animation = animationRef.current;
+    const controls = controlsRef.current;
+
+    animation.requestId = cameraMove.requestId;
+    animation.elapsed = 0;
+    animation.duration = reducedMotion ? 0 : cameraMove.animateMs / 1000;
+    animation.active = true;
+    animation.startPosition.copy(camera.position);
+    animation.startTarget.copy(controls?.target ?? targetLookAt);
+    animation.currentTarget.copy(animation.startTarget);
+
+    if (controls) {
+      controls.enabled = false;
+      controls.target.copy(animation.startTarget);
+    }
+  }, [camera, cameraMove.animateMs, cameraMove.requestId, controlsRef, reducedMotion, targetLookAt]);
 
   useFrame((_, delta) => {
-    const alpha = reducedMotion ? 1 : 1 - Math.exp(-delta * 4.4);
-    camera.position.lerp(targetPosition, alpha);
-    controlsRef.current?.target.lerp(targetLookAt, alpha);
-    controlsRef.current?.update();
+    const animation = animationRef.current;
+    if (!animation.active) {
+      return;
+    }
+
+    animation.elapsed += delta;
+    const progress = animation.duration === 0 ? 1 : Math.min(animation.elapsed / animation.duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    camera.position.lerpVectors(animation.startPosition, targetPosition, eased);
+    animation.currentTarget.lerpVectors(animation.startTarget, targetLookAt, eased);
+
+    const controls = controlsRef.current;
+    if (controls) {
+      controls.target.copy(animation.currentTarget);
+      controls.update();
+    } else {
+      camera.lookAt(animation.currentTarget);
+    }
+
+    if (progress >= 1) {
+      animation.active = false;
+      if (controls) {
+        controls.target.copy(targetLookAt);
+        controls.enabled = true;
+        controls.update();
+      } else {
+        camera.lookAt(targetLookAt);
+      }
+    }
   });
 
   return null;

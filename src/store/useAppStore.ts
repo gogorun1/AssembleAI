@@ -12,6 +12,12 @@ interface ToastState {
   message: string;
 }
 
+interface CameraMoveState {
+  viewKey: string;
+  requestId: number;
+  animateMs: number;
+}
+
 export interface AppState {
   manifest: AssemblyManifest;
   currentStep: number;
@@ -20,6 +26,7 @@ export interface AppState {
   mentionedPartIds: string[];
   highlightedPartIds: string[];
   activeViewKey: string;
+  cameraMove: CameraMoveState;
   explodeLevel: 0 | 1 | 2;
   selectedPartId?: string;
   toast?: ToastState;
@@ -44,6 +51,15 @@ export interface AppState {
 }
 
 const mentionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const initialViewKey = manifest.steps[0].cameraView;
+
+function nextCameraMove(state: AppState, viewKey: string, animateMs = 800): CameraMoveState {
+  return {
+    viewKey,
+    requestId: state.cameraMove.requestId + 1,
+    animateMs
+  };
+}
 
 export const useAppStore = create<AppState>((set, get) => ({
   manifest,
@@ -60,7 +76,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   ],
   mentionedPartIds: [],
   highlightedPartIds: manifest.steps[0].highlightParts,
-  activeViewKey: manifest.steps[0].cameraView,
+  activeViewKey: initialViewKey,
+  cameraMove: {
+    viewKey: initialViewKey,
+    requestId: 0,
+    animateMs: 0
+  },
   explodeLevel: 1,
   firstVoiceInteraction: false,
   resetDemoState() {
@@ -74,7 +95,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       transcript: [],
       mentionedPartIds: [],
       highlightedPartIds: manifest.steps[0].highlightParts,
-      activeViewKey: manifest.steps[0].cameraView,
+      activeViewKey: initialViewKey,
+      cameraMove: {
+        viewKey: initialViewKey,
+        requestId: 0,
+        animateMs: 0
+      },
       explodeLevel: 1,
       selectedPartId: undefined,
       toast: undefined,
@@ -87,12 +113,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   goToStep(index) {
     const stepIndex = Math.max(1, Math.min(index, manifest.steps.length));
     const step = manifest.steps[stepIndex - 1];
-    set({
+    set((state) => ({
       currentStep: stepIndex,
       activeViewKey: step.cameraView,
+      cameraMove: nextCameraMove(state, step.cameraView),
       highlightedPartIds: step.highlightParts,
       explodeLevel: stepIndex === manifest.steps.length ? 0 : 1
-    });
+    }));
     get().viewer?.goToStep(stepIndex);
     get().viewer?.setCamera(step.cameraView, 800);
     get().viewer?.highlight(step.highlightParts, 'pulse');
@@ -149,7 +176,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().viewer?.clearHighlights();
   },
   setActiveView(viewKey) {
-    set({ activeViewKey: viewKey });
+    set((state) => ({
+      activeViewKey: viewKey,
+      cameraMove: nextCameraMove(state, viewKey)
+    }));
     get().viewer?.setCamera(viewKey, 800);
   },
   setExplodeLevel(level) {

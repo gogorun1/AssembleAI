@@ -18,6 +18,11 @@ The demo is optimized for a laptop or projector in a 16:9 layout:
 - Optional intent endpoint behind `VITE_INTENT_ENDPOINT`.
 - Web Speech TTS through `speechSynthesis`.
 - WebGL fallback line drawing so the UI still works when 3D context creation fails.
+- Presenter Mode controls for the six critical demo utterances plus reset/rehearsal controls.
+- Full Reset / Rehearsal Reset buttons to restore the opening state or rehearse from step 1.
+- In-memory event log support for utterances, intents, step changes, and resets.
+- DemoChecklist.md — read-through verification checklist for presenters.
+- Playwright smoke tests covering the core flow, presenter controls, reset, and viewer fallback.
 
 ## Demo Script
 
@@ -40,6 +45,7 @@ Every voice action also has a click or keyboard fallback:
 - Progress ticks: jump to a step
 - Part chips: highlight and identify that part
 - Warning strip: ask for the common mistake
+- Presenter Mode buttons: Next step, Which screw, Where does it go, Back view, Common mistake, Repeat, Full Reset, Rehearsal Reset
 
 ## Quick Start
 
@@ -65,13 +71,14 @@ npm run dev -- --host 127.0.0.1 --port 5323
 ```bash
 npm test
 npm run build
+npm run test:e2e
 ```
 
-Current tests cover:
+Current tests pass:
 
-- Manifest integrity: step count, common mistakes, camera/part references, visible part codes.
-- Preset intent coverage for the six critical demo utterances.
-- Orange Sync store behavior for the two-second part mention flash.
+- `npm test`: 22 unit tests pass (manifest integrity, preset intents, Orange Sync store, reset semantics, and event log behavior).
+- `npm run build`: production build completes without errors.
+- `npm run test:e2e`: 5 Playwright smoke tests pass (app load, presenter controls, reset flow, and viewer canvas/fallback).
 
 ## Tech Stack
 
@@ -170,3 +177,16 @@ For parallel execution, split the next build into three workstreams:
 - Person C: demo UX, photo validation, QA, and operations.
 
 The detailed plan is in `docs/specs/real-demo-roadmap.md`.
+
+### Person C Progress
+
+Phase 0 (Demo UX foundation) is complete on the `person-c-demo-ux` branch:
+
+- Implementation plan at `.hermes/plans/2026-07-04_194700-person-c-demo-ux-plan.md`.
+- Presenter Mode with buttons for the six critical demo utterances.
+- Full Reset and Rehearsal Reset buttons for opening-state recovery and rehearsal.
+- In-memory event log support for utterances, intents, step changes, and resets.
+- DemoChecklist.md — read-through verification checklist for presenters.
+- 5 Playwright smoke tests for core flow, presenter paths, reset, and viewer fallback.
+
+**Next:** Phase 1 — Photo Validation UI shell.

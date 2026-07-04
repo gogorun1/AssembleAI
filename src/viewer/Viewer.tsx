@@ -24,8 +24,9 @@ import {
 import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
-import { PartsBench, SlotGhosts } from './PartsBench';
+import { SlotGhosts } from './PartsBench';
 import { resolvePickablePartId } from './picking';
+import { isTap, markPointerDown } from './pointer';
 
 interface CameraSnapshot {
   viewKey: string;
@@ -117,6 +118,7 @@ export function Viewer() {
           shadows
           dpr={[1, 2]}
           camera={{ position: [2.3, 2.5, 7.0], fov: 38, near: 0.1, far: 80 }}
+          onPointerDown={(event) => markPointerDown(event.clientX, event.clientY)}
         >
           <Scene
             modelPath={modelPath}
@@ -203,6 +205,9 @@ function Scene({
   onMappingReport?: (value: MappingReport) => void;
 }) {
   const controlsRef = useRef(null) as MutableRefObject<any>;
+  // Bumped when the user grabs the controls, so an in-flight camera transition
+  // yields immediately to manual orbit/zoom.
+  const interruptRef = useRef(0);
   const colors = useTokenColors();
 
   return (
@@ -226,18 +231,21 @@ function Scene({
         <PrimitiveModel colors={colors} />
       )}
       <GridPlate colors={colors} />
-      <PartsBench colors={colors} />
       <SlotGhosts colors={colors} />
       <ContactShadows position={[0, -0.02, 0]} opacity={0.28} scale={5} blur={2.4} far={3} />
-      <CameraRig controlsRef={controlsRef} onCameraSnapshot={onCameraSnapshot} />
+      <CameraRig controlsRef={controlsRef} interruptRef={interruptRef} onCameraSnapshot={onCameraSnapshot} />
       <OrbitControls
         ref={controlsRef}
         makeDefault
         enableDamping
         dampingFactor={0.08}
+        enablePan={false}
         minDistance={2.2}
-        maxDistance={8.5}
-        maxPolarAngle={Math.PI * 0.48}
+        maxDistance={9}
+        maxPolarAngle={Math.PI * 0.5}
+        onStart={() => {
+          interruptRef.current += 1;
+        }}
       />
     </>
   );
@@ -245,34 +253,71 @@ function Scene({
 
 function CameraRig({
   controlsRef,
+  interruptRef,
   onCameraSnapshot
 }: {
   controlsRef: MutableRefObject<any>;
+  interruptRef: MutableRefObject<number>;
   onCameraSnapshot?: (value: CameraSnapshot) => void;
 }) {
   const camera = useThree((state) => state.camera);
   const manifest = useAppStore((state) => state.manifest);
   const activeViewKey = useAppStore((state) => state.activeViewKey);
+  const cameraNonce = useAppStore((state) => state.cameraNonce);
   const reducedMotion = useReducedMotion();
-  const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
-  const targetPosition = useMemo(() => new THREE.Vector3(...view.position), [view.position]);
-  const targetLookAt = useMemo(() => new THREE.Vector3(...view.target), [view.target]);
+
+  const lastNonce = useRef(-1);
+  const lastInterrupt = useRef(0);
+  const flying = useRef(false);
+  const t = useRef(1);
+  const dur = useRef(0);
+  const startPos = useRef(new THREE.Vector3());
+  const endPos = useRef(new THREE.Vector3());
+  const startTarget = useRef(new THREE.Vector3());
+  const endTarget = useRef(new THREE.Vector3());
   const lastEmitRef = useRef(0);
 
   useFrame((_, delta) => {
-    const alpha = reducedMotion ? 1 : 1 - Math.exp(-delta * 4.4);
-    camera.position.lerp(targetPosition, alpha);
-    controlsRef.current?.target.lerp(targetLookAt, alpha);
-    controlsRef.current?.update();
+    const controls = controlsRef.current;
+
+    // A user grab cancels any in-flight preset transition so orbit/zoom is free.
+    if (interruptRef.current !== lastInterrupt.current) {
+      lastInterrupt.current = interruptRef.current;
+      flying.current = false;
+    }
+
+    // A new camera command (view button, step, bin, reset) starts a one-shot flight.
+    if (cameraNonce !== lastNonce.current) {
+      lastNonce.current = cameraNonce;
+      const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
+      startPos.current.copy(camera.position);
+      startTarget.current.copy(controls?.target ?? startTarget.current.set(0, 1.1, 0));
+      endPos.current.set(...view.position);
+      endTarget.current.set(...view.target);
+      t.current = 0;
+      dur.current = reducedMotion ? 0 : 0.85;
+      flying.current = true;
+    }
+
+    if (flying.current) {
+      t.current = dur.current <= 0 ? 1 : Math.min(1, t.current + delta / dur.current);
+      const e = easeInOutCubic(t.current);
+      camera.position.lerpVectors(startPos.current, endPos.current, e);
+      if (controls) controls.target.lerpVectors(startTarget.current, endTarget.current, e);
+      if (t.current >= 1) flying.current = false;
+    }
+
+    // Always update so OrbitControls damping works during free manual control.
+    controls?.update();
 
     if (onCameraSnapshot) {
       const now = performance.now();
       if (now - lastEmitRef.current > 180) {
-        const target = controlsRef.current?.target as THREE.Vector3 | undefined;
+        const target = controls?.target as THREE.Vector3 | undefined;
         onCameraSnapshot({
           viewKey: activeViewKey,
           position: [camera.position.x, camera.position.y, camera.position.z],
-          target: target ? [target.x, target.y, target.z] : view.target
+          target: target ? [target.x, target.y, target.z] : [0, 1.1, 0]
         });
         lastEmitRef.current = now;
       }
@@ -365,7 +410,11 @@ function GlbModel({
         } else if (installed && !fs.prev) {
           fs.flying = true;
           fs.t = 0;
-          fs.from.set(bin.position[0], bin.position[1], bin.position[2]);
+          // Launch from the bin's on-screen (UI) position, projected ~4.5 units
+          // in front of the camera so the part appears to fly from the UI card.
+          binVec.current.set(bin.anchorNdc[0], bin.anchorNdc[1], 0.5).unproject(state.camera);
+          binVec.current.sub(state.camera.position).normalize().multiplyScalar(4.5).add(state.camera.position);
+          fs.from.copy(binVec.current);
         }
         fs.prev = installed;
         visible = installed || fs.flying;
@@ -425,7 +474,11 @@ function GlbModel({
     }
   });
 
-  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
+  const onSelect = (event: ThreeEvent<MouseEvent>) => {
+    // Ignore selection if the pointer was dragged (an orbit gesture).
+    if (!isTap(event.nativeEvent.clientX, event.nativeEvent.clientY)) {
+      return;
+    }
     event.stopPropagation();
     const partId = resolvePickablePartId(event.object);
     if (!partId) {
@@ -451,7 +504,7 @@ function GlbModel({
 
   return (
     <group>
-      <primitive object={root} onPointerDown={onPointerDown} />
+      <primitive object={root} onClick={onSelect} />
 
       {unmatchedPartIds.map((partId) => {
         const layout = partLayouts[partId];
@@ -556,7 +609,10 @@ function PartGroup({
     group.scale.setScalar(pulse);
   });
 
-  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
+  const onSelect = (event: ThreeEvent<MouseEvent>) => {
+    if (!isTap(event.nativeEvent.clientX, event.nativeEvent.clientY)) {
+      return;
+    }
     event.stopPropagation();
     const partId = resolvePickablePartId(event.object);
     if (partId !== part.id) {
@@ -574,7 +630,7 @@ function PartGroup({
   };
 
   return (
-    <group ref={groupRef} onPointerDown={onPointerDown}>
+    <group ref={groupRef} onClick={onSelect}>
       {pose.primitives.map((primitive) => (
         <PrimitiveMesh
           key={primitive.id}

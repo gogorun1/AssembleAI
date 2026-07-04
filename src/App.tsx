@@ -6,6 +6,7 @@ import { StepCard } from './components/StepCard';
 import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
+import { PartsBinsPanel } from './components/PartsBinsPanel';
 import { CommandPanel, type CommandLanguage } from './components/CommandPanel';
 import { PresenterPanel } from './components/PresenterPanel';
 import { PhotoCheckPanel } from './components/PhotoCheckPanel';
@@ -74,6 +75,7 @@ export default function App() {
   const previousStep = useAppStore((state) => state.previousStep);
   const nextStep = useAppStore((state) => state.nextStep);
   const goToStep = useAppStore((state) => state.goToStep);
+  const setActiveView = useAppStore((state) => state.setActiveView);
   const setExplodeLevel = useAppStore((state) => state.setExplodeLevel);
   const clearHighlights = useAppStore((state) => state.clearHighlights);
   const clearToast = useAppStore((state) => state.clearToast);
@@ -366,19 +368,29 @@ export default function App() {
       <div className="appShell">
         <main className="viewerStage" aria-label="3D assembly viewport">
           <Viewer />
-          <div className="bottomControls">
-            <button className="iconButton" type="button" onClick={previousStep} aria-label="Previous step" title="Previous step">
-              <ChevronLeft size={20} aria-hidden />
+          <PartsBinsPanel />
+          <div className="viewControls" role="group" aria-label="Camera views">
+            <span className="viewControlsLabel">VIEW</span>
+            <button className="viewButton" type="button" onClick={() => setActiveView('front')} title="Recenter (front view)">
+              Front
             </button>
+            <button className="viewButton" type="button" onClick={() => setActiveView('side')} title="Side view">
+              Side
+            </button>
+            <button className="viewButton" type="button" onClick={() => setActiveView('top')} title="Top view">
+              Top
+            </button>
+            <button className="viewButton" type="button" onClick={() => setActiveView('iso')} title="Isometric (3D) view">
+              3D
+            </button>
+          </div>
+          <div className="bottomControls">
             <VoiceOrb
               state={voiceState}
               showHint={!firstVoiceInteraction}
               onPointerDown={beginPushToTalk}
               onPointerUp={endPushToTalk}
             />
-            <button className="iconButton" type="button" onClick={nextStep} aria-label="Next step" title="Next step">
-              <ChevronRight size={20} aria-hidden />
-            </button>
             <button
               className="iconButton"
               type="button"
@@ -395,11 +407,21 @@ export default function App() {
         </main>
 
         <aside className="rightRail" aria-label="Assembly agent panel">
-          <ProgressRail
-            steps={manifest.steps}
-            currentStep={currentStep}
-            onSelectStep={goToStep}
-          />
+          <div className="stepNav">
+            <button className="stepNavButton" type="button" onClick={previousStep} aria-label="Previous step" title="Previous step">
+              <ChevronLeft size={18} aria-hidden />
+            </button>
+            <div className="stepNavRail">
+              <ProgressRail
+                steps={manifest.steps}
+                currentStep={currentStep}
+                onSelectStep={goToStep}
+              />
+            </div>
+            <button className="stepNavButton" type="button" onClick={nextStep} aria-label="Next step" title="Next step">
+              <ChevronRight size={18} aria-hidden />
+            </button>
+          </div>
           <StepCard step={step} onCommonMistake={triggerMistakeIntent} />
           <PresenterPanel
             utterances={presenterUtterances}

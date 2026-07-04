@@ -1,21 +1,23 @@
 import { partLayouts, type Vec3 } from './useViewerCommands';
 
 /**
- * Fixed workbench "part bins" placed around the model. Each bin holds one
- * category of hardware, is labelled with a number + name, and is the launch
- * point for the fly-into-slot animation when its step is reached.
+ * Parts bins rendered in the DOM UI layer (see components/PartsBinsPanel). Each
+ * bin holds one category of hardware, is labelled with a number + name, and is
+ * the launch anchor for the fly-into-slot animation when its step is reached.
  */
 export interface PartBin {
   id: string;
-  index: number; // number stamped on the bin
+  index: number; // number stamped on the bin card
   name: string;
   /** Manifest part ids stored in this bin. */
   partIds: string[];
-  /** World position of the bin (on the workbench floor, around the model). */
-  position: Vec3;
-  /** How many decorative icons to show resting in the tray. */
-  icons: number;
-  /** Icon primitive shape for the tray contents. */
+  /**
+   * Normalized-device-coordinate anchor (x,y in -1..1) marking roughly where the
+   * bin's UI card sits on screen — used as the launch point for the fly-into-slot
+   * animation so parts appear to come from the on-screen bin.
+   */
+  anchorNdc: [number, number];
+  /** Icon shape shown on the UI card. */
   iconShape: 'screw' | 'lock' | 'dowel' | 'strap';
 }
 
@@ -25,8 +27,7 @@ export const partBins: PartBin[] = [
     index: 1,
     name: 'Cam screws',
     partIds: ['cam-screw'],
-    position: [-1.85, 0.06, 1.15],
-    icons: 6,
+    anchorNdc: [-0.82, 0.55],
     iconShape: 'screw'
   },
   {
@@ -34,8 +35,7 @@ export const partBins: PartBin[] = [
     index: 2,
     name: 'Cam locks',
     partIds: ['cam-lock'],
-    position: [-1.05, 0.06, 1.75],
-    icons: 6,
+    anchorNdc: [-0.82, 0.28],
     iconShape: 'lock'
   },
   {
@@ -43,26 +43,23 @@ export const partBins: PartBin[] = [
     index: 3,
     name: 'Dowels & pins',
     partIds: ['wood-dowel', 'shelf-pin'],
-    position: [0, 0.06, 2.0],
-    icons: 7,
+    anchorNdc: [-0.82, 0.0],
     iconShape: 'dowel'
   },
   {
-    id: 'bin-back-screws',
+    id: 'bin-back-nails',
     index: 4,
     name: 'Back nails',
     partIds: ['back-nail'],
-    position: [1.05, 0.06, 1.75],
-    icons: 6,
+    anchorNdc: [-0.82, -0.28],
     iconShape: 'screw'
   },
   {
-    id: 'bin-wall-strap',
+    id: 'bin-wall-hardware',
     index: 5,
     name: 'Wall hardware',
     partIds: ['wall-bracket', 'bracket-screw', 'washer'],
-    position: [1.85, 0.06, 1.15],
-    icons: 4,
+    anchorNdc: [-0.82, -0.55],
     iconShape: 'strap'
   }
 ];

@@ -8,7 +8,7 @@
 ## 1. Pre-Demo Setup
 
 - [ ] `npm install` — dependencies installed (no errors)
-- [ ] `npm test` — all unit tests pass (expected: 22+ tests)
+- [ ] `npm test` — all unit tests pass
 - [ ] `npm run build` — production build succeeds
 - [ ] `npm run dev` — dev server starts on `http://localhost:5173`
 - [ ] Chrome browser ready (required for Web Speech API / voice)
@@ -39,14 +39,19 @@
 | **Repeat** → | Current step instruction repeated in transcript |
 | **Where does it go?** → | Placement guidance shown for current step |
 
-### Step 3 — Voice Demo (optional, Chrome only)
+### Step 3 — Typed Command Demo (no mic)
+- [ ] Type *"What's next?"* in **Typed Command** and submit → step advances to 2/9
+- [ ] Toggle **FR**, type *"Et cette vis, elle va où ?"* and submit → French reply mentions the washer screw
+- [ ] While typing, **Space**, arrows, and number keys do not trigger global shortcuts
+
+### Step 4 — Voice Demo (optional, Chrome only)
 - [ ] Hold **Space** → voice orb pulses (listening state)
 - [ ] Say *"Which screw should I use?"* → correct part highlights
 - [ ] Say *"Show me the back view"* → camera moves
 - [ ] Say *"What's next?"* → step advances
 - [ ] Release **Space** → orb returns to idle
 
-### Step 4 — Keyboard Navigation
+### Step 5 — Keyboard Navigation
 - [ ] **Arrow Right** → next step
 - [ ] **Arrow Left** → previous step
 - [ ] **1–9** → jump to step N
@@ -74,6 +79,7 @@
 
 ### Presenter Fallback (if voice fails)
 - [ ] All critical utterances available as clickable buttons
+- [ ] Typed Command accepts the same utterances without microphone access
 - [ ] No microphone required — mouse-only demo works end-to-end
 - [ ] If Web Speech API unavailable, toast shows: *"Voice needs Chrome — click steps and parts instead."*
 
@@ -136,6 +142,7 @@
   - [ ] Common mistake
   - [ ] Repeat
 - [ ] **Network-off demo** — `npm run dev` with no endpoints configured; local intent parser + mock photo check must work
+- [ ] **Typed fallback** — EN/FR typed commands work with microphone disabled
 - [ ] **Recover without touching code** — Full reset and rehearsal reset buttons work; presenter does not need a terminal or editor
 
 ---
@@ -156,4 +163,4 @@ npm run test:e2e  # Playwright smoke tests pass (starts dev server automatically
 
 ---
 
-*Last updated: 2026-07-04 (Person C: photo validation, debug overlay, CI)*
+*Last updated: 2026-07-04 (rescue: typed command, EN/FR toggle, shortcut guard)*

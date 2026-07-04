@@ -20,6 +20,7 @@ The demo is optimized for a laptop or projector in a 16:9 layout:
 - Model generation script for `/public/models/billy.glb`.
 - WebGL fallback line drawing so the UI still works when 3D context creation fails.
 - Presenter Mode controls for the six critical demo utterances plus reset/rehearsal controls.
+- Typed Command panel with EN/FR language toggle for microphone-free demos.
 - Full Reset / Rehearsal Reset buttons to restore the opening state or rehearse from step 1.
 - Photo Check panel with a manifest-aware mock for "Did I do this right?" (swaps to a real VLM endpoint via `VITE_PHOTO_CHECK_ENDPOINT`).
 - Debug overlay (press `D`) showing live app state, the recent event log, and a copy-debug-bundle button.
@@ -51,6 +52,8 @@ Every voice action also has a click or keyboard fallback:
 - Part chips: highlight and identify that part
 - Warning strip: ask for the common mistake
 - Presenter Mode buttons: Next step, Which screw, Where does it go, Back view, Common mistake, Repeat, Full Reset, Rehearsal Reset
+- Typed Command: enter any demo utterance and submit it through the same intent pipeline as voice
+- EN/FR toggle: changes typed-command placeholder and Web Speech recognition language
 
 ## Quick Start
 
@@ -83,7 +86,7 @@ Current tests pass:
 
 - `npm test`: unit tests cover manifest integrity, preset intents, Orange Sync store behavior, reset semantics, event log behavior, viewer mesh mapping, step poses, and the photo-check mock.
 - `npm run build`: production build completes without errors.
-- `npm run test:e2e`: 7 Playwright smoke tests (app load, presenter controls, reset flow, photo check, debug overlay, and viewer canvas/fallback). Requires `npx playwright install chromium` first.
+- `npm run test:e2e`: 9 Playwright smoke tests (app load, presenter controls, typed command, language toggle, reset flow, photo check, debug overlay, and viewer canvas/fallback). Requires `npx playwright install chromium` first.
 
 ## Tech Stack
 
@@ -103,7 +106,7 @@ No router and no CSS framework are used.
 ```text
 src/
   App.tsx                         Main orchestration and voice loop
-  components/                     Step card, part chips, transcript, orb, toast
+  components/                     Step card, part chips, transcript, orb, command panel, toast
   data/billy.manifest.json        Hand-authored bookcase manifest
   services/intent.ts              Intent parser facade and preset demo parser
   services/photoCheck.ts          Photo-validation facade with offline mock

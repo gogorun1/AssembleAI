@@ -23,7 +23,7 @@ import {
 import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
-import { PartsBench, SlotGhosts } from './PartsBench';
+import { SlotGhosts } from './PartsBench';
 import { isTap, markPointerDown } from './pointer';
 
 interface CameraSnapshot {
@@ -225,7 +225,6 @@ function Scene({
         <PrimitiveModel colors={colors} />
       )}
       <GridPlate colors={colors} />
-      <PartsBench colors={colors} />
       <SlotGhosts colors={colors} />
       <ContactShadows position={[0, -0.02, 0]} opacity={0.28} scale={5} blur={2.4} far={3} />
       <CameraRig controlsRef={controlsRef} interruptRef={interruptRef} onCameraSnapshot={onCameraSnapshot} />
@@ -405,7 +404,11 @@ function GlbModel({
         } else if (installed && !fs.prev) {
           fs.flying = true;
           fs.t = 0;
-          fs.from.set(bin.position[0], bin.position[1], bin.position[2]);
+          // Launch from the bin's on-screen (UI) position, projected ~4.5 units
+          // in front of the camera so the part appears to fly from the UI card.
+          binVec.current.set(bin.anchorNdc[0], bin.anchorNdc[1], 0.5).unproject(state.camera);
+          binVec.current.sub(state.camera.position).normalize().multiplyScalar(4.5).add(state.camera.position);
+          fs.from.copy(binVec.current);
         }
         fs.prev = installed;
         visible = installed || fs.flying;

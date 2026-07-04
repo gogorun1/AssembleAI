@@ -7,15 +7,18 @@ import { partLayouts, type Vec3 } from './useViewerCommands';
  */
 export interface PartBin {
   id: string;
-  index: number; // number stamped on the bin
+  index: number; // number stamped on the bin card
   name: string;
   /** Manifest part ids stored in this bin. */
   partIds: string[];
-  /** World position of the bin (on the workbench floor, around the model). */
-  position: Vec3;
-  /** How many decorative icons to show resting in the tray. */
-  icons: number;
-  /** Icon primitive shape for the tray contents. */
+  /**
+   * Normalized-device-coordinate anchor (x,y in -1..1) marking roughly where the
+   * bin's UI card sits on screen. Used as the launch point for the fly-into-slot
+   * animation so parts appear to come from the on-screen bin. The bins are UI
+   * (DOM) elements, not objects in the 3D scene.
+   */
+  anchorNdc: [number, number];
+  /** Icon shape shown on the UI card. */
   iconShape: 'screw' | 'lock' | 'dowel' | 'strap';
 }
 
@@ -25,8 +28,7 @@ export const partBins: PartBin[] = [
     index: 1,
     name: 'Cam screws',
     partIds: ['cam-screw-washer'],
-    position: [-1.85, 0.06, 1.15],
-    icons: 6,
+    anchorNdc: [-0.82, 0.55],
     iconShape: 'screw'
   },
   {
@@ -34,8 +36,7 @@ export const partBins: PartBin[] = [
     index: 2,
     name: 'Cam locks',
     partIds: ['cam-lock'],
-    position: [-1.05, 0.06, 1.75],
-    icons: 6,
+    anchorNdc: [-0.82, 0.28],
     iconShape: 'lock'
   },
   {
@@ -43,8 +44,7 @@ export const partBins: PartBin[] = [
     index: 3,
     name: 'Dowels & pins',
     partIds: ['wood-dowel', 'shelf-pin'],
-    position: [0, 0.06, 2.0],
-    icons: 7,
+    anchorNdc: [-0.82, 0.0],
     iconShape: 'dowel'
   },
   {
@@ -52,8 +52,7 @@ export const partBins: PartBin[] = [
     index: 4,
     name: 'Back screws',
     partIds: ['back-screw'],
-    position: [1.05, 0.06, 1.75],
-    icons: 6,
+    anchorNdc: [-0.82, -0.28],
     iconShape: 'screw'
   },
   {
@@ -61,8 +60,7 @@ export const partBins: PartBin[] = [
     index: 5,
     name: 'Wall strap',
     partIds: ['safety-strap'],
-    position: [1.85, 0.06, 1.15],
-    icons: 2,
+    anchorNdc: [-0.82, -0.55],
     iconShape: 'strap'
   }
 ];

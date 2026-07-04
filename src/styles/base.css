@@ -182,6 +182,43 @@ button:focus-visible,
   background: var(--accent-wash);
 }
 
+.stepNav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.stepNavRail {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.stepNavButton {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+
+.stepNavButton:hover {
+  border-color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.stepNavButton:active {
+  transform: translateY(var(--s-1));
+}
+
 .splash {
   position: fixed;
   inset: 0;

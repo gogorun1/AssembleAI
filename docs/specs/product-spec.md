@@ -116,8 +116,11 @@ interface ViewerAPI {
 The current viewer uses:
 
 - R3F canvas and drei controls.
-- Hand-authored primitive part layouts.
+- Manifest-driven GLB loading for `/models/billy.glb`.
+- Mesh-node mapping from manifest part ids to model nodes.
+- Hand-authored primitive part layouts as the model fallback.
 - Step-dependent assembled/exploded poses.
+- Camera and mesh debug overlays through `?camDebug=1` and `?meshDebug=1`.
 - Camera smoothing with reduced-motion fallback.
 - WebGL error boundary with a 2D manual-style fallback.
 

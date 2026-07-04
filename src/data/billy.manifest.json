@@ -1,12 +1,16 @@
 {
   "id": "billy-bookcase",
   "name": "BILLY Bookcase",
+  "model": {
+    "glbPath": "/models/billy.glb"
+  },
   "parts": [
     {
       "id": "side-panel-left",
       "code": "101532",
       "label": "Side panel (left)",
       "meshName": "side_panel_left",
+      "meshNodes": ["side_panel_left", "SidePanelLeft"],
       "quantity": 1
     },
     {
@@ -14,6 +18,7 @@
       "code": "101533",
       "label": "Side panel (right)",
       "meshName": "side_panel_right",
+      "meshNodes": ["side_panel_right", "SidePanelRight"],
       "quantity": 1
     },
     {
@@ -21,6 +26,7 @@
       "code": "101534",
       "label": "Bottom panel",
       "meshName": "bottom_panel",
+      "meshNodes": ["bottom_panel", "BottomPanel"],
       "quantity": 1
     },
     {
@@ -28,6 +34,7 @@
       "code": "101535",
       "label": "Top panel",
       "meshName": "top_panel",
+      "meshNodes": ["top_panel", "TopPanel"],
       "quantity": 1
     },
     {
@@ -35,6 +42,7 @@
       "code": "101536",
       "label": "Fixed center shelf",
       "meshName": "fixed_shelf",
+      "meshNodes": ["fixed_shelf", "FixedShelf"],
       "quantity": 1
     },
     {
@@ -42,6 +50,7 @@
       "code": "101537",
       "label": "Adjustable shelf",
       "meshName": "adjustable_shelf",
+      "meshNodes": ["adjustable_shelf", "AdjustableShelf"],
       "quantity": 2
     },
     {
@@ -49,6 +58,7 @@
       "code": "101538",
       "label": "Back panel",
       "meshName": "back_panel",
+      "meshNodes": ["back_panel", "BackPanel"],
       "quantity": 1
     },
     {
@@ -56,6 +66,7 @@
       "code": "117327",
       "label": "Cam screw with washer",
       "meshName": "cam_screw_washer",
+      "meshNodes": ["cam_screw_washer", "CamScrewWasher"],
       "quantity": 12
     },
     {
@@ -63,6 +74,7 @@
       "code": "119030",
       "label": "Cam lock",
       "meshName": "cam_lock",
+      "meshNodes": ["cam_lock", "CamLock"],
       "quantity": 12
     },
     {
@@ -70,6 +82,7 @@
       "code": "100674",
       "label": "Wood dowel",
       "meshName": "wood_dowel",
+      "meshNodes": ["wood_dowel", "WoodDowel"],
       "quantity": 10
     },
     {
@@ -77,6 +90,7 @@
       "code": "101339",
       "label": "Shelf pin",
       "meshName": "shelf_pin",
+      "meshNodes": ["shelf_pin", "ShelfPin"],
       "quantity": 8
     },
     {
@@ -84,6 +98,7 @@
       "code": "M3.5x16",
       "label": "Short back screw",
       "meshName": "back_screw",
+      "meshNodes": ["back_screw", "BackScrew"],
       "quantity": 12
     },
     {
@@ -91,6 +106,7 @@
       "code": "110789",
       "label": "Wall safety strap",
       "meshName": "safety_strap",
+      "meshNodes": ["safety_strap", "SafetyStrap"],
       "quantity": 1
     }
   ],

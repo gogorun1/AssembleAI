@@ -4,6 +4,11 @@ export interface AssemblyManifest {
   parts: Part[];
   steps: Step[];
   cameraViews: Record<string, CameraView>;
+  model?: ModelSource;
+}
+
+export interface ModelSource {
+  glbPath: string;
 }
 
 export interface Part {
@@ -11,6 +16,7 @@ export interface Part {
   code: string;
   label: string;
   meshName: string;
+  meshNodes?: string[];
   quantity: number;
 }
 

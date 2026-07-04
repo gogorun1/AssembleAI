@@ -9,16 +9,32 @@ Already built:
 - React/Vite/TypeScript app.
 - Single BILLY-style manifest.
 - 9-step walkthrough.
-- 3D primitive viewer with command API.
+- Manifest-driven GLB viewer with command API.
+- Generated `/public/models/billy.glb` asset and `npm run model:billy`.
+- Mesh-node mapping, early step offsets, camera debug, and mesh debug helpers.
+- Primitive model fallback and WebGL fallback.
 - Web Speech STT and browser TTS wrappers.
 - Preset intent parser for demo-critical utterances.
 - Orange Sync state event.
-- WebGL fallback.
-- Tests for manifest, intent, and Orange Sync.
+- Presenter mode, reset/rehearsal controls, debug overlay, event log, and demo checklist.
+- Photo Check UI shell with manifest-aware offline mock and `VITE_PHOTO_CHECK_ENDPOINT` boundary.
+- GitHub Actions CI and Playwright smoke tests.
+- Tests for manifest, intent, viewer mapping, step poses, Orange Sync, reset/event logging, and photo-check mock.
 
 Main gap:
 
-The app is a strong interactive prototype, not yet a true AI/3D assembly demo. The 3D model, intent parser, voice stack, and validation loop need production-grade replacements.
+The app is now past the primitive-viewer and presenter-safety prototype, but it is not yet a true agentic assembly demo. The included GLB is generated from simple geometry, the intent parser still defaults to deterministic presets, voice still depends on browser APIs, and photo validation is currently a deterministic mock unless a VLM endpoint is configured.
+
+## Remaining Functional Gaps After PR #4
+
+- Real structured-output agent backend with schema validation and part disambiguation.
+- Server-side secret boundary for LLM, STT, TTS, VLM, logging, and storage keys.
+- Hosted or recorded-audio STT path that works outside Chrome Web Speech.
+- Hosted TTS/audio playback path with browser `speechSynthesis` fallback.
+- Real VLM-backed "Did I do this right?" validation behind the existing Photo Check boundary.
+- Manifest schema validation and visual regression screenshots.
+- Production-modeled furniture GLB, full step pose coverage, and bundle/code-splitting polish.
+- Manual ingestion, multi-product catalog, persistence, accounts, and analytics.
 
 ## Three-Person Parallel Work Plan
 
@@ -51,6 +67,11 @@ First deliverables:
 - A mesh mapping utility or manifest extension.
 - Real mesh highlighting for at least steps 1-3.
 - A camera authoring helper or documented camera capture workflow.
+
+Status after PR #3:
+
+- Landed: generated GLB, manifest model path, mesh aliases, GLB loader, mapping helpers, early step offsets, real mesh highlighting, camera helper, mesh helper, and fallback safety.
+- Remaining: production-quality modeled asset, full step pose coverage, performance polish, and browser smoke coverage.
 
 Independent until:
 
@@ -120,6 +141,11 @@ First deliverables:
 - Browser smoke test for load, step navigation, part click, and WebGL fallback.
 - Photo-check UI shell with mocked structured response.
 
+Status after PR #4:
+
+- Landed: presenter buttons, full/rehearsal reset, event log, debug overlay, copy debug bundle, demo checklist, Photo Check UI shell, offline photo mock, Playwright smoke tests, and CI workflow.
+- Remaining: real VLM endpoint, richer visual regression assets, and integration polish with Person A/B final services.
+
 Independent until:
 
 - Needs Person B for real VLM endpoint.
@@ -139,13 +165,12 @@ If a contract must change, all three people should agree first and land the cont
 
 ### Merge Order
 
-Recommended merge order:
+Recommended remaining merge order:
 
-1. Person C lands presenter/reset/QA scaffolding first, because it improves demo safety without blocking other work.
-2. Person A lands GLB viewer behind the existing `ViewerAPI`.
-3. Person B lands the structured intent endpoint behind `VITE_INTENT_ENDPOINT`.
-4. Person C lands photo-check UI and operations tooling.
-5. Final integration PR connects real model, real intent endpoint, voice provider settings, and final demo copy.
+1. Person B lands the structured intent endpoint behind `VITE_INTENT_ENDPOINT`.
+2. Person B or C lands real VLM photo validation behind `VITE_PHOTO_CHECK_ENDPOINT`.
+3. Person A lands production asset polish and full step animation coverage.
+4. Final integration PR connects real model, real intent endpoint, voice provider settings, VLM settings, and final demo copy.
 
 ### Daily Sync Checklist
 
@@ -177,11 +202,15 @@ Exit criteria:
 - Presenter can recover from STT failure in one click.
 - `npm test`, `npm run build`, and browser smoke test pass.
 
+Status: PR #4 covers the presenter controls, reset paths, debug overlay, checklist, CI, and browser smoke scaffolding. Remaining Phase 0 work is mainly rehearsal evidence and visual regression screenshots.
+
 ## Phase 1: Real 3D Asset Pipeline
 
 Target: 1-3 days
 
 Goal: replace primitive geometry with a real optimized BILLY-style model.
+
+Status: PR #3 implements the GLB pipeline, generated model asset, node mapping, debug helpers, and early step offsets. Treat the remaining work as asset-quality and coverage polish rather than a full viewer rewrite.
 
 Tasks:
 
@@ -249,6 +278,8 @@ Exit criteria:
 Target: 2-4 days
 
 Goal: add the P1 feature that validates one uploaded photo against the expected state.
+
+Status: PR #4 adds the Photo Check panel, offline manifest-aware mock, result UI, part highlighting, event logging, and the `VITE_PHOTO_CHECK_ENDPOINT` integration boundary. Remaining work is the real VLM endpoint and sample photo fixture set.
 
 Tasks:
 

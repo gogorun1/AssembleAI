@@ -1,4 +1,6 @@
 import type { ResolvedIntent } from '../types/assembly';
+import { createRemoteTTSProvider } from './tts.remote';
+import { createWebSpeechTTSProvider } from './tts.webSpeech';
 
 export interface TTSService {
   speak(intent: ResolvedIntent): Promise<void>;
@@ -6,35 +8,37 @@ export interface TTSService {
   preload(): Promise<void>;
 }
 
-export function createTTSService(): TTSService {
-  const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
+export type TTSProviderName = 'web-speech' | 'remote';
 
+export interface TTSProvider {
+  create(): TTSService;
+}
+
+export interface CreateTTSServiceOptions {
+  provider?: TTSProviderName;
+}
+
+export function createTTSService(options: CreateTTSServiceOptions = {}): TTSService {
+  const provider = resolveTTSProvider(options.provider);
+  return provider.create();
+}
+
+export function createNoopTTSService(): TTSService {
   return {
-    async preload() {
-      if (!synth) {
-        return;
-      }
-
-      synth.getVoices();
-    },
-    async speak(intent) {
-      if (!synth) {
-        return;
-      }
-
-      synth.cancel();
-      await new Promise<void>((resolve) => {
-        const utterance = new SpeechSynthesisUtterance(intent.reply);
-        utterance.lang = intent.language === 'fr' ? 'fr-FR' : 'en-US';
-        utterance.rate = 1;
-        utterance.pitch = 1;
-        utterance.onend = () => resolve();
-        utterance.onerror = () => resolve();
-        synth.speak(utterance);
-      });
-    },
-    cancel() {
-      synth?.cancel();
-    }
+    speak: async () => {},
+    cancel: () => {},
+    preload: async () => {}
   };
+}
+
+function resolveTTSProvider(providerName = getConfiguredTTSProvider()): TTSProvider {
+  if (providerName === 'remote') {
+    return createRemoteTTSProvider();
+  }
+
+  return createWebSpeechTTSProvider();
+}
+
+function getConfiguredTTSProvider(): TTSProviderName {
+  return import.meta.env.VITE_TTS_PROVIDER === 'remote' ? 'remote' : 'web-speech';
 }

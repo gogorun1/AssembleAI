@@ -327,12 +327,9 @@ function GlbModel({
       binding.node.position.lerp(target, alpha);
       binding.node.visible = pose.visible;
 
-      const isSelected = selectedPartId === binding.partId;
-      // While selected, spin in place; when deselected (store auto-clears the
-      // selection after a beat) ease the rotation back to zero so it stops.
-      binding.node.rotation.y = isSelected
-        ? binding.node.rotation.y + delta * 1.4
-        : THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
+      // Selected state is highlight-only — the part stays axis-aligned and does
+      // not spin. Any residual rotation eases back to zero.
+      binding.node.rotation.y = THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
 
       const mentioned = mentionedPartIds.includes(binding.partId);
       const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.03 : 1;
@@ -474,9 +471,8 @@ function PartGroup({
     const alpha = 1 - Math.exp(-delta * 8);
     group.position.lerp(targetOffset, alpha);
     group.visible = pose.visible;
-    group.rotation.y = selected
-      ? group.rotation.y + delta * 1.4
-      : THREE.MathUtils.lerp(group.rotation.y, 0, alpha);
+    // Selected state is highlight-only — no spin.
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, 0, alpha);
     const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.035 : 1;
     group.scale.setScalar(pulse);
   });

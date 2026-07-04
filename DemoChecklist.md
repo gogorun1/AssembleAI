@@ -15,8 +15,8 @@
 - [ ] Audio output working (TTS reads step instructions aloud)
 - [ ] Microphone permitted (if voice demo — Chrome asks for mic permission on first Space-hold)
 - [ ] Network mode decided:
-  - **Online:** `VITE_INTENT_ENDPOINT` can be set for remote intent parsing; falls back to local parser.
-  - **Offline:** No endpoints needed — local intent parser handles all six critical utterances.
+  - **Online:** `VITE_INTENT_ENDPOINT` (intent) and `VITE_PHOTO_CHECK_ENDPOINT` (photo VLM) can be set for remote processing; both fall back gracefully.
+  - **Offline:** No endpoints needed — local intent parser handles all six critical utterances and photo check uses the built-in mock.
 
 ---
 
@@ -83,25 +83,36 @@
 
 ---
 
-## 4. Photo Validation Demo (Placeholder)
+## 4. Photo Validation Demo
 
-> Photo Check is a UI shell awaiting the real VLM endpoint (Person B track).
+> Photo Check is a working UI shell with a manifest-aware mock. It swaps to a real VLM endpoint (Person B track) via `VITE_PHOTO_CHECK_ENDPOINT` with no UI change.
 
-- [ ] `PhotoCheckPanel` is **not yet implemented or wired** in this phase — this is planned for the Photo Validation UI Shell phase
-- [ ] When activated, presenter can:
-  1. Upload an image (file input, `image/*`)
-  2. Click **Check photo**
-  3. See mock validation result (pass / warning / fail)
-  4. Click findings to highlight referenced parts
-  5. Click recommended utterance button
+- [ ] `PhotoCheckPanel` is visible in the right rail below Presenter Mode
+- [ ] Presenter can:
+  1. Click **Choose photo** and pick any image (`image/*`)
+  2. See the image preview
+  3. Click **Check photo**
+  4. See mock validation result badge (Looks right / Double-check / Looks wrong / Unclear) with confidence
+  5. Click **Highlight parts** on a finding to flash referenced parts in the viewer and rail
+  6. Click the recommended utterance button to ask a follow-up
 - [ ] Mock response works without any endpoint configured (network-off safe)
+- [ ] Mock alternates outcome by step parity: odd steps with a common mistake return a warning, even steps return a pass
 - [ ] Real VLM endpoint can be swapped in later via `VITE_PHOTO_CHECK_ENDPOINT` without changing the UI contract
 
 ---
 
-## 5. Event Log (Debug Support)
+## 5. Debug Overlay & Event Log
 
-- [ ] Event log records: `utterance`, `intent`, `step_change`, `reset`
+### Debug Overlay
+- [ ] Press **D** to toggle the debug overlay (top-left)
+- [ ] Overlay shows live state: step, voice state, active view, explode level, selected/highlighted/mentioned parts, event count
+- [ ] Overlay lists the newest 20 events
+- [ ] **Copy debug bundle** copies full state + event log JSON to clipboard
+- [ ] **Clear event log** empties the log
+- [ ] Overlay is hidden by default so it never appears on stage accidentally
+
+### Event Log
+- [ ] Event log records: `utterance`, `intent`, `step_change`, `reset`, `photo_check`
 - [ ] Each event has: `id` (UUID), `type`, `label`, `timestamp`, optional `payload`
 - [ ] Log is capped at **100 entries** (oldest dropped automatically)
 - [ ] `clearEventLog()` empties the log
@@ -145,4 +156,4 @@ npm run test:e2e  # Playwright smoke tests pass (starts dev server automatically
 
 ---
 
-*Last updated: 2026-07-04*
+*Last updated: 2026-07-04 (Person C: photo validation, debug overlay, CI)*

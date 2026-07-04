@@ -7,7 +7,10 @@ import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
 import { PresenterPanel } from './components/PresenterPanel';
+import { PhotoCheckPanel } from './components/PhotoCheckPanel';
+import { DebugOverlay } from './components/DebugOverlay';
 import { presenterUtterances } from './data/presenterUtterances';
+import type { PhotoCheckResult } from './services/photoCheck';
 import { parseIntent } from './services/intent';
 import { createSTTService, type STTService } from './services/stt';
 import { createTTSService } from './services/tts';
@@ -30,6 +33,7 @@ export default function App() {
   const sttRef = useRef<STTService>();
   const noSpeechTimer = useRef<ReturnType<typeof setTimeout>>();
   const [ready, setReady] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
 
   const step = manifest.steps[currentStep - 1];
   const partsById = useMemo(
@@ -160,6 +164,26 @@ export default function App() {
     store.showToast('Rehearsal reset complete.');
   }, [store]);
 
+  const mentionParts = useCallback((partIds: string[]) => {
+    const liveStore = useAppStore.getState();
+    liveStore.setHighlightedParts(partIds);
+    for (const partId of partIds) {
+      liveStore.mentionPart(partId);
+    }
+  }, []);
+
+  const onPhotoCheckResult = useCallback((result: PhotoCheckResult) => {
+    useAppStore.getState().logEvent({
+      type: 'photo_check',
+      label: `${result.status} (${Math.round(result.confidence * 100)}%)`,
+      payload: {
+        status: result.status,
+        confidence: result.confidence,
+        findings: result.findings.length
+      }
+    });
+  }, []);
+
   const beginPushToTalk = useCallback(() => {
     const liveStore = useAppStore.getState();
     liveStore.markVoiceInteraction();
@@ -250,6 +274,9 @@ export default function App() {
       if (/^[1-9]$/.test(event.key)) {
         store.goToStep(Number(event.key));
       }
+      if (event.key === 'd' || event.key === 'D') {
+        setDebugOpen((open) => !open);
+      }
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.code === 'Space') {
@@ -313,6 +340,13 @@ export default function App() {
             onRehearsalReset={rehearsalReset}
             disabled={voiceState !== 'idle'}
           />
+          <PhotoCheckPanel
+            currentStep={currentStep}
+            onMentionParts={mentionParts}
+            onRunUtterance={runUtterance}
+            onResult={onPhotoCheckResult}
+            disabled={voiceState !== 'idle'}
+          />
           <section className="partRail" aria-label="Parts needed">
             <div className="partRailHeader">
               <span>PARTS IN HAND</span>
@@ -342,6 +376,7 @@ export default function App() {
         </aside>
       </div>
       <Toast toast={toast} onDismiss={store.clearToast} />
+      <DebugOverlay enabled={debugOpen} onClose={() => setDebugOpen(false)} />
       <div className={`splash ${ready ? 'splashHidden' : ''}`} aria-hidden={ready}>
         <div className="splashInner">
           <div className="splashNumeral">0</div>

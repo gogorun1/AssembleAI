@@ -75,6 +75,35 @@ test.describe('Demo smoke tests', () => {
     ).toBeVisible();
   });
 
+  test('photo check produces a mocked validation result', async ({ page }) => {
+    const panel = page.getByRole('region', { name: 'Photo check' });
+    await expect(panel).toBeVisible();
+
+    // Attach a small in-memory PNG to the hidden file input.
+    const pngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    await page.getByTestId('photo-check-input').setInputFiles({
+      name: 'test.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(pngBase64, 'base64')
+    });
+
+    await page.getByTestId('photo-check-run').click();
+
+    // Mocked structured result should render without any backend.
+    await expect(page.getByTestId('photo-check-result')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('debug overlay toggles with the D key', async ({ page }) => {
+    await expect(page.getByTestId('debug-overlay')).toHaveCount(0);
+
+    await page.keyboard.press('d');
+    await expect(page.getByTestId('debug-overlay')).toBeVisible();
+
+    await page.keyboard.press('d');
+    await expect(page.getByTestId('debug-overlay')).toHaveCount(0);
+  });
+
   test('viewer stage contains canvas or fallback UI', async ({ page }) => {
     // Assert the viewer stage exists
     const viewerStage = page.getByRole('main', { name: '3D assembly viewport' });

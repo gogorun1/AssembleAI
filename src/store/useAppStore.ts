@@ -12,7 +12,7 @@ interface ToastState {
   message: string;
 }
 
-interface AppState {
+export interface AppState {
   manifest: AssemblyManifest;
   currentStep: number;
   voiceState: VoiceState;

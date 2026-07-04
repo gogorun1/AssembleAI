@@ -248,6 +248,8 @@ Acceptance criteria:
 Estimated effort: M
 
 ### B10 — Voice State Machine Tests and Failure Surfacing
+Status: Complete. Added voice controller coverage for the idle -> listening -> transcribing -> thinking -> acting -> speaking -> idle flow, push-to-talk barge-in TTS cancellation, five-second no-speech timeout, unavailable STT no-op behavior, and recoverable STT error messaging.
+
 Description: Add tests and any small service hooks needed to prove the product-spec voice rules: idle -> listening -> transcribing -> thinking -> acting -> speaking -> idle; push-to-talk during `speaking` cancels TTS; no speech after 5 seconds returns to idle; STT unavailable surfaces a recoverable message instead of throwing.
 
 Files to create/modify:
@@ -275,6 +277,8 @@ Acceptance criteria:
 Estimated effort: M
 
 ### B11 — Intent Action Integration Audit
+Status: Complete. Centralized app intent side effects in a tested helper and added assertions for `which_part`, `where_does_it_go`, `show_angle`, `next_step`, `prev_step`, `goto_step`, and `common_mistake` routing to store, viewer, and Orange Sync behavior.
+
 Description: Verify that every `ResolvedIntent` type still maps to the correct app behavior: step navigation, part highlighting, Orange Sync, camera moves, transcript part mentions, and TTS reply. This task is primarily integration validation and small fixes where the service output shape and app behavior diverge.
 
 Files to create/modify:
@@ -302,6 +306,8 @@ Acceptance criteria:
 Estimated effort: S
 
 ### B12 — Demo Readiness and Provider Documentation
+Status: Complete. Updated `README.md` with local/offline mode, optional remote intent/STT/TTS configuration, environment variables, fallback order, supported browsers, and `npm test` / `npm run build` verification commands.
+
 Description: Document how to run Person B features in local/offline mode and with optional remote providers. Include required environment variables, fallback order, supported browsers, test commands, and rehearsal checks for microphone, TTS voice availability, endpoint latency, and network-off behavior.
 
 Files to create/modify:

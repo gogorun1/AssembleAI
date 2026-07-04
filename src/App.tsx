@@ -7,8 +7,10 @@ import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
 import { parseIntent } from './services/intent';
-import { createSTTService, type STTService } from './services/stt';
+import { applyResolvedIntentAction } from './services/intentActions';
+import { createSTTService } from './services/stt';
 import { createTTSService } from './services/tts';
+import { createVoiceController, type VoiceController } from './services/voiceController';
 import { useAppStore } from './store/useAppStore';
 import type { Part, ResolvedIntent } from './types/assembly';
 import { Viewer } from './viewer/Viewer';
@@ -25,8 +27,7 @@ export default function App() {
   const firstVoiceInteraction = useAppStore((state) => state.firstVoiceInteraction);
   const store = useAppStore();
   const ttsRef = useRef(createTTSService());
-  const sttRef = useRef<STTService>();
-  const noSpeechTimer = useRef<ReturnType<typeof setTimeout>>();
+  const voiceControllerRef = useRef<VoiceController>();
   const [ready, setReady] = useState(false);
 
   const step = manifest.steps[currentStep - 1];
@@ -41,56 +42,13 @@ export default function App() {
 
   const executeIntent = useCallback(async (intent: ResolvedIntent) => {
     const liveStore = useAppStore.getState();
-    const partIds = intent.partIds ?? [];
-
-    liveStore.setVoiceState('acting');
-
-    if (intent.viewKey) {
-      liveStore.setActiveView(intent.viewKey);
-    }
-
-    if (partIds.length > 0) {
-      liveStore.setHighlightedParts(partIds);
-      for (const partId of partIds) {
-        liveStore.mentionPart(partId);
-      }
-    }
-
-    switch (intent.type) {
-      case 'next_step':
-      case 'prev_step':
-      case 'goto_step':
-        liveStore.goToStep(intent.stepNumber ?? liveStore.currentStep);
-        break;
-      case 'which_part':
-        if (partIds[0]) {
-          liveStore.viewer?.spinPart(partIds[0]);
-          liveStore.selectPart(partIds[0]);
-        }
-        break;
-      case 'where_does_it_go':
-      case 'common_mistake':
-      case 'repeat':
-        if (partIds[0]) {
-          liveStore.selectPart(partIds[0]);
-        }
-        break;
-      case 'show_angle':
-      case 'how_many_left':
-      case 'help':
-      case 'unknown':
-        break;
-    }
-
-    liveStore.addTranscript({
-      speaker: 'agent',
-      text: intent.reply,
-      mentionedPartIds: partIds,
-      language: intent.language
-    });
-
+    applyResolvedIntentAction(liveStore, intent);
     liveStore.setVoiceState('speaking');
-    await ttsRef.current.speak(intent);
+    try {
+      await ttsRef.current.speak(intent);
+    } catch {
+      liveStore.showToast('Voice reply failed - the visual action is still applied.');
+    }
     if (useAppStore.getState().voiceState === 'speaking') {
       useAppStore.getState().setVoiceState('idle');
     }
@@ -102,12 +60,22 @@ export default function App() {
       liveStore.addTranscript({ speaker: 'user', text });
       liveStore.setVoiceState('thinking');
 
-      const intent = await parseIntent(text, {
-        manifest: liveStore.manifest,
-        currentStep: liveStore.currentStep
-      });
+      try {
+        const intent = await parseIntent(text, {
+          manifest: liveStore.manifest,
+          currentStep: liveStore.currentStep
+        });
 
-      await executeIntent(intent);
+        await executeIntent(intent);
+      } catch {
+        liveStore.showToast('I could not understand that - click steps and parts instead.');
+        liveStore.addTranscript({
+          speaker: 'agent',
+          text: 'I could not understand that. Try a step, part, camera angle, or common mistake.',
+          language: 'en'
+        });
+        liveStore.setVoiceState('idle');
+      }
     },
     [executeIntent]
   );
@@ -137,58 +105,28 @@ export default function App() {
   }, [runUtterance]);
 
   const beginPushToTalk = useCallback(() => {
-    const liveStore = useAppStore.getState();
-    liveStore.markVoiceInteraction();
-
-    if (liveStore.voiceState === 'speaking') {
-      ttsRef.current.cancel();
-      liveStore.setVoiceState('idle');
-    }
-
-    const stt = sttRef.current;
-    if (!stt || stt.state === 'unavailable') {
-      liveStore.showToast('Voice needs Chrome - click steps and parts instead.');
-      return;
-    }
-
-    liveStore.setVoiceState('listening');
-    stt.start();
-    noSpeechTimer.current = setTimeout(() => {
-      if (useAppStore.getState().voiceState === 'listening') {
-        stt.abort();
-        useAppStore.getState().setVoiceState('idle');
-      }
-    }, 5000);
+    voiceControllerRef.current?.beginPushToTalk();
   }, []);
 
   const endPushToTalk = useCallback(() => {
-    const stt = sttRef.current;
-    if (!stt || useAppStore.getState().voiceState !== 'listening') {
-      return;
-    }
-
-    clearTimeout(noSpeechTimer.current);
-    useAppStore.getState().setVoiceState('transcribing');
-    stt.stop();
+    voiceControllerRef.current?.endPushToTalk();
   }, []);
 
   useEffect(() => {
     const stt = createSTTService();
-    sttRef.current = stt;
-    stt.onResult((text) => {
-      clearTimeout(noSpeechTimer.current);
-      void runUtterance(text);
+    voiceControllerRef.current = createVoiceController({
+      stt,
+      tts: ttsRef.current,
+      getVoiceState: () => useAppStore.getState().voiceState,
+      setVoiceState: (state) => useAppStore.getState().setVoiceState(state),
+      markVoiceInteraction: () => useAppStore.getState().markVoiceInteraction(),
+      showRecoverableMessage: (message) => useAppStore.getState().showToast(message),
+      runUtterance
     });
-    stt.onEnd(() => {
-      const state = useAppStore.getState().voiceState;
-      if (state === 'listening' || state === 'transcribing') {
-        useAppStore.getState().setVoiceState('idle');
-      }
-    });
-    stt.onError(() => {
-      useAppStore.getState().showToast('Voice capture stopped - click steps and parts instead.');
-      useAppStore.getState().setVoiceState('idle');
-    });
+    return () => {
+      voiceControllerRef.current?.dispose();
+      voiceControllerRef.current = undefined;
+    };
   }, [runUtterance]);
 
   useEffect(() => {
@@ -202,9 +140,6 @@ export default function App() {
     });
     return () => {
       cancelled = true;
-      clearTimeout(noSpeechTimer.current);
-      ttsRef.current.cancel();
-      sttRef.current?.abort();
     };
   }, []);
 

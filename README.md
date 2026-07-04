@@ -60,6 +60,12 @@ For a fixed demo port:
 npm run dev -- --host 127.0.0.1 --port 5323
 ```
 
+## Local And Offline Mode
+
+No remote credentials are required for the default demo. Leave `VITE_INTENT_ENDPOINT` unset and the app uses the deterministic local intent parser for the demo script, step navigation, part lookup, camera requests, and common-mistake prompts.
+
+Voice capture and speech output use browser APIs by default. If STT is unavailable, the app surfaces a recoverable message and the click/keyboard controls continue to work.
+
 ## Verification
 
 ```bash
@@ -72,6 +78,8 @@ Current tests cover:
 - Manifest integrity: step count, common mistakes, camera/part references, visible part codes.
 - Preset intent coverage for the six critical demo utterances.
 - Orange Sync store behavior for the two-second part mention flash.
+- Voice state behavior for push-to-talk, no-speech timeout, STT fallback, and TTS cancel.
+- Intent action routing from `ResolvedIntent` to store/viewer behavior.
 
 ## Tech Stack
 
@@ -132,6 +140,8 @@ See `src/styles/tokens.css` for the token source of truth.
 
 ```bash
 VITE_INTENT_ENDPOINT=https://example.com/intent
+VITE_STT_PROVIDER=web-speech
+VITE_TTS_PROVIDER=web-speech
 ```
 
 If `VITE_INTENT_ENDPOINT` is present, `src/services/intent.ts` posts the utterance, current step, manifest parts, steps, camera views, recent transcript, and locale hint to that endpoint. The endpoint should return the `ResolvedIntent` shape described in `src/types/assembly.ts`; responses are schema-validated before the app acts on them.
@@ -139,6 +149,22 @@ If `VITE_INTENT_ENDPOINT` is present, `src/services/intent.ts` posts the utteran
 Remote intent calls have an 8-second budget. Network failures and 5xx responses retry once within that budget, and any failure, timeout, non-2xx response, invalid JSON, or schema-invalid intent falls back to the deterministic local parser.
 
 If no endpoint is configured, the app uses deterministic local intent handling for the hackathon script.
+
+`VITE_STT_PROVIDER` defaults to `web-speech`. Set it to `remote` only when wiring a hosted speech-to-text provider behind `src/services/stt.remote.ts`; the current placeholder is an unavailable no-op so demos fail safely without secrets.
+
+`VITE_TTS_PROVIDER` defaults to `web-speech`. Set it to `remote` only when wiring a hosted text-to-speech provider behind `src/services/tts.remote.ts`; the current placeholder is a no-op provider so visual actions still run.
+
+## Fallback Order
+
+The demo is designed to stay usable when network or browser voice features fail:
+
+1. Click, keyboard, and presenter controls are the primary hard fallback.
+2. With no `VITE_INTENT_ENDPOINT`, deterministic local intent handling resolves the supported demo utterances.
+3. With remote providers configured, remote intent/STT/TTS are optional upgrades; failures fall back to local intent behavior or visible recoverable messages.
+
+## Supported Browsers
+
+Use a current Chromium browser, preferably Chrome, for the full Web Speech STT and `speechSynthesis` path. Safari, Firefox, and other browsers can still run the visual demo, click controls, keyboard controls, deterministic intent parser, and WebGL fallback, but browser speech recognition support may be unavailable.
 
 ## Current Limitations
 

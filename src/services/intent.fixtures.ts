@@ -8,6 +8,7 @@ export interface IntentFixture {
   expectedViewKey: string | undefined;
   expectedStepNumber: number | undefined;
   expectedLanguage: 'en' | 'fr';
+  expectedReplyIncludes?: string[];
 }
 
 export const goldenIntentFixtures: IntentFixture[] = [
@@ -108,7 +109,58 @@ export const goldenIntentFixtures: IntentFixture[] = [
     expectedPartIds: undefined,
     expectedViewKey: undefined,
     expectedStepNumber: undefined,
-    expectedLanguage: 'en'
+    expectedLanguage: 'en',
+    expectedReplyIncludes: ['Side panel (left) (101532)', 'Side panel (right) (101533)', 'Top panel (101535)', 'Bottom panel (101534)']
+  },
+  {
+    utterance: 'Which screw?',
+    currentStep: 6,
+    expectedType: 'unknown',
+    expectedPartIds: undefined,
+    expectedViewKey: undefined,
+    expectedStepNumber: undefined,
+    expectedLanguage: 'en',
+    expectedReplyIncludes: ['Cam screw with washer (117327)', 'Short back screw (M3.5x16)']
+  },
+  {
+    utterance: 'Where does this panel go?',
+    currentStep: 1,
+    expectedType: 'unknown',
+    expectedPartIds: undefined,
+    expectedViewKey: undefined,
+    expectedStepNumber: undefined,
+    expectedLanguage: 'en',
+    expectedReplyIncludes: ['Side panel (left) (101532)', 'Side panel (right) (101533)']
+  },
+  {
+    utterance: 'Which shelf is this?',
+    currentStep: 6,
+    expectedType: 'unknown',
+    expectedPartIds: undefined,
+    expectedViewKey: undefined,
+    expectedStepNumber: undefined,
+    expectedLanguage: 'en',
+    expectedReplyIncludes: ['Fixed center shelf (101536)', 'Adjustable shelf (101537)']
+  },
+  {
+    utterance: 'Which hardware do I use?',
+    currentStep: 6,
+    expectedType: 'unknown',
+    expectedPartIds: undefined,
+    expectedViewKey: undefined,
+    expectedStepNumber: undefined,
+    expectedLanguage: 'en',
+    expectedReplyIncludes: ['Cam screw with washer (117327)', 'Cam lock (119030)', 'Short back screw (M3.5x16)']
+  },
+  {
+    utterance: 'Et cette vis, elle va ou ?',
+    currentStep: 6,
+    expectedType: 'unknown',
+    expectedPartIds: undefined,
+    expectedViewKey: undefined,
+    expectedStepNumber: undefined,
+    expectedLanguage: 'fr',
+    expectedReplyIncludes: ['Cam screw with washer (117327)', 'Short back screw (M3.5x16)']
   },
   {
     utterance: 'Where does the right side panel fit?',
@@ -162,6 +214,53 @@ export const goldenIntentFixtures: IntentFixture[] = [
     expectedPartIds: undefined,
     expectedViewKey: undefined,
     expectedStepNumber: 5,
+    expectedLanguage: 'en'
+  },
+  {
+    utterance: "Montre l'etape trois.",
+    currentStep: 1,
+    expectedType: 'goto_step',
+    expectedPartIds: undefined,
+    expectedViewKey: undefined,
+    expectedStepNumber: 3,
+    expectedLanguage: 'fr',
+    expectedReplyIncludes: ["Je montre l'etape 3"]
+  },
+  {
+    utterance: 'Montre la piece 117327.',
+    currentStep: 1,
+    expectedType: 'which_part',
+    expectedPartIds: ['cam-screw-washer'],
+    expectedViewKey: 'screw-detail',
+    expectedStepNumber: undefined,
+    expectedLanguage: 'fr',
+    expectedReplyIncludes: ['Utilise la piece 117327']
+  },
+  {
+    utterance: 'Show me this piece.',
+    currentStep: 6,
+    expectedType: 'unknown',
+    expectedPartIds: undefined,
+    expectedViewKey: undefined,
+    expectedStepNumber: undefined,
+    expectedLanguage: 'en'
+  },
+  {
+    utterance: 'Show me the visible screw.',
+    currentStep: 1,
+    expectedType: 'which_part',
+    expectedPartIds: ['cam-screw-washer'],
+    expectedViewKey: 'screw-detail',
+    expectedStepNumber: undefined,
+    expectedLanguage: 'en'
+  },
+  {
+    utterance: 'Show me the VA anchor view.',
+    currentStep: 9,
+    expectedType: 'show_angle',
+    expectedPartIds: undefined,
+    expectedViewKey: 'wall-anchor',
+    expectedStepNumber: undefined,
     expectedLanguage: 'en'
   },
   {

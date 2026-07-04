@@ -15,10 +15,11 @@ export const INTENT_ENDPOINT_PROMPT_TEMPLATE = `You are AssembleAI's intent pars
 Return only one JSON object that matches the ResolvedIntent schema.
 Allowed intent types: next_step, prev_step, goto_step, which_part, where_does_it_go, show_angle, repeat, how_many_left, common_mistake, help, unknown.
 Allowed languages: en, fr.
-Keep reply to at most two short sentences.
+Keep reply to at most two short, direct sentences tied to the visual action.
 Only use partIds from the manifest parts list.
 Only use viewKey values from the camera view keys list.
-If the utterance is unclear, return type "unknown" with a helpful reply.`;
+If several parts could match, return type "unknown" with a clarification reply listing candidate labels or codes.
+For type "unknown", do not include partIds, stepNumber, or viewKey.`;
 
 const FALLBACK_INTENT: ResolvedIntent = {
   type: 'unknown',
@@ -131,15 +132,17 @@ function normalizeEndpointIntent(
 ): ResolvedIntent {
   const record = isRecord(value) ? value : {};
   const currentStep = request.steps.find((step) => step.index === request.currentStep) ?? request.steps[0];
+  const type = record.type;
+  const isUnknown = type === 'unknown';
   const candidate = {
-    type: record.type,
+    type,
     language: record.language ?? request.locale ?? detectLanguage(request.utterance),
     reply: trimToTwoSentences(String(record.reply ?? '')),
-    partQuery: record.partQuery,
-    stepNumber: record.stepNumber,
-    viewQuery: record.viewQuery,
-    partIds: record.partIds,
-    viewKey: record.viewKey ?? currentStep?.cameraView
+    partQuery: isUnknown ? undefined : record.partQuery,
+    stepNumber: isUnknown ? undefined : record.stepNumber,
+    viewQuery: isUnknown ? undefined : record.viewQuery,
+    partIds: isUnknown ? undefined : record.partIds,
+    viewKey: isUnknown ? undefined : record.viewKey ?? currentStep?.cameraView
   };
   const validation = validateResolvedIntent(candidate, manifest);
 
@@ -206,10 +209,15 @@ function getEnv(key: string): string | undefined {
 function detectLanguage(utterance: string): 'en' | 'fr' {
   const text = ` ${utterance.toLocaleLowerCase()} `;
   const folded = foldText(text);
-  return /[àâçéèêëîïôûùüÿæœ]/i.test(text) ||
-    /\b(cette|ce|cet|elle|ou|où|vis|va|piece|pièce|etape|étape|erreur|montre)\b/.test(folded)
-    ? 'fr'
-    : 'en';
+  if (/[àâçéèêëîïôûùüÿæœ]/i.test(text)) {
+    return 'fr';
+  }
+
+  const markers = folded.match(/\b(cette|ce|cet|elle|ou|vis|va|piece|etape|erreur|montre)\b/g) ?? [];
+  const hasFrenchPhrase =
+    /\b(?:ou\s+va|va\s+ou|elle\s+va|cette\s+vis|cette\s+piece|montre\s+(?:la|le|les|moi)|(?:la|le|les)\s+(?:vis|piece))\b/.test(folded);
+
+  return hasFrenchPhrase || markers.length >= 2 ? 'fr' : 'en';
 }
 
 function trimToTwoSentences(reply: string): string {

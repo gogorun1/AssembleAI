@@ -112,6 +112,25 @@ describe('parseIntent endpoint integration', () => {
     expect(intent.partIds).toEqual(['shelf-pin']);
   });
 
+  it('strips viewer action fields from endpoint unknown intents', async () => {
+    vi.stubEnv('VITE_INTENT_ENDPOINT', 'https://example.com/intent');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
+      type: 'unknown',
+      language: 'en',
+      reply: 'I see a few possible parts. Which one do you mean?',
+      partIds: ['cam-screw-washer'],
+      viewKey: 'screw-detail',
+      stepNumber: 3
+    })));
+
+    const intent = await parseIntent('Which screw?', context);
+
+    expect(intent.type).toBe('unknown');
+    expect(intent.partIds).toBeUndefined();
+    expect(intent.viewKey).toBeUndefined();
+    expect(intent.stepNumber).toBeUndefined();
+  });
+
   it('falls back to the preset parser after an 8-second timeout', async () => {
     vi.useFakeTimers();
     vi.stubEnv('VITE_INTENT_ENDPOINT', 'https://example.com/intent');
@@ -182,6 +201,28 @@ describe('intent endpoint handler', () => {
       ...endpointIntent,
       reply: 'Use part 117327. I am highlighting it now.'
     });
+  });
+
+  it('removes action fields from structured-model unknown intents', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
+      output_text: JSON.stringify({
+        type: 'unknown',
+        language: 'en',
+        reply: 'I see a few possible parts. Which one do you mean?',
+        partIds: ['cam-screw-washer'],
+        viewKey: 'screw-detail',
+        stepNumber: 2
+      })
+    })));
+
+    const response = await handleIntentRequest(endpointRequest('Which screw?'));
+    const intent = await response.json() as ResolvedIntent;
+
+    expect(response.status).toBe(200);
+    expect(intent.type).toBe('unknown');
+    expect(intent.partIds).toBeUndefined();
+    expect(intent.viewKey).toBeUndefined();
+    expect(intent.stepNumber).toBeUndefined();
   });
 
   it('falls back gracefully when the structured model returns non-2xx', async () => {

@@ -51,7 +51,7 @@ const digitWords = new Map<string, number>([
 ]);
 
 const partAliases: Record<string, string[]> = {
-  'cam-screw-washer': ['washer screw', 'screw with washer', 'cam screw', 'cam bolt', '117327', 'vis', 'vis avec rondelle'],
+  'cam-screw-washer': ['washer screw', 'screw with washer', 'cam screw', 'cam bolt', '117327', 'vis avec rondelle'],
   'cam-lock': ['cam lock', 'locking cam', 'round cam', '119030'],
   'wood-dowel': ['wood dowel', 'dowel', 'wood peg', 'peg', 'tourillon', '100674'],
   'shelf-pin': ['shelf pin', 'shelf peg', 'support pin', 'pin for the shelf', '101339'],
@@ -65,6 +65,13 @@ const partAliases: Record<string, string[]> = {
   'fixed-shelf': ['fixed shelf', 'center shelf', 'middle shelf', '101536'],
   'adjustable-shelf': ['adjustable shelf', 'loose shelf', 'moveable shelf', '101537']
 };
+
+const partCategories = {
+  panel: (partId) => partId.includes('panel'),
+  screw: (partId) => partId.includes('screw'),
+  shelf: (partId) => partId.includes('shelf') && !partId.includes('pin'),
+  hardware: (partId) => !partId.includes('panel') && !partId.includes('shelf')
+} satisfies Record<string, (partId: string) => boolean>;
 
 const cameraAliases: Record<string, string[]> = {
   'back-panel': ['from the back', 'back view', 'rear view', 'behind', 'from behind', 'back side', 'derriere', 'arriere'],
@@ -161,7 +168,9 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       type: 'next_step',
       stepNumber: nextIndex,
       language,
-      reply: `Next is step ${nextIndex}: ${context.manifest.steps[nextIndex - 1].title}.`
+      reply: language === 'fr'
+        ? `Etape ${nextIndex}: ${context.manifest.steps[nextIndex - 1].title}.`
+        : `Next is step ${nextIndex}: ${context.manifest.steps[nextIndex - 1].title}.`
     };
   }
 
@@ -171,7 +180,9 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       type: 'prev_step',
       stepNumber: previousIndex,
       language,
-      reply: `Back to step ${previousIndex}: ${context.manifest.steps[previousIndex - 1].title}.`
+      reply: language === 'fr'
+        ? `Retour a l'etape ${previousIndex}: ${context.manifest.steps[previousIndex - 1].title}.`
+        : `Back to step ${previousIndex}: ${context.manifest.steps[previousIndex - 1].title}.`
     };
   }
 
@@ -181,7 +192,9 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       type: 'goto_step',
       stepNumber: requestedStep,
       language,
-      reply: `Jumping to step ${requestedStep}: ${context.manifest.steps[requestedStep - 1].title}.`
+      reply: language === 'fr'
+        ? `Je montre l'etape ${requestedStep}: ${context.manifest.steps[requestedStep - 1].title}.`
+        : `Jumping to step ${requestedStep}: ${context.manifest.steps[requestedStep - 1].title}.`
     };
   }
 
@@ -192,7 +205,9 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       viewQuery: utterance,
       viewKey: cameraView,
       language,
-      reply: `Showing ${context.manifest.cameraViews[cameraView].label}.`
+      reply: language === 'fr'
+        ? `Je montre ${context.manifest.cameraViews[cameraView].label}.`
+        : `Showing ${context.manifest.cameraViews[cameraView].label}.`
     };
   }
 
@@ -203,7 +218,9 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       viewQuery: 'closer',
       viewKey: focusedView,
       language,
-      reply: `Zooming into ${context.manifest.cameraViews[focusedView].label}.`
+      reply: language === 'fr'
+        ? `Je zoome sur ${context.manifest.cameraViews[focusedView].label}.`
+        : `Zooming into ${context.manifest.cameraViews[focusedView].label}.`
     };
   }
 
@@ -214,17 +231,16 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       language,
       partIds,
       viewKey: step.cameraView,
-      reply: step.commonMistake ?? 'This step is mostly about alignment; check the highlighted parts before tightening.'
+      reply: language === 'fr'
+        ? 'Je montre le point a verifier sur cette etape.'
+        : step.commonMistake ?? 'This step is mostly about alignment; check the highlighted parts before tightening.'
     };
   }
 
   if (isPlacementRequest(phrase)) {
     const resolved = resolvePartIds(phrase, context);
     if (resolved.ambiguous) {
-      return unknownIntent(
-        utterance,
-        `I see a few possible parts: ${labelParts(resolved.candidates, context.manifest)}. Which one do you mean?`
-      );
+      return clarificationIntent(utterance, resolved.candidates, context.manifest);
     }
 
     const partIds = resolved.partIds;
@@ -243,10 +259,7 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
   const partResolution = resolvePartIds(phrase, context);
   if (isWhichPartRequest(phrase) || (partResolution.partIds.length > 0 && isPartDisplayRequest(phrase))) {
     if (partResolution.ambiguous) {
-      return unknownIntent(
-        utterance,
-        `I see a few possible parts: ${labelParts(partResolution.candidates, context.manifest)}. Which one do you mean?`
-      );
+      return clarificationIntent(utterance, partResolution.candidates, context.manifest);
     }
 
     const partIds = partResolution.partIds;
@@ -257,8 +270,12 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       partIds,
       viewKey: resolveViewForParts(partIds, step),
       reply: partIds.includes('cam-screw-washer')
-        ? 'Use part 117327, the cam screw with the washer. I am spinning it and flashing its chip now.'
-        : `I found ${labelParts(partIds, context.manifest)}. I am isolating it for you.`
+        ? language === 'fr'
+          ? 'Utilise la piece 117327, la vis avec rondelle. Je la fais tourner maintenant.'
+          : 'Use part 117327, the cam screw with the washer. I am spinning it and flashing its chip now.'
+        : language === 'fr'
+          ? `J'ai trouve ${labelParts(partIds, context.manifest)}. Je l'isole maintenant.`
+          : `I found ${labelParts(partIds, context.manifest)}. I am isolating it for you.`
     };
   }
 
@@ -268,7 +285,7 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
       language,
       viewKey: step.cameraView,
       partIds: step.highlightParts,
-      reply: step.action
+      reply: language === 'fr' ? 'Je remontre cette etape.' : step.action
     };
   }
 
@@ -277,7 +294,9 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
     return {
       type: 'how_many_left',
       language,
-      reply: left === 0 ? 'This is the final step.' : `${left} steps left after this one.`
+      reply: language === 'fr'
+        ? left === 0 ? 'Ceci est la derniere etape.' : `Il reste ${left} etapes apres celle-ci.`
+        : left === 0 ? 'This is the final step.' : `${left} steps left after this one.`
     };
   }
 
@@ -285,7 +304,9 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
     return {
       type: 'help',
       language,
-      reply: 'Ask for the next step, a back view, a common mistake, or which part to use.'
+      reply: language === 'fr'
+        ? 'Demande une etape, une vue arriere, une erreur courante, ou une piece.'
+        : 'Ask for the next step, a back view, a common mistake, or which part to use.'
     };
   }
 
@@ -298,15 +319,17 @@ export function normalizeIntent(
   context: IntentContext
 ): ResolvedIntent {
   const step = getStep(context);
+  const type = value.type;
+  const isUnknown = type === 'unknown';
   const candidate = {
-    type: value.type,
+    type,
     language: value.language ?? detectLanguage(utterance),
     reply: trimToTwoSentences(String(value.reply ?? '')),
-    partQuery: value.partQuery,
-    stepNumber: value.stepNumber,
-    viewQuery: value.viewQuery,
-    partIds: value.partIds,
-    viewKey: value.viewKey ?? step.cameraView
+    partQuery: isUnknown ? undefined : value.partQuery,
+    stepNumber: isUnknown ? undefined : value.stepNumber,
+    viewQuery: isUnknown ? undefined : value.viewQuery,
+    partIds: isUnknown ? undefined : value.partIds,
+    viewKey: isUnknown ? undefined : value.viewKey ?? step.cameraView
   };
 
   const validation = validateResolvedIntent(candidate, context.manifest);
@@ -359,34 +382,40 @@ export function resolvePartIds(phrase: string, context: IntentContext): PartReso
   }
 
   if (hasWholeWord(phrase, 'panel') || includesAny(phrase, ['board', 'panneau'])) {
-    const highlightedPanels = step.highlightParts.filter((partId) => partId.includes('panel'));
-    const panelsInStep = highlightedPanels.length > 0
-      ? highlightedPanels
-      : unique(step.partsNeeded.map((part) => part.partId)).filter((partId) => partId.includes('panel'));
-
-    return {
-      partIds: panelsInStep.length === 1 ? panelsInStep : [],
-      ambiguous: panelsInStep.length !== 1,
-      candidates: panelsInStep.length > 0
-        ? panelsInStep
-        : context.manifest.parts.filter((part) => part.id.includes('panel')).map((part) => part.id)
-    };
+    return resolvePartCategory(context, 'panel');
   }
 
   if (hasWholeWord(phrase, 'screw') || hasWholeWord(phrase, 'vis')) {
-    const highlightedScrews = step.highlightParts.filter((partId) => partId.includes('screw'));
-    const screwsInStep = highlightedScrews.length > 0
-      ? highlightedScrews
-      : unique(step.partsNeeded.map((part) => part.partId)).filter((partId) => partId.includes('screw'));
+    return resolvePartCategory(context, 'screw');
+  }
 
-    return {
-      partIds: screwsInStep.length === 1 ? screwsInStep : [],
-      ambiguous: screwsInStep.length !== 1,
-      candidates: screwsInStep.length > 0 ? screwsInStep : ['cam-screw-washer', 'back-screw']
-    };
+  if (hasWholeWord(phrase, 'shelf') || hasWholeWord(phrase, 'shelves')) {
+    return resolvePartCategory(context, 'shelf');
+  }
+
+  if (hasWholeWord(phrase, 'hardware') || hasWholeWord(phrase, 'piece') || hasWholeWord(phrase, 'part')) {
+    return resolvePartCategory(context, 'hardware');
   }
 
   return { partIds: [], ambiguous: false, candidates: [] };
+}
+
+function resolvePartCategory(context: IntentContext, category: keyof typeof partCategories): PartResolution {
+  const step = getStep(context);
+  const inCategory = partCategories[category];
+  const highlighted = step.highlightParts.filter(inCategory);
+  const inStep = highlighted.length > 0
+    ? highlighted
+    : unique(step.partsNeeded.map((part) => part.partId)).filter(inCategory);
+  const candidates = inStep.length > 0
+    ? inStep
+    : context.manifest.parts.filter((part) => inCategory(part.id)).map((part) => part.id);
+
+  return {
+    partIds: inStep.length === 1 ? inStep : [],
+    ambiguous: inStep.length !== 1,
+    candidates
+  };
 }
 
 function resolveMistakePartIds(step: Step): string[] {
@@ -396,7 +425,8 @@ function resolveMistakePartIds(step: Step): string[] {
 
 export function parseStepNumber(phrase: string, maxStep: number): number | undefined {
   const folded = foldText(phrase);
-  const digitMatch = folded.match(/\b(?:step|etape|stage)\s+(?:number\s+)?(\d+)\b/);
+  const stepWord = '(?:step|l\\s+etape|etape|stage)';
+  const digitMatch = folded.match(new RegExp(`\\b${stepWord}\\s+(?:number\\s+)?(\\d+)\\b`));
   if (digitMatch?.[1]) {
     return clampStep(Number(digitMatch[1]), maxStep);
   }
@@ -409,7 +439,7 @@ export function parseStepNumber(phrase: string, maxStep: number): number | undef
   for (const [word, value] of digitWords) {
     const escaped = escapeRegExp(word);
     if (
-      new RegExp(`\\b(?:step|etape|stage)\\s+(?:number\\s+)?${escaped}\\b`).test(folded) ||
+      new RegExp(`\\b${stepWord}\\s+(?:number\\s+)?${escaped}\\b`).test(folded) ||
       new RegExp(`\\b(?:go to|jump to|open|show me|take me to)\\s+(?:the\\s+)?(?:step\\s+)?${escaped}(?:\\s+step)?\\b`).test(folded)
     ) {
       return clampStep(value, maxStep);
@@ -430,16 +460,35 @@ function clampStep(value: number, maxStep: number): number | undefined {
 function detectLanguage(utterance: string): 'en' | 'fr' {
   const text = ` ${utterance.toLocaleLowerCase()} `;
   const folded = foldText(text);
-  return /[àâçéèêëîïôûùüÿæœ]/i.test(text) ||
-    /\b(cette|ce|cet|elle|ou|où|vis|va|piece|pièce|etape|étape|erreur|montre)\b/.test(folded)
-    ? 'fr'
-    : 'en';
+  if (/[àâçéèêëîïôûùüÿæœ]/i.test(text)) {
+    return 'fr';
+  }
+
+  const markers = folded.match(/\b(cette|ce|cet|elle|ou|vis|va|piece|etape|erreur|montre)\b/g) ?? [];
+  const hasFrenchPhrase =
+    /\b(?:ou\s+va|va\s+ou|elle\s+va|cette\s+vis|cette\s+piece|montre\s+(?:la|le|les|moi)|(?:la|le|les)\s+(?:vis|piece))\b/.test(folded);
+
+  return hasFrenchPhrase || markers.length >= 2 ? 'fr' : 'en';
 }
 
 function labelParts(partIds: string[], manifest: AssemblyManifest): string {
   return partIds
-    .map((partId) => manifest.parts.find((part) => part.id === partId)?.label ?? partId)
+    .map((partId) => {
+      const part = manifest.parts.find((candidate) => candidate.id === partId);
+      return part ? `${part.label} (${part.code})` : partId;
+    })
     .join(', ');
+}
+
+function clarificationIntent(utterance: string, candidates: string[], manifest: AssemblyManifest): ResolvedIntent {
+  const language = detectLanguage(utterance);
+  const candidateList = labelParts(candidates, manifest);
+  return unknownIntent(
+    utterance,
+    language === 'fr'
+      ? `Je vois plusieurs pieces possibles: ${candidateList}. Laquelle veux-tu voir ?`
+      : `I see a few possible parts: ${candidateList}. Which one do you mean?`
+  );
 }
 
 function unknownIntent(utterance: string, reply?: string): ResolvedIntent {
@@ -595,16 +644,22 @@ function isWhichPartRequest(phrase: string): boolean {
     'which one',
     'which part',
     'which screw',
+    'which panel',
+    'which shelf',
+    'which hardware',
     'what is this',
     'is this the',
     'identify',
     'find the',
-    'show me the'
+    'show me the',
+    'montre la',
+    'montre le',
+    'montre les'
   ]);
 }
 
 function isPartDisplayRequest(phrase: string): boolean {
-  return includesAny(phrase, ['show me', 'find', 'highlight', 'which', 'identify', 'is this']);
+  return includesAny(phrase, ['show me', 'find', 'highlight', 'which', 'identify', 'is this', 'montre']);
 }
 
 function includesPhrase(text: string, phrase: string): boolean {

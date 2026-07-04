@@ -20,6 +20,142 @@ Main gap:
 
 The app is a strong interactive prototype, not yet a true AI/3D assembly demo. The 3D model, intent parser, voice stack, and validation loop need production-grade replacements.
 
+## Three-Person Parallel Work Plan
+
+The next build can be split into three tracks that run at the same time. Each person owns a different surface area and integrates through stable contracts already present in the codebase.
+
+### Person A: 3D Asset and Viewer Pipeline
+
+Mission: turn the current primitive bookcase into a real 3D assembly experience.
+
+Primary files:
+
+- `src/viewer/Viewer.tsx`
+- `src/viewer/useViewerCommands.ts`
+- `src/data/billy.manifest.json`
+- future `public/models/*`
+- future `scripts/model-*`
+
+Responsibilities:
+
+- Source, model, or export a clean GLB/GLTF bookcase.
+- Ensure mesh/node names map cleanly to manifest `meshName` values.
+- Replace primitive part layouts with GLB node mapping while preserving `ViewerAPI`.
+- Author assembled, partial, and exploded poses per step.
+- Polish camera presets, part highlighting, and `spinPart`.
+- Keep the WebGL fallback working.
+
+First deliverables:
+
+- One optimized GLB in `public/models/`.
+- A mesh mapping utility or manifest extension.
+- Real mesh highlighting for at least steps 1-3.
+- A camera authoring helper or documented camera capture workflow.
+
+Independent until:
+
+- Needs final part ids and step ids from the manifest.
+- Needs Person B only for semantic part resolution, not for viewer implementation.
+
+### Person B: AI Intent, Voice, and Speech
+
+Mission: make the assistant understand natural questions reliably and speak well on stage.
+
+Primary files:
+
+- `src/services/intent.ts`
+- `src/services/stt.ts`
+- `src/services/tts.ts`
+- `src/types/assembly.ts`
+- `src/services/*.test.ts`
+- future `api/intent/*` or serverless endpoint files
+
+Responsibilities:
+
+- Implement a structured-output intent endpoint.
+- Keep deterministic preset fallback for demo-critical utterances.
+- Add part disambiguation and clarification behavior.
+- Add paraphrase tests for the six demo utterances.
+- Add optional higher-quality STT and TTS providers behind existing service interfaces.
+- Preserve barge-in behavior and 8-second timeouts.
+
+First deliverables:
+
+- JSON schema for `ResolvedIntent`.
+- `/intent` endpoint or deployable serverless function.
+- Golden test set with at least 20 paraphrases.
+- Provider switches for STT/TTS with Web Speech fallback.
+
+Independent until:
+
+- Needs stable manifest shape and part ids.
+- Needs Person C for final demo script phrasing and presenter fallback copy.
+
+### Person C: Demo UX, Photo Validation, QA, and Operations
+
+Mission: make the demo presentable, recoverable, and measurable.
+
+Primary files:
+
+- `src/App.tsx`
+- `src/components/*`
+- `src/styles/*`
+- `docs/specs/*`
+- future `src/services/photoCheck.ts`
+- future browser smoke tests and CI files
+
+Responsibilities:
+
+- Add presenter mode with buttons for all critical utterances.
+- Add reset/rehearsal controls.
+- Add photo upload and VLM result UI for "Did I do this right?"
+- Add debug overlay and local event log.
+- Add browser smoke tests and CI.
+- Own README/demo checklist updates.
+
+First deliverables:
+
+- Presenter mode and reset controls.
+- `DemoChecklist.md`.
+- Browser smoke test for load, step navigation, part click, and WebGL fallback.
+- Photo-check UI shell with mocked structured response.
+
+Independent until:
+
+- Needs Person B for real VLM endpoint.
+- Needs Person A for final visual screenshots and real model capture.
+
+### Shared Contracts
+
+The three tracks should not change these contracts casually:
+
+- `src/types/assembly.ts`
+- `ViewerAPI`
+- `ResolvedIntent`
+- manifest `part.id`, `step.index`, and `cameraViews` keys
+- Orange Sync behavior via `mentionPart(partId)`
+
+If a contract must change, all three people should agree first and land the contract change in its own PR.
+
+### Merge Order
+
+Recommended merge order:
+
+1. Person C lands presenter/reset/QA scaffolding first, because it improves demo safety without blocking other work.
+2. Person A lands GLB viewer behind the existing `ViewerAPI`.
+3. Person B lands the structured intent endpoint behind `VITE_INTENT_ENDPOINT`.
+4. Person C lands photo-check UI and operations tooling.
+5. Final integration PR connects real model, real intent endpoint, voice provider settings, and final demo copy.
+
+### Daily Sync Checklist
+
+- Are part ids stable?
+- Did any `ResolvedIntent` fields change?
+- Did any viewer command semantics change?
+- Are all six critical utterances still green?
+- Can the demo still run with network off?
+- Can the presenter recover without touching code?
+
 ## Phase 0: Demo Hardening
 
 Target: 0.5-1 day

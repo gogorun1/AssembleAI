@@ -163,4 +163,10 @@ To make AssembleAI a real demo rather than a convincing hackathon prototype:
 5. Build an authoring pipeline for manifests, camera views, and step animations.
 6. Add observability, QA scripts, and a rehearsed presentation mode.
 
+For parallel execution, split the next build into three workstreams:
+
+- Person A: 3D asset and viewer pipeline.
+- Person B: AI intent, voice, and speech providers.
+- Person C: demo UX, photo validation, QA, and operations.
+
 The detailed plan is in `docs/specs/real-demo-roadmap.md`.

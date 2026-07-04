@@ -45,6 +45,7 @@ export default function App() {
     const liveStore = useAppStore.getState();
     const partIds = intent.partIds ?? [];
 
+    liveStore.logEvent({ type: 'intent', label: intent.type, payload: { type: intent.type, partIds, stepNumber: intent.stepNumber } });
     liveStore.setVoiceState('acting');
 
     if (intent.viewKey) {
@@ -101,6 +102,7 @@ export default function App() {
   const runUtterance = useCallback(
     async (text: string) => {
       const liveStore = useAppStore.getState();
+      liveStore.logEvent({ type: 'utterance', label: text.slice(0, 80), payload: { text: text.slice(0, 200) } });
       liveStore.addTranscript({ speaker: 'user', text });
       liveStore.setVoiceState('thinking');
 
@@ -143,6 +145,7 @@ export default function App() {
     sttRef.current?.abort();
     clearTimeout(noSpeechTimer.current);
     store.resetDemoState();
+    store.logEvent({ type: 'reset', label: 'Full reset' });
     store.showToast('Demo reset to opening state.');
   }, [store]);
 
@@ -153,6 +156,7 @@ export default function App() {
     store.goToStep(1);
     store.clearHighlights();
     store.setExplodeLevel(1);
+    store.logEvent({ type: 'reset', label: 'Rehearsal reset' });
     store.showToast('Rehearsal reset complete.');
   }, [store]);
 

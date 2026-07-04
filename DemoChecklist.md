@@ -135,6 +135,7 @@
 # Run before any demo
 npm test          # All tests pass (vitest)
 npm run build     # TypeScript + Vite build succeeds (no errors)
+npm run test:e2e  # Playwright smoke tests pass (starts dev server automatically)
 ```
 
 **Known good configuration:**

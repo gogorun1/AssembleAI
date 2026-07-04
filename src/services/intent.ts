@@ -1,10 +1,15 @@
-import type { AssemblyManifest, Part, ResolvedIntent, Step } from '../types/assembly';
+import type { AssemblyManifest, Part, ResolvedIntent, Step, TranscriptLine } from '../types/assembly';
 import { validateResolvedIntent } from './intent.schema';
 
 export interface IntentContext {
   manifest: AssemblyManifest;
   currentStep: number;
+  recentTranscript?: TranscriptLine[];
+  locale?: 'en' | 'fr';
 }
+
+export const INTENT_ENDPOINT_TIMEOUT_MS = 8000;
+export const INTENT_ENDPOINT_ENV_VAR = 'VITE_INTENT_ENDPOINT';
 
 const digitWords = new Map<string, number>([
   ['one', 1],
@@ -79,6 +84,8 @@ export async function parseIntent(
   utterance: string,
   context: IntentContext
 ): Promise<ResolvedIntent> {
+  // Set VITE_INTENT_ENDPOINT to a serverless /intent URL to enable remote structured intent parsing.
+  // When it is unset, times out, or returns invalid output, the deterministic preset parser is used.
   const endpoint = import.meta.env.VITE_INTENT_ENDPOINT;
   if (endpoint) {
     return parseIntentWithEndpoint(endpoint, utterance, context);
@@ -92,8 +99,30 @@ async function parseIntentWithEndpoint(
   utterance: string,
   context: IntentContext
 ): Promise<ResolvedIntent> {
+  const deadline = Date.now() + INTENT_ENDPOINT_TIMEOUT_MS;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await fetchIntentAttempt(endpoint, utterance, context, deadline);
+    } catch (error) {
+      if (attempt === 1 || !shouldRetryIntentEndpoint(error) || Date.now() >= deadline) {
+        return parsePresetIntent(utterance, context);
+      }
+    }
+  }
+
+  return parsePresetIntent(utterance, context);
+}
+
+async function fetchIntentAttempt(
+  endpoint: string,
+  utterance: string,
+  context: IntentContext,
+  deadline: number
+): Promise<ResolvedIntent> {
+  const remainingMs = Math.max(0, deadline - Date.now());
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 8000);
+  const timeout = globalThis.setTimeout(() => controller.abort(), remainingMs);
 
   try {
     const response = await fetch(endpoint, {
@@ -104,20 +133,20 @@ async function parseIntentWithEndpoint(
         currentStep: context.currentStep,
         parts: context.manifest.parts,
         steps: context.manifest.steps,
-        cameraViews: context.manifest.cameraViews
+        cameraViews: context.manifest.cameraViews,
+        recentTranscript: context.recentTranscript ?? [],
+        locale: context.locale
       }),
       signal: controller.signal
     });
 
     if (!response.ok) {
-      throw new Error(`Intent endpoint failed: ${response.status}`);
+      throw new IntentEndpointError(response.status);
     }
 
     return normalizeIntent(await response.json(), utterance, context);
-  } catch {
-    return unknownIntent(utterance);
   } finally {
-    window.clearTimeout(timeout);
+    globalThis.clearTimeout(timeout);
   }
 }
 
@@ -263,7 +292,7 @@ export function parsePresetIntent(utterance: string, context: IntentContext): Re
   return unknownIntent(utterance);
 }
 
-function normalizeIntent(
+export function normalizeIntent(
   value: Partial<ResolvedIntent>,
   utterance: string,
   context: IntentContext
@@ -281,7 +310,25 @@ function normalizeIntent(
   };
 
   const validation = validateResolvedIntent(candidate, context.manifest);
-  return validation.ok && validation.intent ? validation.intent : unknownIntent(utterance);
+  if (!validation.ok || !validation.intent) {
+    throw new Error(`Invalid intent response: ${validation.errors.join(', ')}`);
+  }
+
+  return validation.intent;
+}
+
+class IntentEndpointError extends Error {
+  constructor(readonly status: number) {
+    super(`Intent endpoint failed: ${status}`);
+  }
+}
+
+function shouldRetryIntentEndpoint(error: unknown): boolean {
+  if (error instanceof IntentEndpointError) {
+    return error.status >= 500;
+  }
+
+  return error instanceof TypeError;
 }
 
 function getStep(context: IntentContext): Step {
@@ -578,6 +625,7 @@ function trimToTwoSentences(reply: string): string {
     .match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g)
     ?.slice(0, 2)
     .join(' ')
+    .replace(/\s{2,}/g, ' ')
     .trim() ?? '';
 }
 

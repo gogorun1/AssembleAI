@@ -134,7 +134,9 @@ See `src/styles/tokens.css` for the token source of truth.
 VITE_INTENT_ENDPOINT=https://example.com/intent
 ```
 
-If `VITE_INTENT_ENDPOINT` is present, `src/services/intent.ts` posts the utterance, current step, parts, and steps to that endpoint. The endpoint should return the `ResolvedIntent` shape described in `src/types/assembly.ts`.
+If `VITE_INTENT_ENDPOINT` is present, `src/services/intent.ts` posts the utterance, current step, manifest parts, steps, camera views, recent transcript, and locale hint to that endpoint. The endpoint should return the `ResolvedIntent` shape described in `src/types/assembly.ts`; responses are schema-validated before the app acts on them.
+
+Remote intent calls have an 8-second budget. Network failures and 5xx responses retry once within that budget, and any failure, timeout, non-2xx response, invalid JSON, or schema-invalid intent falls back to the deterministic local parser.
 
 If no endpoint is configured, the app uses deterministic local intent handling for the hackathon script.
 

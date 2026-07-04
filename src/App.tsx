@@ -6,6 +6,8 @@ import { StepCard } from './components/StepCard';
 import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
+import { PresenterPanel } from './components/PresenterPanel';
+import { presenterUtterances } from './data/presenterUtterances';
 import { parseIntent } from './services/intent';
 import { createSTTService, type STTService } from './services/stt';
 import { createTTSService } from './services/tts';
@@ -135,6 +137,24 @@ export default function App() {
   const triggerMistakeIntent = useCallback(async () => {
     await runUtterance('Did people mess this step up before?');
   }, [runUtterance]);
+
+  const fullReset = useCallback(() => {
+    ttsRef.current.cancel();
+    sttRef.current?.abort();
+    clearTimeout(noSpeechTimer.current);
+    store.resetDemoState();
+    store.showToast('Demo reset to opening state.');
+  }, [store]);
+
+  const rehearsalReset = useCallback(() => {
+    ttsRef.current.cancel();
+    sttRef.current?.abort();
+    clearTimeout(noSpeechTimer.current);
+    store.goToStep(1);
+    store.clearHighlights();
+    store.setExplodeLevel(1);
+    store.showToast('Rehearsal reset complete.');
+  }, [store]);
 
   const beginPushToTalk = useCallback(() => {
     const liveStore = useAppStore.getState();
@@ -282,6 +302,13 @@ export default function App() {
             onSelectStep={store.goToStep}
           />
           <StepCard step={step} onCommonMistake={triggerMistakeIntent} />
+          <PresenterPanel
+            utterances={presenterUtterances}
+            onRunUtterance={runUtterance}
+            onFullReset={fullReset}
+            onRehearsalReset={rehearsalReset}
+            disabled={voiceState !== 'idle'}
+          />
           <section className="partRail" aria-label="Parts needed">
             <div className="partRailHeader">
               <span>PARTS IN HAND</span>

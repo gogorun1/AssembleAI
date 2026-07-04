@@ -98,7 +98,7 @@ function stepView(step: Step): string {
 const t = {
   step: (lang: Language, s: Step) =>
     lang === 'fr'
-      ? `Étape ${s.index} : ${s.title}. ${s.action}`
+      ? `Étape ${s.index} : ${s.title}.`
       : `Step ${s.index}: ${s.title}. ${s.action}`,
   whichPart: (lang: Language, p: Part) =>
     lang === 'fr'
@@ -106,7 +106,7 @@ const t = {
       : `That's the ${p.label.toLowerCase()}, code ${p.code}.`,
   whereGoes: (lang: Language, p: Part, s: Step) =>
     lang === 'fr'
-      ? `${p.label} se pose à l'étape ${s.index}. ${s.action}`
+      ? `${p.label} se pose à l'étape ${s.index}, « ${s.title} ».`
       : `The ${p.label.toLowerCase()} goes on at step ${s.index}. ${s.action}`,
   angle: (lang: Language, label: string) =>
     lang === 'fr' ? `Voici la vue ${label.toLowerCase()}.` : `Here's the ${label.toLowerCase()} view.`,

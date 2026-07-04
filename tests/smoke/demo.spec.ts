@@ -58,6 +58,27 @@ test.describe('Demo smoke tests', () => {
     ).toBeVisible();
   });
 
+  test('typed command input can drive the same intent pipeline', async ({ page }) => {
+    await page.getByTestId('command-input').click();
+    await page.keyboard.type("What's next?");
+    await expect(page.getByTestId('command-input')).toHaveValue("What's next?");
+    await page.getByTestId('command-submit').click();
+
+    await expect(page.getByText('2/9')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Next is step 2:/)).toBeVisible();
+  });
+
+  test('language toggle supports French typed commands', async ({ page }) => {
+    await page.getByTestId('language-fr').click();
+    await expect(page.getByTestId('language-fr')).toHaveAttribute('aria-pressed', 'true');
+
+    await page.getByTestId('command-input').fill('Et cette vis, elle va où ?');
+    await page.getByTestId('command-submit').click();
+
+    await expect(page.getByText(/Cette vis va/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/rondelle visible/i)).toBeVisible();
+  });
+
   test('full reset returns to welcome state', async ({ page }) => {
     // First advance to step 2 to create non-initial state
     await page.getByTestId('presenter-button-next-step').click();

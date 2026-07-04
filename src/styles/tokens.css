@@ -1,0 +1,56 @@
+:root {
+  /* ── Color ──────────────────────────────────────────────── */
+  /* surfaces */
+  --paper: #f2f1ea; /* drafting paper — app background */
+  --paper-raised: #fbfaf6; /* cards, panels */
+  --paper-sunken: #e7e6dd; /* wells, progress track */
+
+  /* ink */
+  --ink: #22303a; /* primary text, diagram linework — blue-black ink */
+  --ink-soft: #5c6b74; /* secondary text, captions */
+  --line: #c9c8bc; /* hairline borders, dividers (1px, no shadows) */
+
+  /* the one electric ingredient */
+  --accent: #ee5a0e; /* safety orange — highlights, active states, 3D part pulse */
+  --accent-ink: #b03f00; /* orange readable on paper, for small text/icons */
+  --accent-wash: #fbe3d2; /* orange at 12% feel — chip flash background */
+
+  /* semantic */
+  --ok: #3e7a4c; /* step completed check */
+  --warn-wash: #f6ecd3; /* commonMistake card background */
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-display: 'Archivo', sans-serif; /* headers: weight 750, width 125% */
+  --font-body: 'Archivo', sans-serif; /* weight 400/550, normal width */
+  --font-mono: 'IBM Plex Mono', monospace; /* codes, numerals, timers, timestamps */
+
+  --text-xs: 0.75rem; /* 12 — captions, part codes */
+  --text-sm: 0.875rem; /* 14 — secondary UI */
+  --text-md: 1rem; /* 16 — body, transcript */
+  --text-lg: 1.25rem; /* 20 — step title */
+  --text-xl: 1.75rem; /* 28 — panel headers */
+  --step-numeral: 4.5rem; /* 72 — the die-cut step number, mono, weight 600 */
+
+  /* ── Spacing & radius ───────────────────────────────────── */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  --r-sm: 3px; /* chips, buttons — manuals are squarish */
+  --r-md: 6px; /* cards */
+  --r-lg: 10px; /* panels, the VoiceOrb container */
+
+  /* ── Motion ─────────────────────────────────────────────── */
+  --t-fast: 140ms; /* chip flash, button press */
+  --t-med: 260ms; /* card enter, highlight pulse attack */
+  --t-slow: 800ms; /* camera flights (three.js side uses same value) */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* the app's ONLY drop shadow (VoiceOrb) */
+  --orb-shadow: 0 8px 24px rgba(34, 48, 58, 0.28);
+}

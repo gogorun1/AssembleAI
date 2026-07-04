@@ -1,0 +1,260 @@
+{
+  "id": "billy-bookcase",
+  "name": "BILLY Bookcase",
+  "parts": [
+    {
+      "id": "side-panel-left",
+      "code": "101532",
+      "label": "Side panel (left)",
+      "meshName": "side-panel-left",
+      "quantity": 1
+    },
+    {
+      "id": "side-panel-right",
+      "code": "101533",
+      "label": "Side panel (right)",
+      "meshName": "side-panel-right",
+      "quantity": 1
+    },
+    {
+      "id": "top-panel",
+      "code": "114770",
+      "label": "Top panel",
+      "meshName": "top-panel",
+      "quantity": 1
+    },
+    {
+      "id": "bottom-panel",
+      "code": "114771",
+      "label": "Bottom panel (base)",
+      "meshName": "bottom-panel",
+      "quantity": 1
+    },
+    {
+      "id": "back-panel",
+      "code": "509051",
+      "label": "Back panel (hardboard)",
+      "meshName": "back-panel",
+      "quantity": 1
+    },
+    {
+      "id": "shelf",
+      "code": "118331",
+      "label": "Adjustable shelf",
+      "meshName": "shelf",
+      "quantity": 3
+    },
+    {
+      "id": "wood-dowel",
+      "code": "101351",
+      "label": "Wood dowel",
+      "meshName": "wood-dowel",
+      "quantity": 8
+    },
+    {
+      "id": "cam-lock",
+      "code": "100049",
+      "label": "Cam lock nut",
+      "meshName": "cam-lock",
+      "quantity": 8
+    },
+    {
+      "id": "cam-screw",
+      "code": "M6\u00d740",
+      "label": "Cam lock screw (with washer)",
+      "meshName": "cam-screw",
+      "quantity": 8
+    },
+    {
+      "id": "shelf-pin",
+      "code": "100337",
+      "label": "Shelf support pin",
+      "meshName": "shelf-pin",
+      "quantity": 12
+    },
+    {
+      "id": "back-nail",
+      "code": "118330",
+      "label": "Back panel nail",
+      "meshName": "back-nail",
+      "quantity": 20
+    },
+    {
+      "id": "wall-bracket",
+      "code": "102275",
+      "label": "Wall anchor bracket",
+      "meshName": "wall-bracket",
+      "quantity": 1
+    }
+  ],
+  "cameraViews": {
+    "overview": {
+      "position": [5.5, 4.5, 7.5],
+      "target": [0, 2, 0],
+      "label": "Overview (3/4)"
+    },
+    "front": {
+      "position": [0, 2.2, 8],
+      "target": [0, 2.2, 0],
+      "label": "Front"
+    },
+    "back-panel": {
+      "position": [0.5, 2.4, -8],
+      "target": [0, 2.4, 0],
+      "label": "Back panel"
+    },
+    "top": {
+      "position": [0.2, 9, 0.3],
+      "target": [0, 3.6, 0],
+      "label": "Top down"
+    },
+    "cam-lock-detail": {
+      "position": [3.6, 0.9, 3.6],
+      "target": [1.05, 0.6, 0.2],
+      "label": "Cam lock detail"
+    },
+    "shelf-detail": {
+      "position": [4.2, 2.7, 4.2],
+      "target": [0.6, 2.6, 0],
+      "label": "Shelf detail"
+    },
+    "hardware-detail": {
+      "position": [2.4, 1.2, 4.4],
+      "target": [0, 1, 0.4],
+      "label": "Hardware"
+    },
+    "exploded": {
+      "position": [7.5, 5, 9],
+      "target": [0, 2.4, 0],
+      "label": "Exploded"
+    }
+  },
+  "steps": [
+    {
+      "index": 1,
+      "title": "Lay out the parts",
+      "action": "Unpack every part and sort the hardware into groups before you begin.",
+      "partsNeeded": [
+        { "partId": "side-panel-left", "quantity": 1 },
+        { "partId": "side-panel-right", "quantity": 1 },
+        { "partId": "top-panel", "quantity": 1 },
+        { "partId": "bottom-panel", "quantity": 1 }
+      ],
+      "cameraView": "exploded",
+      "highlightParts": ["side-panel-left", "side-panel-right", "top-panel", "bottom-panel"],
+      "commonMistake": "The two side panels look identical but are mirrored — the pre-drilled holes must face inward on both.",
+      "estMinutes": 5
+    },
+    {
+      "index": 2,
+      "title": "Tap in the dowels",
+      "action": "Push a wood dowel into each hole along the inner edges of both side panels.",
+      "partsNeeded": [
+        { "partId": "wood-dowel", "quantity": 8 },
+        { "partId": "side-panel-left", "quantity": 1 },
+        { "partId": "side-panel-right", "quantity": 1 }
+      ],
+      "cameraView": "cam-lock-detail",
+      "highlightParts": ["wood-dowel", "side-panel-left"],
+      "commonMistake": "Do not hammer dowels flush — leave half exposed so the next panel can seat onto them.",
+      "toolNeeded": "Rubber mallet",
+      "estMinutes": 4
+    },
+    {
+      "index": 3,
+      "title": "Attach the base",
+      "action": "Seat the bottom panel between the side panels and lock it with cam nuts.",
+      "partsNeeded": [
+        { "partId": "bottom-panel", "quantity": 1 },
+        { "partId": "cam-lock", "quantity": 4 },
+        { "partId": "cam-screw", "quantity": 4 }
+      ],
+      "cameraView": "cam-lock-detail",
+      "highlightParts": ["bottom-panel", "cam-lock"],
+      "commonMistake": "Turn each cam lock a full half-turn clockwise — a partial turn feels tight but pops loose later.",
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 6
+    },
+    {
+      "index": 4,
+      "title": "Attach the top",
+      "action": "Fit the top panel onto the dowels at the top of both side panels.",
+      "partsNeeded": [
+        { "partId": "top-panel", "quantity": 1 },
+        { "partId": "cam-lock", "quantity": 4 },
+        { "partId": "cam-screw", "quantity": 4 }
+      ],
+      "cameraView": "overview",
+      "highlightParts": ["top-panel"],
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 5
+    },
+    {
+      "index": 5,
+      "title": "Tighten the cam locks",
+      "action": "Go around the frame and firm up every cam lock so the box is square.",
+      "partsNeeded": [
+        { "partId": "cam-lock", "quantity": 8 },
+        { "partId": "cam-screw", "quantity": 8 }
+      ],
+      "cameraView": "cam-lock-detail",
+      "highlightParts": ["cam-lock", "cam-screw"],
+      "commonMistake": "Stop when it resists — over-tightening a cam lock strips the particleboard and ruins the joint.",
+      "toolNeeded": "Phillips screwdriver",
+      "estMinutes": 4
+    },
+    {
+      "index": 6,
+      "title": "Nail on the back",
+      "action": "Lay the back panel over the frame and nail it down every few inches.",
+      "partsNeeded": [
+        { "partId": "back-panel", "quantity": 1 },
+        { "partId": "back-nail", "quantity": 20 }
+      ],
+      "cameraView": "back-panel",
+      "highlightParts": ["back-panel", "back-nail"],
+      "commonMistake": "The white finished side of the back panel faces the room — if the brown side shows, you nailed it on backwards.",
+      "toolNeeded": "Hammer",
+      "estMinutes": 8
+    },
+    {
+      "index": 7,
+      "title": "Stand it upright",
+      "action": "With a helper, carefully tip the bookcase up onto its base.",
+      "partsNeeded": [],
+      "cameraView": "front",
+      "highlightParts": [],
+      "estMinutes": 2
+    },
+    {
+      "index": 8,
+      "title": "Set the shelf pins",
+      "action": "Push four shelf pins into the holes at each height you want a shelf.",
+      "partsNeeded": [{ "partId": "shelf-pin", "quantity": 12 }],
+      "cameraView": "shelf-detail",
+      "highlightParts": ["shelf-pin"],
+      "commonMistake": "Use the same hole number on all four posts — mismatched pins leave the shelf rocking.",
+      "estMinutes": 3
+    },
+    {
+      "index": 9,
+      "title": "Place the shelves",
+      "action": "Lower each adjustable shelf onto its four pins.",
+      "partsNeeded": [{ "partId": "shelf", "quantity": 3 }],
+      "cameraView": "shelf-detail",
+      "highlightParts": ["shelf"],
+      "estMinutes": 3
+    },
+    {
+      "index": 10,
+      "title": "Secure to the wall",
+      "action": "Screw the anchor bracket to the top and fasten it into a wall stud.",
+      "partsNeeded": [{ "partId": "wall-bracket", "quantity": 1 }],
+      "cameraView": "top",
+      "highlightParts": ["wall-bracket"],
+      "commonMistake": "Never skip this — an unanchored bookcase is a serious tip-over hazard, especially with children.",
+      "toolNeeded": "Drill",
+      "estMinutes": 6
+    }
+  ]
+}

@@ -1,0 +1,203 @@
+.app {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+/* drafting-paper grid behind the 3D model (§6.4) */
+.viewport {
+  position: absolute;
+  inset: 0;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.viewport::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  opacity: 0.94; /* fade the grid to ~6% presence */
+  pointer-events: none;
+}
+
+.canvasHost {
+  position: absolute;
+  inset: 0;
+}
+
+.rail {
+  position: absolute;
+  top: var(--s-5);
+  right: var(--s-5);
+  bottom: var(--s-5);
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  z-index: 5;
+}
+
+.railGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+}
+
+.chipsHeader {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  width: 100%;
+}
+
+.transcriptCard {
+  flex: 1;
+  min-height: 0;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.orbDock {
+  position: absolute;
+  bottom: var(--s-6);
+  left: 0;
+  right: 448px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  z-index: 6;
+}
+
+.cmdForm {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+.cmdInput {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  padding: var(--s-2) var(--s-3);
+  width: 280px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+
+.cmdSend {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--paper-raised);
+}
+
+/* top-left controls */
+.topLeft {
+  position: absolute;
+  top: var(--s-5);
+  left: var(--s-5);
+  z-index: 6;
+  display: flex;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-weight: 750;
+  font-stretch: 125%;
+  letter-spacing: 0.03em;
+  font-size: var(--text-xl);
+  color: var(--ink);
+}
+
+.brand em {
+  color: var(--accent-ink);
+  font-style: normal;
+}
+
+.langToggle {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.langBtn {
+  padding: var(--s-1) var(--s-3);
+  border: none;
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+}
+
+.langActive {
+  background: var(--accent);
+  color: #fff;
+}
+
+.explodeBtn {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+
+/* splash */
+.splash {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+}
+
+.splashNumeral {
+  font-family: var(--font-mono);
+  font-size: 8rem;
+  font-weight: 600;
+  color: transparent;
+  -webkit-text-stroke: 3px var(--ink);
+}
+
+.splashLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  letter-spacing: 0.1em;
+}

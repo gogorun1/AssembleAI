@@ -1,0 +1,43 @@
+.rail {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.track {
+  display: flex;
+  gap: var(--s-1);
+  flex: 1;
+  padding: var(--s-2);
+  background: var(--paper-sunken);
+  border-radius: var(--r-sm);
+}
+
+.tick {
+  flex: 1;
+  height: 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 0;
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.done {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.current {
+  background: var(--accent);
+  border-color: var(--accent-ink);
+}
+
+.fraction {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}

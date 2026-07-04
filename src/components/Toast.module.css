@@ -1,0 +1,26 @@
+.toast {
+  position: fixed;
+  left: var(--s-5);
+  bottom: var(--s-5);
+  max-width: 340px;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: var(--s-3) var(--s-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink);
+  z-index: 20;
+  animation: enter var(--t-med) var(--ease);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

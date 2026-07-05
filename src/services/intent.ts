@@ -14,7 +14,12 @@ const digitWords = new Map<string, number>([
   ['six', 6],
   ['seven', 7],
   ['eight', 8],
-  ['nine', 9]
+  ['nine', 9],
+  ['ten', 10],
+  ['eleven', 11],
+  ['twelve', 12],
+  ['thirteen', 13],
+  ['fourteen', 14]
 ]);
 
 export async function parseIntent(
@@ -72,9 +77,9 @@ function parsePresetIntent(utterance: string, context: IntentContext): ResolvedI
       type: 'where_does_it_go',
       partQuery: 'vis',
       language,
-      partIds: ['cam-screw-washer'],
-      viewKey: 'screw-detail',
-      reply: 'Cette vis va dans les trous pre-perces des panneaux lateraux, rondelle visible. Je te montre le bon point de fixation.'
+      partIds: ['cam-screw'],
+      viewKey: 'side-screw-detail',
+      reply: 'Cette vis 118331 se visse dans les panneaux lateraux avant les serrures a came. Je te montre le bon trou.'
     };
   }
 
@@ -139,16 +144,16 @@ function parsePresetIntent(utterance: string, context: IntentContext): ResolvedI
     };
   }
 
-  if (includesAny(phrase, ['which one', 'which part', 'which screw', 'screw with the washer'])) {
+  if (includesAny(phrase, ['which one', 'which part', 'which screw', 'which cam', 'cam lock screw', 'screw with the washer'])) {
     const partIds = resolvePartIds(phrase, context);
     return {
       type: 'which_part',
       partQuery: utterance,
       language,
       partIds,
-      viewKey: partIds.includes('cam-screw-washer') ? 'screw-detail' : step.cameraView,
-      reply: partIds.includes('cam-screw-washer')
-        ? 'Use part 117327, the cam screw with the washer. I am spinning it and flashing its chip now.'
+      viewKey: partIds.includes('cam-screw') ? 'side-screw-detail' : step.cameraView,
+      reply: partIds.includes('cam-screw')
+        ? 'Use 118331, the cam screw. I am spinning it and flashing its chip now.'
         : `I found ${labelParts(partIds, context.manifest)}. I am isolating it for you.`
     };
   }
@@ -224,20 +229,44 @@ function getStep(context: IntentContext): Step {
 function resolvePartIds(phrase: string, context: IntentContext): string[] {
   const step = getStep(context);
 
-  if (includesAny(phrase, ['washer', 'cam screw', 'vis'])) {
-    return ['cam-screw-washer'];
+  if (includesAny(phrase, ['cam screw', 'cam lock screw', 'screw with the washer', '118331', 'vis'])) {
+    return ['cam-screw'];
   }
 
-  if (includesAny(phrase, ['short screw', 'back screw'])) {
-    return ['back-screw'];
+  if (includesAny(phrase, ['washer'])) {
+    return ['washer'];
+  }
+
+  if (includesAny(phrase, ['back nail', 'panel nail', 'nail', '101201'])) {
+    return ['back-nail'];
+  }
+
+  if (includesAny(phrase, ['bracket screw', '109041'])) {
+    return ['bracket-screw'];
+  }
+
+  if (includesAny(phrase, ['screw'])) {
+    const screw = step.highlightParts.find((partId) => partId.includes('screw'));
+    return [screw ?? 'cam-screw'];
+  }
+
+  if (includesAny(phrase, ['wall bracket', 'bracket'])) {
+    return ['wall-bracket'];
   }
 
   if (includesAny(phrase, ['back panel', 'rear panel'])) {
     return ['back-panel'];
   }
 
+  if (includesAny(phrase, ['side panel', 'left panel', 'right panel'])) {
+    const sidePanel = step.highlightParts.find((partId) => partId.includes('side-panel'));
+    return [sidePanel ?? step.highlightParts[0]];
+  }
+
   if (includesAny(phrase, ['panel'])) {
-    const panel = step.highlightParts.find((partId) => partId.includes('panel'));
+    const panel = step.highlightParts.find(
+      (partId) => partId.includes('panel') && !partId.includes('side-panel')
+    );
     return [panel ?? step.highlightParts[0]];
   }
 
@@ -256,7 +285,7 @@ function parseStepNumber(phrase: string, maxStep: number): number | undefined {
   }
 
   for (const [word, value] of digitWords) {
-    if (phrase.includes(`step ${word}`)) {
+    if (new RegExp(`\\bstep\\s+${word}\\b`).test(phrase)) {
       return clampStep(value, maxStep);
     }
   }

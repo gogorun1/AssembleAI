@@ -5,7 +5,7 @@
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: var(--paper-raised);
+  background: color-mix(in srgb, var(--paper-raised) 94%, var(--paper));
 }
 
 .header {

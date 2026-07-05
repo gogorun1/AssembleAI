@@ -17,20 +17,16 @@ import {
   derivePartPose,
   partLayouts,
   resolvePartIdForNode,
+  type DetailMaterial,
   type PartLayout,
   type PartPrimitive
 } from './useViewerCommands';
 import styles from './Viewer.module.css';
-
-interface TokenColors {
-  paperRaised: string;
-  paperSunken: string;
-  ink: string;
-  inkSoft: string;
-  line: string;
-  accent: string;
-  ok: string;
-}
+import { useTokenColors, type TokenColors } from './colors';
+import { binForPart } from './bins';
+import { SlotGhosts } from './PartsBench';
+import { resolvePickablePartId } from './picking';
+import { isTap, markPointerDown } from './pointer';
 
 interface CameraSnapshot {
   viewKey: string;
@@ -43,6 +39,21 @@ interface MappingReport {
   totalNodes: number;
   matchedParts: number;
   missingPartIds: string[];
+}
+
+interface FlightState {
+  seeded: boolean;
+  prev: boolean;
+  flying: boolean;
+  t: number;
+  from: THREE.Vector3;
+}
+
+const FLIGHT_SECONDS = 1.5;
+const FLIGHT_ARC_LIFT = 1.1;
+
+function easeInOutCubic(x: number): number {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 }
 
 interface PartBinding {
@@ -106,7 +117,8 @@ export function Viewer() {
         <Canvas
           shadows
           dpr={[1, 2]}
-          camera={{ position: [3.2, 2.1, 5.2], fov: 32, near: 0.1, far: 80 }}
+          camera={{ position: [2.3, 2.5, 7.0], fov: 38, near: 0.1, far: 80 }}
+          onPointerDown={(event) => markPointerDown(event.clientX, event.clientY)}
         >
           <Scene
             modelPath={modelPath}
@@ -116,8 +128,8 @@ export function Viewer() {
         </Canvas>
       </WebGLErrorBoundary>
       <div className={styles.caption} aria-hidden>
-        <div className={styles.eyebrow}>ASSEMBLY MANIFEST · {manifest.id.toUpperCase()}</div>
-        <div className={styles.title}>Voice + 3D assembly copilot</div>
+        <div className={styles.eyebrow}>IKEA ASSEMBLY · {manifest.id.toUpperCase()}</div>
+        <div className={styles.title}>{manifest.name}</div>
         {showCameraHelper && cameraSnapshot ? <CameraHelperPanel snapshot={cameraSnapshot} /> : null}
         {showMeshHelper && mappingReport ? <MeshHelperPanel report={mappingReport} /> : null}
       </div>
@@ -168,12 +180,16 @@ function ViewerFallback() {
         <div className={`${styles.fallbackPart} ${styles.topPanel} ${active.has('top-panel') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.bottomPanel} ${active.has('bottom-panel') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.fixedShelf} ${active.has('fixed-shelf') ? styles.hot : ''}`} />
+        <div className={`${styles.fallbackPart} ${styles.adjustableBottom} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.adjustableLow} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.adjustableHigh} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
+        <div className={`${styles.fallbackPart} ${styles.adjustableTop} ${active.has('adjustable-shelf') ? styles.hot : ''}`} />
+        <div className={`${styles.fallbackPart} ${styles.frontRail} ${active.has('front-rail') ? styles.hot : ''}`} />
         <div className={`${styles.fallbackPart} ${styles.backPanel} ${active.has('back-panel') ? styles.hot : ''}`} />
-        <div className={`${styles.hardwareDot} ${styles.dotOne} ${active.has('cam-screw-washer') ? styles.hot : ''}`} />
-        <div className={`${styles.hardwareDot} ${styles.dotTwo} ${active.has('cam-lock') ? styles.hot : ''}`} />
+        <div className={`${styles.hardwareDot} ${styles.dotOne} ${active.has('cam-screw') ? styles.hot : ''}`} />
+        <div className={`${styles.hardwareDot} ${styles.dotTwo} ${active.has('back-nail') ? styles.hot : ''}`} />
         <div className={`${styles.hardwareDot} ${styles.dotThree} ${active.has('shelf-pin') ? styles.hot : ''}`} />
+        <div className={`${styles.hardwareDot} ${styles.dotFour} ${active.has('wall-bracket') ? styles.hot : ''}`} />
       </div>
     </div>
   );
@@ -189,19 +205,22 @@ function Scene({
   onMappingReport?: (value: MappingReport) => void;
 }) {
   const controlsRef = useRef(null) as MutableRefObject<any>;
+  // Bumped when the user grabs the controls, so an in-flight camera transition
+  // yields immediately to manual orbit/zoom.
+  const interruptRef = useRef(0);
   const colors = useTokenColors();
 
   return (
     <>
       <color attach="background" args={[colors.paperSunken]} />
-      <ambientLight intensity={0.62} />
+      <ambientLight intensity={0.74} />
       <directionalLight
         castShadow
-        position={[3.4, 5.2, 3.2]}
-        intensity={1.35}
+        position={[3.2, 6.2, 3.8]}
+        intensity={1.2}
         shadow-mapSize={[2048, 2048]}
       />
-      <directionalLight position={[-3, 2.2, -2]} intensity={0.34} />
+      <directionalLight position={[-2.8, 3.2, -2.6]} intensity={0.28} />
       {modelPath ? (
         <ModelErrorBoundary fallback={<PrimitiveModel colors={colors} />}>
           <Suspense fallback={<LoadingModel colors={colors} />}>
@@ -212,16 +231,21 @@ function Scene({
         <PrimitiveModel colors={colors} />
       )}
       <GridPlate colors={colors} />
+      <SlotGhosts colors={colors} />
       <ContactShadows position={[0, -0.02, 0]} opacity={0.28} scale={5} blur={2.4} far={3} />
-      <CameraRig controlsRef={controlsRef} onCameraSnapshot={onCameraSnapshot} />
+      <CameraRig controlsRef={controlsRef} interruptRef={interruptRef} onCameraSnapshot={onCameraSnapshot} />
       <OrbitControls
         ref={controlsRef}
         makeDefault
         enableDamping
         dampingFactor={0.08}
+        enablePan={false}
         minDistance={2.2}
-        maxDistance={8}
-        maxPolarAngle={Math.PI * 0.48}
+        maxDistance={9}
+        maxPolarAngle={Math.PI * 0.5}
+        onStart={() => {
+          interruptRef.current += 1;
+        }}
       />
     </>
   );
@@ -229,34 +253,71 @@ function Scene({
 
 function CameraRig({
   controlsRef,
+  interruptRef,
   onCameraSnapshot
 }: {
   controlsRef: MutableRefObject<any>;
+  interruptRef: MutableRefObject<number>;
   onCameraSnapshot?: (value: CameraSnapshot) => void;
 }) {
   const camera = useThree((state) => state.camera);
   const manifest = useAppStore((state) => state.manifest);
   const activeViewKey = useAppStore((state) => state.activeViewKey);
+  const cameraNonce = useAppStore((state) => state.cameraNonce);
   const reducedMotion = useReducedMotion();
-  const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
-  const targetPosition = useMemo(() => new THREE.Vector3(...view.position), [view.position]);
-  const targetLookAt = useMemo(() => new THREE.Vector3(...view.target), [view.target]);
+
+  const lastNonce = useRef(-1);
+  const lastInterrupt = useRef(0);
+  const flying = useRef(false);
+  const t = useRef(1);
+  const dur = useRef(0);
+  const startPos = useRef(new THREE.Vector3());
+  const endPos = useRef(new THREE.Vector3());
+  const startTarget = useRef(new THREE.Vector3());
+  const endTarget = useRef(new THREE.Vector3());
   const lastEmitRef = useRef(0);
 
   useFrame((_, delta) => {
-    const alpha = reducedMotion ? 1 : 1 - Math.exp(-delta * 4.4);
-    camera.position.lerp(targetPosition, alpha);
-    controlsRef.current?.target.lerp(targetLookAt, alpha);
-    controlsRef.current?.update();
+    const controls = controlsRef.current;
+
+    // A user grab cancels any in-flight preset transition so orbit/zoom is free.
+    if (interruptRef.current !== lastInterrupt.current) {
+      lastInterrupt.current = interruptRef.current;
+      flying.current = false;
+    }
+
+    // A new camera command (view button, step, bin, reset) starts a one-shot flight.
+    if (cameraNonce !== lastNonce.current) {
+      lastNonce.current = cameraNonce;
+      const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
+      startPos.current.copy(camera.position);
+      startTarget.current.copy(controls?.target ?? startTarget.current.set(0, 1.1, 0));
+      endPos.current.set(...view.position);
+      endTarget.current.set(...view.target);
+      t.current = 0;
+      dur.current = reducedMotion ? 0 : 0.85;
+      flying.current = true;
+    }
+
+    if (flying.current) {
+      t.current = dur.current <= 0 ? 1 : Math.min(1, t.current + delta / dur.current);
+      const e = easeInOutCubic(t.current);
+      camera.position.lerpVectors(startPos.current, endPos.current, e);
+      if (controls) controls.target.lerpVectors(startTarget.current, endTarget.current, e);
+      if (t.current >= 1) flying.current = false;
+    }
+
+    // Always update so OrbitControls damping works during free manual control.
+    controls?.update();
 
     if (onCameraSnapshot) {
       const now = performance.now();
       if (now - lastEmitRef.current > 180) {
-        const target = controlsRef.current?.target as THREE.Vector3 | undefined;
+        const target = controls?.target as THREE.Vector3 | undefined;
         onCameraSnapshot({
           viewKey: activeViewKey,
           position: [camera.position.x, camera.position.y, camera.position.z],
-          target: target ? [target.x, target.y, target.z] : view.target
+          target: target ? [target.x, target.y, target.z] : [0, 1.1, 0]
         });
         lastEmitRef.current = now;
       }
@@ -314,30 +375,96 @@ function GlbModel({
   }, [bindings.length, modelPath, onMappingReport, unmatchedPartIds]);
 
   const scratch = useRef(new THREE.Vector3());
+  const binVec = useRef(new THREE.Vector3());
+  const flight = useRef(new Map<string, FlightState>());
 
   useFrame((state, delta) => {
     const alpha = 1 - Math.exp(-delta * 8);
     for (const binding of bindings) {
+      const layout = partLayouts[binding.partId];
       const pose = derivePartPose(binding.partId, currentStep, explodeLevel);
-      const target = scratch.current.set(
+      const slot = scratch.current.set(
         binding.basePosition.x + pose.offset[0],
         binding.basePosition.y + pose.offset[1],
         binding.basePosition.z + pose.offset[2]
       );
-      binding.node.position.lerp(target, alpha);
-      binding.node.visible = pose.visible;
 
-      const isSelected = selectedPartId === binding.partId;
-      binding.node.rotation.y = isSelected
-        ? state.clock.elapsedTime * 0.72
-        : THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
+      const bin = binForPart[binding.partId];
+      const installed = layout ? currentStep >= layout.unlockStep : true;
+      let visible = pose.visible;
+      let grow = 1;
+
+      if (bin && explodeLevel === 0) {
+        // Binned hardware: sits in its tray until its step arrives, then flies
+        // into the slot along an arc with a scale-up "install" pop.
+        let fs = flight.current.get(binding.partId);
+        if (!fs) {
+          fs = { seeded: false, prev: installed, flying: false, t: 1, from: new THREE.Vector3() };
+          flight.current.set(binding.partId, fs);
+        }
+        if (!fs.seeded) {
+          fs.seeded = true;
+          fs.prev = installed;
+          fs.t = 1;
+          if (installed) binding.node.position.copy(slot);
+        } else if (installed && !fs.prev) {
+          fs.flying = true;
+          fs.t = 0;
+          // Launch from the bin's on-screen (UI) position, projected ~4.5 units
+          // in front of the camera so the part appears to fly from the UI card.
+          binVec.current.set(bin.anchorNdc[0], bin.anchorNdc[1], 0.5).unproject(state.camera);
+          binVec.current.sub(state.camera.position).normalize().multiplyScalar(4.5).add(state.camera.position);
+          fs.from.copy(binVec.current);
+        }
+        fs.prev = installed;
+        visible = installed || fs.flying;
+
+        if (fs.flying) {
+          fs.t = Math.min(1, fs.t + delta / FLIGHT_SECONDS);
+          const e = easeInOutCubic(fs.t);
+          const inv = 1 - e;
+          // quadratic bezier from bin -> lifted control point -> slot
+          const cx = (fs.from.x + slot.x) / 2;
+          const cy = Math.max(fs.from.y, slot.y) + FLIGHT_ARC_LIFT;
+          const cz = (fs.from.z + slot.z) / 2;
+          binVec.current.set(
+            inv * inv * fs.from.x + 2 * inv * e * cx + e * e * slot.x,
+            inv * inv * fs.from.y + 2 * inv * e * cy + e * e * slot.y,
+            inv * inv * fs.from.z + 2 * inv * e * cz + e * e * slot.z
+          );
+          binding.node.position.copy(binVec.current);
+          grow = 0.5 + 0.5 * e;
+          if (fs.t >= 1) {
+            fs.flying = false;
+            binding.node.position.copy(slot);
+            grow = 1;
+          }
+        } else {
+          binding.node.position.lerp(slot, alpha);
+        }
+      } else {
+        const fs = flight.current.get(binding.partId);
+        if (fs) {
+          fs.flying = false;
+          fs.t = 1;
+          fs.prev = installed;
+        }
+        binding.node.position.lerp(slot, alpha);
+        visible = pose.visible;
+      }
+
+      binding.node.visible = visible;
+      // Selected state is highlight-only — the part stays axis-aligned and does
+      // not spin. Any residual rotation eases back to zero.
+      binding.node.rotation.y = THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
 
       const mentioned = mentionedPartIds.includes(binding.partId);
       const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.03 : 1;
+      const s = grow * pulse;
       binding.node.scale.set(
-        binding.baseScale.x * pulse,
-        binding.baseScale.y * pulse,
-        binding.baseScale.z * pulse
+        binding.baseScale.x * s,
+        binding.baseScale.y * s,
+        binding.baseScale.z * s
       );
 
       const highlight = highlightedPartIds.includes(binding.partId) || mentioned;
@@ -347,9 +474,13 @@ function GlbModel({
     }
   });
 
-  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
+  const onSelect = (event: ThreeEvent<MouseEvent>) => {
+    // Ignore selection if the pointer was dragged (an orbit gesture).
+    if (!isTap(event.nativeEvent.clientX, event.nativeEvent.clientY)) {
+      return;
+    }
     event.stopPropagation();
-    const partId = findPartId(event.object);
+    const partId = resolvePickablePartId(event.object);
     if (!partId) {
       return;
     }
@@ -373,7 +504,7 @@ function GlbModel({
 
   return (
     <group>
-      <primitive object={root} onPointerDown={onPointerDown} />
+      <primitive object={root} onClick={onSelect} />
 
       {unmatchedPartIds.map((partId) => {
         const layout = partLayouts[partId];
@@ -472,13 +603,21 @@ function PartGroup({
     const alpha = 1 - Math.exp(-delta * 8);
     group.position.lerp(targetOffset, alpha);
     group.visible = pose.visible;
-    group.rotation.y = selected ? state.clock.elapsedTime * 0.72 : THREE.MathUtils.lerp(group.rotation.y, 0, alpha);
+    // Selected state is highlight-only — no spin.
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, 0, alpha);
     const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.035 : 1;
     group.scale.setScalar(pulse);
   });
 
-  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
+  const onSelect = (event: ThreeEvent<MouseEvent>) => {
+    if (!isTap(event.nativeEvent.clientX, event.nativeEvent.clientY)) {
+      return;
+    }
     event.stopPropagation();
+    const partId = resolvePickablePartId(event.object);
+    if (partId !== part.id) {
+      return;
+    }
     const store = useAppStore.getState();
     store.selectPart(part.id);
     store.mentionPart(part.id);
@@ -491,16 +630,32 @@ function PartGroup({
   };
 
   return (
-    <group ref={groupRef} onPointerDown={onPointerDown}>
+    <group ref={groupRef} onClick={onSelect}>
       {pose.primitives.map((primitive) => (
         <PrimitiveMesh
           key={primitive.id}
+          partId={part.id}
           primitive={primitive}
           layout={layout}
           colors={colors}
           highlighted={highlighted || mentioned}
+          pickable
         />
       ))}
+      {layout.details?.flatMap((detail) =>
+        detail.primitives.map((primitive) => (
+          <PrimitiveMesh
+            key={`${detail.id}-${primitive.id}`}
+            partId={part.id}
+            primitive={primitive}
+            layout={layout}
+            colors={colors}
+            highlighted={highlighted || mentioned}
+            detailMaterial={detail.material}
+            pickable={false}
+          />
+        ))
+      )}
       {selected ? (
         <Html position={annotationPosition(layout)} center distanceFactor={5.4} className={styles.annotation}>
           <div className={styles.annotationCode}>{part.code}</div>
@@ -512,22 +667,38 @@ function PartGroup({
 }
 
 function PrimitiveMesh({
+  partId,
   primitive,
   layout,
   colors,
-  highlighted
+  highlighted,
+  detailMaterial,
+  pickable
 }: {
+  partId: string;
   primitive: PartPrimitive;
   layout: PartLayout;
   colors: TokenColors;
   highlighted: boolean;
+  detailMaterial?: DetailMaterial;
+  pickable: boolean;
 }) {
-  const materialColor = highlighted ? colors.accent : colorForRole(layout.role, colors);
+  const materialColor = highlighted
+    ? colors.accent
+    : detailMaterial
+      ? colorForDetail(detailMaterial, colors)
+      : colorForRole(layout.role, colors);
   const emissive = highlighted ? colors.accent : colors.ink;
-  const emissiveIntensity = highlighted ? 0.8 : 0;
+  const emissiveIntensity = highlighted ? 0.42 : 0;
 
   return (
-    <mesh castShadow receiveShadow position={primitive.position} rotation={primitive.rotation}>
+    <mesh
+      castShadow
+      receiveShadow
+      position={primitive.position}
+      rotation={primitive.rotation}
+      userData={{ partId, pickable, isDetail: !pickable }}
+    >
       {primitive.shape === 'box' ? (
         <boxGeometry args={primitive.size} />
       ) : (
@@ -535,12 +706,12 @@ function PrimitiveMesh({
       )}
       <meshStandardMaterial
         color={materialColor}
-        roughness={0.72}
-        metalness={layout.role === 'hardware' ? 0.18 : 0.02}
+        roughness={layout.role === 'hardware' ? 0.38 : layout.role === 'back' ? 0.86 : 0.68}
+        metalness={layout.role === 'hardware' ? 0.48 : 0.02}
         emissive={emissive}
         emissiveIntensity={emissiveIntensity}
       />
-      {primitive.shape === 'box' ? <Edges color={colors.ink} threshold={18} /> : null}
+      {primitive.shape === 'box' ? <Edges color={colors.line} threshold={18} /> : null}
     </mesh>
   );
 }
@@ -604,12 +775,41 @@ function colorForRole(role: PartLayout['role'], colors: TokenColors): string {
     return colors.inkSoft;
   }
   if (role === 'back') {
-    return colors.paperSunken;
+    return '#ECEBE6';
   }
   if (role === 'strap') {
     return colors.ok;
   }
-  return colors.paperRaised;
+  return '#FAFAF6';
+}
+
+function colorForDetail(material: DetailMaterial, colors: TokenColors): string {
+  if (material === 'metal') {
+    return '#6F767D';
+  }
+  if (material === 'slot' || material === 'shadow') {
+    return colors.ink;
+  }
+  if (material === 'wood') {
+    return '#C8A97A';
+  }
+  return colors.line;
+}
+
+function isDetailMesh(mesh: THREE.Mesh): boolean {
+  return mesh.name.includes('_detail_') || mesh.userData?.isDetail === true;
+}
+
+function isDecorativeMesh(mesh: THREE.Mesh): boolean {
+  return isDetailMesh(mesh) || mesh.userData?.isOutline === true;
+}
+
+function detailMaterialForMesh(mesh: THREE.Mesh): DetailMaterial | undefined {
+  if (typeof mesh.userData?.detailMaterial === 'string') {
+    return mesh.userData.detailMaterial as DetailMaterial;
+  }
+  const match = mesh.name.match(/_detail_(edge|shadow|metal|slot|wood)_/);
+  return match?.[1] as DetailMaterial | undefined;
 }
 
 function buildBindings(
@@ -642,6 +842,8 @@ function buildBindings(
     const role = partLayouts[partId]?.role ?? 'panel';
     for (const mesh of meshes) {
       mesh.userData.partId = partId;
+      mesh.userData.pickable = !isDecorativeMesh(mesh);
+      mesh.userData.isDetail = isDetailMesh(mesh);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       applyRoleMaterial(mesh, role, colors);
@@ -668,19 +870,21 @@ function buildBindings(
 }
 
 function applyRoleMaterial(mesh: THREE.Mesh, role: PartLayout['role'], colors: TokenColors): void {
+  const detailMaterial = detailMaterialForMesh(mesh);
   const material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(colorForRole(role, colors)),
-    roughness: 0.72,
-    metalness: role === 'hardware' ? 0.2 : 0.02
+    color: new THREE.Color(detailMaterial ? colorForDetail(detailMaterial, colors) : colorForRole(role, colors)),
+    roughness: role === 'hardware' ? 0.38 : role === 'back' ? 0.86 : 0.68,
+    metalness: role === 'hardware' ? 0.48 : 0.02
   });
   mesh.material = material;
 
   if ((role === 'panel' || role === 'back') && mesh.geometry) {
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(mesh.geometry, 18),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(colors.ink) })
+      new THREE.LineBasicMaterial({ color: new THREE.Color(colors.line) })
     );
     edges.userData.isOutline = true;
+    edges.userData.pickable = false;
     mesh.add(edges);
   }
 }
@@ -691,18 +895,7 @@ function setMeshHighlight(mesh: THREE.Mesh, on: boolean, accent: string): void {
     return;
   }
   material.emissive.set(on ? accent : '#000000');
-  material.emissiveIntensity = on ? 0.7 : 0;
-}
-
-function findPartId(object: THREE.Object3D | null): string | undefined {
-  let cursor: THREE.Object3D | null = object;
-  while (cursor) {
-    if (typeof cursor.userData?.partId === 'string') {
-      return cursor.userData.partId as string;
-    }
-    cursor = cursor.parent;
-  }
-  return undefined;
+  material.emissiveIntensity = on ? 0.42 : 0;
 }
 
 function getDebugFlag(flag: string): boolean {
@@ -710,34 +903,6 @@ function getDebugFlag(flag: string): boolean {
     return false;
   }
   return new URLSearchParams(window.location.search).get(flag) === '1';
-}
-
-function useTokenColors(): TokenColors {
-  return useMemo(() => {
-    if (typeof window === 'undefined') {
-      return {
-        paperRaised: 'white',
-        paperSunken: 'beige',
-        ink: 'black',
-        inkSoft: 'gray',
-        line: 'gray',
-        accent: 'orange',
-        ok: 'green'
-      };
-    }
-
-    const style = getComputedStyle(document.documentElement);
-    const read = (name: string) => style.getPropertyValue(name).trim();
-    return {
-      paperRaised: read('--paper-raised'),
-      paperSunken: read('--paper-sunken'),
-      ink: read('--ink'),
-      inkSoft: read('--ink-soft'),
-      line: read('--line'),
-      accent: read('--accent'),
-      ok: read('--ok')
-    };
-  }, []);
 }
 
 function useReducedMotion(): boolean {

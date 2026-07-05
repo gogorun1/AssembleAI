@@ -17,7 +17,7 @@ and emits one named node per part, so node names always match the manifest.
 ## Node naming contract
 
 - Each part gets a node whose name equals `part.meshName`
-  (e.g. `side_panel_left`, `cam_screw_washer`).
+  (e.g. `side_panel_left`, `cam_screw`).
 - Sub-meshes may be suffixed (`side_panel_left_0`); the loader walks up to the
   named parent to resolve the owning part.
 - The loader also accepts any alias listed in `part.meshNodes` and common

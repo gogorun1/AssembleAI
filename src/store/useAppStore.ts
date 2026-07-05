@@ -35,8 +35,12 @@ interface AppState {
   mentionedPartIds: string[];
   highlightedPartIds: string[];
   activeViewKey: string;
+  /** Bumped whenever a camera preset is (re)requested, so the rig animates once
+   *  and then hands control back to the user's orbit/zoom. */
+  cameraNonce: number;
   explodeLevel: 0 | 1 | 2;
   selectedPartId?: string;
+  selectedBinId?: string;
   toast?: ToastState;
   viewer?: ViewerAPI;
   firstVoiceInteraction: boolean;
@@ -54,6 +58,7 @@ interface AppState {
   setActiveView(viewKey: string): void;
   setExplodeLevel(level: 0 | 1 | 2): void;
   selectPart(partId?: string): void;
+  selectBin(binId?: string): void;
   showToast(message: string): void;
   clearToast(): void;
   markVoiceInteraction(): void;
@@ -63,11 +68,16 @@ interface AppState {
 
 const mentionTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+// Auto-clears the "selected" part so it stops spinning / hides its annotation
+// after a short beat instead of spinning forever.
+let selectTimer: ReturnType<typeof setTimeout> | undefined;
+const SELECT_DURATION_MS = 3000;
+
 function createWelcomeTranscript(): TranscriptLine {
   return {
     id: 'welcome',
     speaker: 'agent',
-    text: 'I have the BILLY bookcase loaded. Hold space and ask which part to use, where it goes, or what is next.',
+    text: 'I have the BILLY 40x28x202 bookcase loaded. Hold space and ask which part to use, where it goes, or what is next.',
     timestamp: Date.now(),
     mentionedPartIds: []
   };
@@ -81,7 +91,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   mentionedPartIds: [],
   highlightedPartIds: manifest.steps[0].highlightParts,
   activeViewKey: manifest.steps[0].cameraView,
-  explodeLevel: 1,
+  cameraNonce: 0,
+  explodeLevel: 0,
   firstVoiceInteraction: false,
   eventLog: [],
   resetDemoState() {
@@ -89,6 +100,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       clearTimeout(timer);
     }
     mentionTimers.clear();
+    if (selectTimer) {
+      clearTimeout(selectTimer);
+      selectTimer = undefined;
+    }
     set({
       currentStep: 1,
       voiceState: 'idle',
@@ -96,8 +111,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       mentionedPartIds: [],
       highlightedPartIds: manifest.steps[0].highlightParts,
       activeViewKey: manifest.steps[0].cameraView,
-      explodeLevel: 1,
+      cameraNonce: get().cameraNonce + 1,
+      explodeLevel: 0,
       selectedPartId: undefined,
+      selectedBinId: undefined,
       toast: undefined,
       firstVoiceInteraction: false,
       eventLog: []
@@ -109,15 +126,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   goToStep(index) {
     const stepIndex = Math.max(1, Math.min(index, manifest.steps.length));
     const step = manifest.steps[stepIndex - 1];
-    set({
+    // The <Viewer /> subscribes to these fields directly, so a single set()
+    // drives the camera + highlights; the imperative ViewerAPI calls were
+    // redundant double-writes. Explode level is left to the user's control.
+    set((state) => ({
       currentStep: stepIndex,
       activeViewKey: step.cameraView,
       highlightedPartIds: step.highlightParts,
-      explodeLevel: stepIndex === manifest.steps.length ? 0 : 1
-    });
-    get().viewer?.goToStep(stepIndex);
-    get().viewer?.setCamera(step.cameraView, 800);
-    get().viewer?.highlight(step.highlightParts, 'pulse');
+      cameraNonce: state.cameraNonce + 1
+    }));
     get().logEvent({ type: 'step_change', label: `Step ${stepIndex}`, payload: { step: stepIndex } });
   },
   nextStep() {
@@ -146,12 +163,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       clearTimeout(mentionTimers.get(partId));
     }
 
+    // Only track the ephemeral "mention" flash here. Persistent highlighting is
+    // driven separately by highlightedPartIds so mentions don't accumulate.
     set((state) => ({
-      mentionedPartIds: Array.from(new Set([...state.mentionedPartIds, partId])),
-      highlightedPartIds: Array.from(new Set([...state.highlightedPartIds, partId]))
+      mentionedPartIds: Array.from(new Set([...state.mentionedPartIds, partId]))
     }));
-
-    get().viewer?.highlight([partId], 'pulse');
 
     mentionTimers.set(
       partId,
@@ -172,15 +188,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().viewer?.clearHighlights();
   },
   setActiveView(viewKey) {
-    set({ activeViewKey: viewKey });
-    get().viewer?.setCamera(viewKey, 800);
+    set((state) => ({ activeViewKey: viewKey, cameraNonce: state.cameraNonce + 1 }));
   },
   setExplodeLevel(level) {
     set({ explodeLevel: level });
     get().viewer?.explode(level);
   },
   selectPart(partId) {
+    if (selectTimer) {
+      clearTimeout(selectTimer);
+      selectTimer = undefined;
+    }
     set({ selectedPartId: partId });
+    if (partId) {
+      selectTimer = setTimeout(() => {
+        set({ selectedPartId: undefined });
+        selectTimer = undefined;
+      }, SELECT_DURATION_MS);
+    }
+  },
+  selectBin(binId) {
+    set({ selectedBinId: binId });
   },
   showToast(message) {
     set({ toast: { id: crypto.randomUUID(), message } });

@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import manifest from './manifest';
 
 describe('billy assembly manifest', () => {
-  it('contains the demo-sized BILLY bookcase walkthrough', () => {
+  it('contains the official BILLY AA-1823127-9-2 walkthrough', () => {
     expect(manifest.id).toBe('billy-bookcase');
-    expect(manifest.steps).toHaveLength(9);
-    expect(manifest.steps.filter((step) => step.commonMistake).length).toBeGreaterThanOrEqual(4);
+    expect(manifest.name).toContain('40x28x202');
+    expect(manifest.steps).toHaveLength(14);
+    expect(manifest.parts.map((part) => part.id)).not.toContain('back-clip');
+    expect(manifest.steps.filter((step) => step.commonMistake).length).toBeGreaterThanOrEqual(10);
   });
 
   it('uses valid part and camera references for every step', () => {
@@ -23,9 +25,56 @@ describe('billy assembly manifest', () => {
     }
   });
 
-  it('keeps manual-style part codes visible in the data', () => {
-    expect(manifest.parts.every((part) => part.code.length >= 3)).toBe(true);
-    expect(manifest.parts.map((part) => part.code)).toContain('117327');
-    expect(manifest.parts.map((part) => part.code)).toContain('M3.5x16');
+  it('matches the official hardware codes and quantities from page 6', () => {
+    const expectedHardware = new Map([
+      ['118331', { id: 'cam-screw', quantity: 12 }],
+      ['101351', { id: 'wood-dowel', quantity: 16 }],
+      ['101201', { id: 'back-nail', quantity: 18 }],
+      ['119081', { id: 'cam-lock', quantity: 12 }],
+      ['131372', { id: 'shelf-pin', quantity: 16 }],
+      ['106989', { id: 'wall-bracket', quantity: 2 }],
+      ['109041', { id: 'bracket-screw', quantity: 2 }],
+      ['100823', { id: 'washer', quantity: 4 }]
+    ]);
+
+    for (const [code, expected] of expectedHardware) {
+      const part = manifest.parts.find((candidate) => candidate.code === code);
+      expect(part?.id, code).toBe(expected.id);
+      expect(part?.quantity, code).toBe(expected.quantity);
+    }
+  });
+
+  it('tracks the official fourteen instruction panels in order', () => {
+    expect(manifest.steps.map((step) => step.title)).toEqual([
+      'Insert the wood dowels',
+      'Install the cam screws',
+      'Seat the shelves on the first side',
+      'Lock the first four cams',
+      'Fit the front rail',
+      'Lower the second side panel',
+      'Lock the remaining cams',
+      'Mark the back panel line',
+      'Slide in the folded back panel',
+      'Rule the nail guide line',
+      'Nail the back panel',
+      'Install the wall brackets',
+      'Insert the shelf pins',
+      'Place the adjustable shelves'
+    ]);
+
+    expect(manifest.steps[0].partsNeeded).toEqual(
+      expect.arrayContaining([
+        { partId: 'wood-dowel', quantity: 16 },
+        { partId: 'front-rail', quantity: 1 }
+      ])
+    );
+    expect(manifest.steps[10].partsNeeded).toContainEqual({ partId: 'back-nail', quantity: 18 });
+    expect(manifest.steps[11].partsNeeded).toEqual(
+      expect.arrayContaining([
+        { partId: 'wall-bracket', quantity: 2 },
+        { partId: 'bracket-screw', quantity: 2 },
+        { partId: 'washer', quantity: 4 }
+      ])
+    );
   });
 });

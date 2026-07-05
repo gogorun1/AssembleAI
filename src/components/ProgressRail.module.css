@@ -6,16 +6,16 @@
   padding: var(--s-3);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: var(--paper-raised);
+  background: color-mix(in srgb, var(--paper-raised) 94%, var(--paper));
 }
 
 .track {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(12px, 1fr));
   gap: var(--s-1);
   padding: var(--s-1);
   border-radius: var(--r-sm);
-  background: var(--paper-sunken);
+  background: color-mix(in srgb, var(--paper-sunken) 70%, var(--paper-raised));
 }
 
 .tick {
@@ -32,7 +32,7 @@
 }
 
 .current {
-  border-color: var(--accent);
+  border-color: var(--accent-ink);
   background: var(--accent);
 }
 

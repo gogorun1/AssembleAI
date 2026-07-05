@@ -13,8 +13,8 @@
 
 .caption {
   position: absolute;
-  inset-block-start: var(--s-5);
-  inset-inline-start: var(--s-5);
+  inset-block-start: var(--s-4);
+  inset-inline-start: var(--s-4);
   z-index: 2;
   pointer-events: none;
 }
@@ -27,13 +27,13 @@
 
 .title {
   margin-block-start: var(--s-2);
-  max-inline-size: 22rem;
+  max-inline-size: 18rem;
   font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-stretch: 125%;
-  font-weight: 750;
-  letter-spacing: 0.02em;
-  line-height: 1;
+  font-size: var(--text-lg);
+  font-stretch: 100%;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.08;
 }
 
 .debugPanel {
@@ -113,6 +113,54 @@
   }
 }
 
+.binLabel {
+  pointer-events: none;
+}
+
+.binCard {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: default;
+  pointer-events: none;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.binCard:hover {
+  border-color: var(--accent);
+}
+
+.binCardActive {
+  border-color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.binNumber {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.binName {
+  font-family: var(--font-display);
+  font-stretch: 118%;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
 .annotation {
   pointer-events: none;
 }
@@ -136,9 +184,9 @@
   margin-block-start: var(--s-1);
   font-family: var(--font-display);
   font-size: var(--text-sm);
-  font-stretch: 125%;
-  font-weight: 750;
-  letter-spacing: 0.02em;
+  font-stretch: 100%;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .fallback {
@@ -146,25 +194,21 @@
   inset: 0;
   display: grid;
   place-items: center;
-  background:
-    linear-gradient(to right, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
-    var(--paper);
-  background-size: var(--grid-size) var(--grid-size);
+  background: var(--paper);
 }
 
 .fallbackModel {
   position: relative;
-  inline-size: min(28vi, 26rem);
-  aspect-ratio: 0.72;
-  transform: perspective(58rem) rotateX(8deg) rotateY(-12deg);
+  inline-size: min(18vi, 18rem);
+  aspect-ratio: 0.22;
+  transform: perspective(58rem) rotateX(5deg) rotateY(-10deg);
 }
 
 .fallbackPart,
 .hardwareDot {
   position: absolute;
-  border: 2px solid var(--ink);
-  background: color-mix(in srgb, var(--paper-raised) 82%, transparent);
+  border: 1px solid var(--line);
+  background: var(--paper-raised);
 }
 
 .fallbackPart {
@@ -195,8 +239,10 @@
 .topPanel,
 .bottomPanel,
 .fixedShelf,
+.adjustableBottom,
 .adjustableLow,
-.adjustableHigh {
+.adjustableHigh,
+.adjustableTop {
   inset-inline: var(--s-5);
   block-size: var(--s-4);
 }
@@ -213,12 +259,26 @@
   inset-block-start: 48%;
 }
 
+.adjustableBottom {
+  inset-block-start: 18%;
+}
+
 .adjustableLow {
-  inset-block-start: 28%;
+  inset-block-start: 34%;
 }
 
 .adjustableHigh {
-  inset-block-start: 68%;
+  inset-block-start: 64%;
+}
+
+.adjustableTop {
+  inset-block-start: 79%;
+}
+
+.frontRail {
+  inset-inline: 0;
+  inset-block-end: 5%;
+  block-size: var(--s-4);
 }
 
 .backPanel {
@@ -248,4 +308,9 @@
 .dotThree {
   inset-block-start: 66%;
   inset-inline-start: 12%;
+}
+
+.dotFour {
+  inset-block-start: 4%;
+  inset-inline-end: 18%;
 }

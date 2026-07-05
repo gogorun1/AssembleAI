@@ -29,11 +29,17 @@ describe('parts bins', () => {
     }
   });
 
-  it('exposes at least one install slot for each binned part', () => {
-    for (const bin of partBins) {
-      for (const partId of bin.partIds) {
-        expect(slotPositions(partId, 1, 0).length, `slots for ${partId}`).toBeGreaterThan(0);
-      }
+  it('exposes install slots for each binned part on a relevant step', () => {
+    const cases: Array<[string, number]> = [
+      ['cam-screw', 2],
+      ['cam-lock', 4],
+      ['wood-dowel', 1],
+      ['shelf-pin', 13],
+      ['back-nail', 11],
+      ['wall-bracket', 12]
+    ];
+    for (const [partId, step] of cases) {
+      expect(slotPositions(partId, step, 0).length, `slots for ${partId} step ${step}`).toBeGreaterThan(0);
     }
   });
 });

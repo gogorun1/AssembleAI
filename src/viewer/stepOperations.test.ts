@@ -3,13 +3,10 @@ import { resolveStepOperations } from './stepOperations';
 import { toolKindFromNeeded } from './tools';
 
 describe('stepOperations', () => {
-  it('returns visible operations only for the active step', () => {
+  it('returns a single primary operation for the active step', () => {
     const step2 = resolveStepOperations(2, 2, 0);
-    expect(step2.length).toBeGreaterThan(0);
-    expect(step2.every((entry) => entry.visible)).toBe(true);
-
-    const hiddenOnStep1 = resolveStepOperations(2, 1, 0);
-    expect(hiddenOnStep1.every((entry) => !entry.visible)).toBe(true);
+    expect(step2).toHaveLength(1);
+    expect(step2[0].operation.tool).toBe('flat-screwdriver');
   });
 
   it('anchors cam screw operations near side panel hardware', () => {

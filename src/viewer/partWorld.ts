@@ -1,8 +1,23 @@
+import manifest from '../data/manifest';
 import { derivePartPose, partLayouts, type Vec3 } from './useViewerCommands';
 
 interface LayoutPoint {
   id: string;
   position: Vec3;
+}
+
+export interface SurfaceAnchor {
+  position: Vec3;
+  normal: Vec3;
+}
+
+const MAX_SLOT_MARKERS = 8;
+
+/** Part ids needed for the given assembly step. */
+export function stepPartIds(stepIndex: number): Set<string> {
+  const step = manifest.steps[stepIndex - 1];
+  if (!step) return new Set();
+  return new Set(step.partsNeeded.map((entry) => entry.partId));
 }
 
 /** Collect primitive positions from a part layout, optionally filtered by point id. */
@@ -38,15 +53,57 @@ export function worldPoint(
   ];
 }
 
-export function findWorldPoint(
+/** Whether a host panel is close enough to its assembly pose to show install markers. */
+export function isHostAnchored(partId: string, currentStep: number, explodeLevel: 0 | 1 | 2): boolean {
+  const layout = partLayouts[partId];
+  if (!layout) return false;
+  const pose = derivePartPose(partId, currentStep, explodeLevel);
+  if (!pose.visible) return false;
+  if (explodeLevel > 0) return true;
+  if (currentStep >= layout.unlockStep) return true;
+  const active = stepPartIds(currentStep).has(partId);
+  if (active) return true;
+  const magnitude = Math.hypot(pose.offset[0], pose.offset[1], pose.offset[2]);
+  return magnitude < 0.22;
+}
+
+/** Nudge marker outward along the panel face so rings sit on the surface, not inside the board. */
+export function surfaceAnchor(partId: string, pointId: string, local: Vec3): SurfaceAnchor {
+  if (pointId.includes('cam-hole') || pointId.includes('shelf-pin-hole')) {
+    const side = local[0] < 0 ? -1 : 1;
+    return {
+      position: [local[0] + side * 0.016, local[1], local[2]],
+      normal: [side, 0, 0]
+    };
+  }
+  if (pointId.includes('dowel-hole')) {
+    return {
+      position: [local[0], local[1], local[2] + 0.014],
+      normal: [0, 0, 1]
+    };
+  }
+  if (pointId.includes('slot') || pointId.includes('nail-guide')) {
+    return {
+      position: [local[0], local[1], local[2] - 0.012],
+      normal: [0, 0, -1]
+    };
+  }
+  return { position: local, normal: [0, 1, 0] };
+}
+
+export function findSurfaceAnchor(
   partId: string,
   pointId: string,
   currentStep: number,
   explodeLevel: 0 | 1 | 2
-): Vec3 | undefined {
+): SurfaceAnchor | undefined {
   const match = collectLayoutPoints(partId, (id) => id === pointId)[0];
   if (!match) return undefined;
-  return worldPoint(partId, match.position, currentStep, explodeLevel);
+  const { position, normal } = surfaceAnchor(partId, pointId, match.position);
+  return {
+    position: worldPoint(partId, position, currentStep, explodeLevel),
+    normal
+  };
 }
 
 const INSTALL_HOSTS: Record<string, string[]> = {
@@ -73,26 +130,70 @@ function installSlotFilter(partId: string): (id: string) => boolean {
   }
 }
 
+function isHardwareRelevant(partId: string, currentStep: number, stepParts: Set<string>): boolean {
+  if (!stepParts.has(partId)) return false;
+  if (partId === 'shelf-pin' && currentStep < 13) return false;
+  const layout = partLayouts[partId];
+  if (layout && currentStep > layout.unlockStep) return false;
+  return true;
+}
+
 /**
- * World-space install targets for binned hardware — anchored to host panel holes
- * and slots, not floating hardware primitives.
+ * World-space install targets for binned hardware — scoped to the current step,
+ * anchored on host panel holes, capped to avoid marker floods.
  */
 export function installSlotPositions(
   partId: string,
   currentStep: number,
-  explodeLevel: 0 | 1 | 2
+  explodeLevel: 0 | 1 | 2,
+  stepParts: Set<string> = stepPartIds(currentStep)
 ): Vec3[] {
-  const hosts = INSTALL_HOSTS[partId];
-  if (hosts) {
-    const filter = installSlotFilter(partId);
-    return hosts.flatMap((hostId) =>
-      collectLayoutPoints(hostId, filter).map((point) =>
-        worldPoint(hostId, point.position, currentStep, explodeLevel)
-      )
-    );
+  if (!isHardwareRelevant(partId, currentStep, stepParts)) {
+    return [];
   }
 
-  return collectLayoutPoints(partId).map((point) =>
-    worldPoint(partId, point.position, currentStep, explodeLevel)
-  );
+  const hosts = INSTALL_HOSTS[partId];
+  const filter = installSlotFilter(partId);
+  const positions: Vec3[] = [];
+
+  const pushFromHost = (hostId: string) => {
+    if (!isHostAnchored(hostId, currentStep, explodeLevel)) return;
+    for (const point of collectLayoutPoints(hostId, filter)) {
+      const { position } = surfaceAnchor(hostId, point.id, point.position);
+      positions.push(worldPoint(hostId, position, currentStep, explodeLevel));
+    }
+  };
+
+  if (hosts) {
+    for (const hostId of hosts) {
+      if (stepParts.has(hostId) || stepParts.has(partId)) {
+        pushFromHost(hostId);
+      }
+    }
+  } else {
+    if (!isHostAnchored(partId, currentStep, explodeLevel)) {
+      return [];
+    }
+    for (const point of collectLayoutPoints(partId, filter)) {
+      const { position } = surfaceAnchor(partId, point.id, point.position);
+      positions.push(worldPoint(partId, position, currentStep, explodeLevel));
+    }
+  }
+
+  if (positions.length <= MAX_SLOT_MARKERS) {
+    return positions;
+  }
+
+  const stride = Math.ceil(positions.length / MAX_SLOT_MARKERS);
+  return positions.filter((_, index) => index % stride === 0).slice(0, MAX_SLOT_MARKERS);
+}
+
+/** @deprecated Use findSurfaceAnchor */
+export function findWorldPoint(
+  partId: string,
+  pointId: string,
+  currentStep: number,
+  explodeLevel: 0 | 1 | 2
+): Vec3 | undefined {
+  return findSurfaceAnchor(partId, pointId, currentStep, explodeLevel)?.position;
 }

@@ -30,6 +30,14 @@ function BinIcon({ shape }: { shape: PartBin['iconShape'] }) {
       </svg>
     );
   }
+  if (shape === 'pin') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="2.5" />
+        <path d="M12 14.5v6" />
+      </svg>
+    );
+  }
   if (shape === 'strap') {
     return (
       <svg {...common}>
@@ -38,7 +46,6 @@ function BinIcon({ shape }: { shape: PartBin['iconShape'] }) {
       </svg>
     );
   }
-  // screw
   return (
     <svg {...common}>
       <circle cx="12" cy="5" r="3" />
@@ -56,7 +63,6 @@ export function PartsBinsPanel() {
   const selectedBinId = useAppStore((state) => state.selectedBinId);
   const selectBin = useAppStore((state) => state.selectBin);
   const setHighlightedParts = useAppStore((state) => state.setHighlightedParts);
-  const mentionPart = useAppStore((state) => state.mentionPart);
   const setActiveView = useAppStore((state) => state.setActiveView);
   const addTranscript = useAppStore((state) => state.addTranscript);
   const parts = useAppStore((state) => state.manifest.parts);
@@ -66,13 +72,17 @@ export function PartsBinsPanel() {
   const onSelect = (binId: string) => {
     const bin = partBins.find((entry) => entry.id === binId);
     if (!bin) return;
-    selectBin(bin.id);
+    const nextSelected = selectedBinId === bin.id ? undefined : bin.id;
+    selectBin(nextSelected);
+    if (!nextSelected) {
+      setHighlightedParts([]);
+      return;
+    }
     setHighlightedParts(bin.partIds);
-    bin.partIds.forEach((partId) => mentionPart(partId));
-    setActiveView('front');
+    setActiveView(bin.focusView, { focus: true });
     addTranscript({
       speaker: 'agent',
-      text: `${bin.name}: highlighted where these go on the model.`,
+      text: `${bin.name}: showing install slots for the current step on the model.`,
       mentionedPartIds: bin.partIds,
       language: 'en'
     });

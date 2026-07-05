@@ -266,6 +266,7 @@ function CameraRig({
   const manifest = useAppStore((state) => state.manifest);
   const activeViewKey = useAppStore((state) => state.activeViewKey);
   const cameraNonce = useAppStore((state) => state.cameraNonce);
+  const cameraFocusScale = useAppStore((state) => state.cameraFocusScale);
   const reducedMotion = useReducedMotion();
 
   const lastNonce = useRef(-1);
@@ -294,8 +295,10 @@ function CameraRig({
       const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
       startPos.current.copy(camera.position);
       startTarget.current.copy(controls?.target ?? startTarget.current.set(0, 1.1, 0));
-      endPos.current.set(...view.position);
-      endTarget.current.set(...view.target);
+      const target = new THREE.Vector3(...view.target);
+      const direction = new THREE.Vector3(...view.position).sub(target).multiplyScalar(cameraFocusScale);
+      endPos.current.copy(target).add(direction);
+      endTarget.current.copy(target);
       t.current = 0;
       dur.current = reducedMotion ? 0 : 0.85;
       flying.current = true;
@@ -356,6 +359,8 @@ function GlbModel({
   const selectedPartId = useAppStore((state) => state.selectedPartId);
   const highlightedPartIds = useAppStore((state) => state.highlightedPartIds);
   const mentionedPartIds = useAppStore((state) => state.mentionedPartIds);
+  const selectedBinId = useAppStore((state) => state.selectedBinId);
+  const suppressPartHighlight = Boolean(selectedBinId);
 
   const { root, bindings, unmatchedPartIds } = useMemo(
     () => buildBindings(gltf.scene, manifest.parts, colors),
@@ -460,7 +465,7 @@ function GlbModel({
       // not spin. Any residual rotation eases back to zero.
       binding.node.rotation.y = THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
 
-      const mentioned = mentionedPartIds.includes(binding.partId);
+      const mentioned = !suppressPartHighlight && mentionedPartIds.includes(binding.partId);
       const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.03 : 1;
       const s = grow * pulse;
       binding.node.scale.set(
@@ -469,7 +474,9 @@ function GlbModel({
         binding.baseScale.z * s
       );
 
-      const highlight = highlightedPartIds.includes(binding.partId) || mentioned;
+      const highlight =
+        !suppressPartHighlight &&
+        (highlightedPartIds.includes(binding.partId) || mentionedPartIds.includes(binding.partId));
       for (const mesh of binding.meshes) {
         setMeshHighlight(mesh, highlight, colors.accent);
       }
@@ -593,6 +600,8 @@ function PartGroup({
   const groupRef = useRef<THREE.Group>(null);
   const mentioned = useAppStore((state) => state.mentionedPartIds.includes(part.id));
   const highlighted = useAppStore((state) => state.highlightedPartIds.includes(part.id));
+  const selectedBinId = useAppStore((state) => state.selectedBinId);
+  const showHighlight = !selectedBinId && (highlighted || mentioned);
   const pose = derivePartPose(part.id, currentStep, explodeLevel);
   const targetOffset = useMemo(() => new THREE.Vector3(...pose.offset), [pose.offset]);
 
@@ -640,7 +649,7 @@ function PartGroup({
           primitive={primitive}
           layout={layout}
           colors={colors}
-          highlighted={highlighted || mentioned}
+          highlighted={showHighlight}
           pickable
         />
       ))}
@@ -652,7 +661,7 @@ function PartGroup({
             primitive={primitive}
             layout={layout}
             colors={colors}
-            highlighted={highlighted || mentioned}
+            highlighted={showHighlight}
             detailMaterial={detail.material}
             pickable={false}
           />

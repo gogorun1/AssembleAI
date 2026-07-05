@@ -38,6 +38,8 @@ interface AppState {
   /** Bumped whenever a camera preset is (re)requested, so the rig animates once
    *  and then hands control back to the user's orbit/zoom. */
   cameraNonce: number;
+  /** Pull camera closer to target for step/detail views (1 = full preset distance). */
+  cameraFocusScale: number;
   explodeLevel: 0 | 1 | 2;
   selectedPartId?: string;
   selectedBinId?: string;
@@ -55,7 +57,7 @@ interface AppState {
   mentionPart(partId: string): void;
   setHighlightedParts(partIds: string[]): void;
   clearHighlights(): void;
-  setActiveView(viewKey: string): void;
+  setActiveView(viewKey: string, options?: { focus?: boolean }): void;
   setExplodeLevel(level: 0 | 1 | 2): void;
   selectPart(partId?: string): void;
   selectBin(binId?: string): void;
@@ -92,6 +94,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   highlightedPartIds: manifest.steps[0].highlightParts,
   activeViewKey: manifest.steps[0].cameraView,
   cameraNonce: 0,
+  cameraFocusScale: 0.76,
   explodeLevel: 0,
   firstVoiceInteraction: false,
   eventLog: [],
@@ -112,6 +115,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       highlightedPartIds: manifest.steps[0].highlightParts,
       activeViewKey: manifest.steps[0].cameraView,
       cameraNonce: get().cameraNonce + 1,
+      cameraFocusScale: 0.76,
       explodeLevel: 0,
       selectedPartId: undefined,
       selectedBinId: undefined,
@@ -133,7 +137,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       currentStep: stepIndex,
       activeViewKey: step.cameraView,
       highlightedPartIds: step.highlightParts,
-      cameraNonce: state.cameraNonce + 1
+      cameraNonce: state.cameraNonce + 1,
+      cameraFocusScale: 0.76,
+      selectedBinId: undefined
     }));
     get().logEvent({ type: 'step_change', label: `Step ${stepIndex}`, payload: { step: stepIndex } });
   },
@@ -187,8 +193,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ highlightedPartIds: [] });
     get().viewer?.clearHighlights();
   },
-  setActiveView(viewKey) {
-    set((state) => ({ activeViewKey: viewKey, cameraNonce: state.cameraNonce + 1 }));
+  setActiveView(viewKey, options) {
+    const focus = options?.focus !== false;
+    set((state) => ({
+      activeViewKey: viewKey,
+      cameraNonce: state.cameraNonce + 1,
+      cameraFocusScale: focus ? 0.76 : 1
+    }));
   },
   setExplodeLevel(level) {
     set({ explodeLevel: level });

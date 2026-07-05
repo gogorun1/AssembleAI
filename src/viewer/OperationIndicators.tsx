@@ -17,6 +17,9 @@ interface OperationIndicatorsProps {
 export function OperationIndicators({ colors }: OperationIndicatorsProps) {
   const currentStep = useAppStore((state) => state.currentStep);
   const explodeLevel = useAppStore((state) => state.explodeLevel);
+  const selectedBinId = useAppStore((state) => state.selectedBinId);
+  if (selectedBinId) return null;
+
   const resolved = resolveStepOperations(currentStep, currentStep, explodeLevel).filter((entry) => entry.visible);
 
   if (resolved.length === 0) {
@@ -35,7 +38,7 @@ export function OperationIndicators({ colors }: OperationIndicatorsProps) {
 function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: TokenColors }) {
   const ringRef = useRef<THREE.Mesh>(null);
   const actorRef = useRef<THREE.Group>(null);
-  const { operation, anchor, approach } = entry;
+  const { operation, anchor, approach, normal } = entry;
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
@@ -51,7 +54,11 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
         THREE.MathUtils.lerp(approach[1], anchor[1], motion.amount) + motion.jitter[1],
         THREE.MathUtils.lerp(approach[2], anchor[2], motion.amount) + motion.jitter[2]
       );
-      actorRef.current.rotation.set(motion.rotation[0], motion.rotation[1], motion.rotation[2]);
+      actorRef.current.rotation.set(
+        motion.rotation[0] + Math.atan2(normal[2], normal[0]),
+        motion.rotation[1],
+        motion.rotation[2]
+      );
     }
   });
 

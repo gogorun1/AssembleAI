@@ -1,5 +1,6 @@
 import { BookOpen, Clock3, Lightbulb, Wrench } from 'lucide-react';
 import type { Step } from '../types/assembly';
+import { StepManualDiagram } from './StepManualDiagram';
 import styles from './StepCard.module.css';
 
 interface StepCardProps {
@@ -37,6 +38,7 @@ export function StepCard({ step, onCommonMistake }: StepCardProps) {
             </span>
           ) : null}
         </div>
+        {step.manualFig ? <StepManualDiagram step={step} /> : null}
       </div>
       {step.commonMistake ? (
         <button className={styles.tip} type="button" onClick={onCommonMistake}>

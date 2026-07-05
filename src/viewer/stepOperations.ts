@@ -1,6 +1,6 @@
 import type { StepOperation } from '../types/assembly';
 import { derivePartPose, partLayouts, type Vec3 } from './useViewerCommands';
-import { findWorldPoint, worldPoint, collectLayoutPoints } from './partWorld';
+import { collectLayoutPoints, findSurfaceAnchor, worldPoint } from './partWorld';
 
 /** Representative operation hotspots per assembly step — anchors tie to partLayouts primitives. */
 export const stepOperations: Record<number, StepOperation[]> = {
@@ -178,6 +178,7 @@ export interface ResolvedOperation {
   operation: StepOperation;
   anchor: Vec3;
   approach: Vec3;
+  normal: Vec3;
   visible: boolean;
 }
 
@@ -185,10 +186,12 @@ function resolveOperationAnchor(
   operation: StepOperation,
   currentStep: number,
   explodeLevel: 0 | 1 | 2
-): Vec3 | undefined {
+): { anchor: Vec3; normal: Vec3 } | undefined {
   if (operation.primitiveId) {
-    const exact = findWorldPoint(operation.partId, operation.primitiveId, currentStep, explodeLevel);
-    if (exact) return exact;
+    const surface = findSurfaceAnchor(operation.partId, operation.primitiveId, currentStep, explodeLevel);
+    if (surface) {
+      return { anchor: surface.position, normal: surface.normal };
+    }
   }
 
   const layout = partLayouts[operation.partId];
@@ -207,12 +210,15 @@ function resolveOperationAnchor(
     [0, 0, 0] as Vec3
   );
   const count = points.length;
-  return worldPoint(
-    operation.partId,
-    [center[0] / count, center[1] / count, center[2] / count],
-    currentStep,
-    explodeLevel
-  );
+  return {
+    anchor: worldPoint(
+      operation.partId,
+      [center[0] / count, center[1] / count, center[2] / count],
+      currentStep,
+      explodeLevel
+    ),
+    normal: [0, 1, 0]
+  };
 }
 
 export function resolveStepOperations(
@@ -221,21 +227,22 @@ export function resolveStepOperations(
   explodeLevel: 0 | 1 | 2
 ): ResolvedOperation[] {
   const ops = stepOperations[stepIndex] ?? [];
-  return ops.flatMap((operation) => {
-    const anchor = resolveOperationAnchor(operation, currentStep, explodeLevel);
-    if (!anchor) return [];
+  const primary = ops[0];
+  if (!primary) return [];
 
-    const pose = derivePartPose(operation.partId, currentStep, explodeLevel);
-    if (!pose.visible || stepIndex !== currentStep) {
-      return [];
-    }
+  const resolved = resolveOperationAnchor(primary, currentStep, explodeLevel);
+  if (!resolved) return [];
 
-    const approachDelta = operation.approach ?? [0.14, 0.08, 0.16];
-    const approach: Vec3 = [
-      anchor[0] + approachDelta[0],
-      anchor[1] + approachDelta[1],
-      anchor[2] + approachDelta[2]
-    ];
-    return [{ operation, anchor, approach, visible: true }];
-  });
+  const pose = derivePartPose(primary.partId, currentStep, explodeLevel);
+  if (!pose.visible || stepIndex !== currentStep) {
+    return [];
+  }
+
+  const approachDelta = primary.approach ?? [0.14, 0.08, 0.16];
+  const approach: Vec3 = [
+    resolved.anchor[0] + approachDelta[0],
+    resolved.anchor[1] + approachDelta[1],
+    resolved.anchor[2] + approachDelta[2]
+  ];
+  return [{ operation: primary, anchor: resolved.anchor, approach, normal: resolved.normal, visible: true }];
 }

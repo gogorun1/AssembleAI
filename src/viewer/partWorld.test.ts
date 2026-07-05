@@ -1,27 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { findWorldPoint, installSlotPositions, worldPoint } from './partWorld';
+import { installSlotPositions, isHostAnchored, stepPartIds } from './partWorld';
 
 describe('partWorld', () => {
-  it('applies step offsets to world points', () => {
-    const atStep1 = worldPoint('bottom-panel', [0, 0.027, 0], 1, 0);
-    const atStep3 = worldPoint('bottom-panel', [0, 0.027, 0], 3, 0);
-    expect(atStep1).not.toEqual(atStep3);
+  it('scopes slot positions to the current step partsNeeded', () => {
+    const step1 = stepPartIds(1);
+    expect(step1.has('wood-dowel')).toBe(true);
+    expect(installSlotPositions('shelf-pin', 1, 0, step1)).toHaveLength(0);
+    expect(installSlotPositions('wood-dowel', 1, 0, step1).length).toBeGreaterThan(0);
   });
 
-  it('anchors cam screw slots on side panel holes', () => {
-    const holes = installSlotPositions('cam-screw', 2, 0);
-    expect(holes.length).toBeGreaterThan(0);
-    expect(Math.abs(holes[0][0])).toBeGreaterThan(0.3);
+  it('caps cam screw markers to a readable subset', () => {
+    const step2 = stepPartIds(2);
+    const slots = installSlotPositions('cam-screw', 2, 0, step2);
+    expect(slots.length).toBeGreaterThan(0);
+    expect(slots.length).toBeLessThanOrEqual(8);
   });
 
-  it('anchors dowel slots on panel edge holes', () => {
-    const holes = installSlotPositions('wood-dowel', 1, 0);
-    expect(holes.some((pos) => pos[1] < 0.2)).toBe(true);
-  });
-
-  it('resolves named layout points for operations', () => {
-    const hole = findWorldPoint('side-panel-left', 'left-cam-hole-bottom-front', 2, 0);
-    expect(hole).toBeTruthy();
-    expect(hole![0]).toBeLessThan(0);
+  it('keeps exploded side panels off slot targets until anchored', () => {
+    expect(isHostAnchored('side-panel-right', 3, 0)).toBe(false);
+    expect(isHostAnchored('side-panel-left', 2, 0)).toBe(true);
   });
 });

@@ -1,4 +1,5 @@
 import type { Part } from '../types/assembly';
+import manifest from '../data/manifest';
 
 export type Vec3 = [number, number, number];
 
@@ -193,7 +194,7 @@ function makeShelfPins(): PartPrimitive[] {
   );
 }
 
-function makeSidePanelCamHoles(side: -1 | 1, prefix: string): PartDetailGroup {
+function makeSidePanelCamHoles(side: -1 | 1, prefix: string): PartDetailGroup[] {
   const levels = [
     { id: 'bottom', y: 0.22 },
     { id: 'fixed', y: 2.02 },
@@ -204,43 +205,68 @@ function makeSidePanelCamHoles(side: -1 | 1, prefix: string): PartDetailGroup {
     { id: 'back', z: -0.18 }
   ];
   const faceX = side * (SIDE_X - BOARD_THICKNESS / 2 + 0.008);
+  const ringX = side * (SIDE_X - BOARD_THICKNESS / 2 + 0.014);
 
-  return {
-    id: `${prefix}-cam-holes`,
-    material: 'shadow',
-    primitives: levels.flatMap((level) =>
-      edges.map((edge) =>
-        cylinder(
-          `${prefix}-cam-hole-${level.id}-${edge.id}`,
-          [0.018, 0.018, 0.012],
-          [faceX, level.y, edge.z],
-          [0, 0, 1.57]
-        )
+  const holes = levels.flatMap((level) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-cam-hole-${level.id}-${edge.id}`,
+        [0.018, 0.018, 0.012],
+        [faceX, level.y, edge.z],
+        [0, 0, 1.57]
       )
     )
-  };
+  );
+
+  const rings = levels.flatMap((level) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-cam-ring-${level.id}-${edge.id}`,
+        [0.024, 0.024, 0.003],
+        [ringX, level.y, edge.z],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  return [
+    { id: `${prefix}-cam-holes`, material: 'shadow', primitives: holes },
+    { id: `${prefix}-cam-hole-rings`, material: 'wood', primitives: rings }
+  ];
 }
 
-function makeShelfDowelHoles(prefix: string, y: number, width = INNER_WIDTH): PartDetailGroup {
+function makeShelfDowelHoles(prefix: string, y: number, width = INNER_WIDTH): PartDetailGroup[] {
   const edges = [
     { id: 'front', z: 0.21 },
     { id: 'back', z: -0.18 }
   ];
 
-  return {
-    id: `${prefix}-dowel-holes`,
-    material: 'shadow',
-    primitives: [-1, 1].flatMap((side) =>
-      edges.map((edge) =>
-        cylinder(
-          `${prefix}-dowel-hole-${sideName(side)}-${edge.id}`,
-          [0.011, 0.011, 0.01],
-          [side * (width / 2 - 0.02), y, edge.z],
-          [0, 0, 1.57]
-        )
+  const holes = [-1, 1].flatMap((side) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-dowel-hole-${sideName(side)}-${edge.id}`,
+        [0.011, 0.011, 0.01],
+        [side * (width / 2 - 0.02), y, edge.z],
+        [0, 0, 1.57]
       )
     )
-  };
+  );
+
+  const rings = [-1, 1].flatMap((side) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-dowel-ring-${sideName(side)}-${edge.id}`,
+        [0.016, 0.016, 0.003],
+        [side * (width / 2 - 0.02), y, edge.z + 0.006],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  return [
+    { id: `${prefix}-dowel-holes`, material: 'shadow', primitives: holes },
+    { id: `${prefix}-dowel-rings`, material: 'wood', primitives: rings }
+  ];
 }
 
 function makeBackPanelNailGuide(): PartDetailGroup {
@@ -262,7 +288,7 @@ function makeSidePanelDetails(side: -1 | 1, prefix: string): PartDetailGroup[] {
   const shelfPinDepths = [0.18, -0.18];
 
   return [
-    makeSidePanelCamHoles(side, prefix),
+    ...makeSidePanelCamHoles(side, prefix),
     {
       id: `${prefix}-back-groove`,
       material: 'shadow',
@@ -426,7 +452,7 @@ export const partLayouts: Record<string, PartLayout> = {
     ],
     details: [
       ...makeShelfEdgeDetails('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH),
-      makeShelfDowelHoles('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+      ...makeShelfDowelHoles('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
     ]
   },
   'top-panel': {
@@ -444,7 +470,7 @@ export const partLayouts: Record<string, PartLayout> = {
     ],
     details: [
       ...makeShelfEdgeDetails('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH),
-      makeShelfDowelHoles('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+      ...makeShelfDowelHoles('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
     ]
   },
   'fixed-shelf': {
@@ -462,7 +488,7 @@ export const partLayouts: Record<string, PartLayout> = {
     ],
     details: [
       ...makeShelfEdgeDetails('fixed-shelf', 2.02),
-      makeShelfDowelHoles('fixed-shelf', 2.02)
+      ...makeShelfDowelHoles('fixed-shelf', 2.02)
     ]
   },
   'adjustable-shelf': {
@@ -506,7 +532,7 @@ export const partLayouts: Record<string, PartLayout> = {
         material: 'edge',
         primitives: [box('front-rail-top-edge', [BOOKCASE_WIDTH, 0.018, 0.01], [0, 0.24, FRONT_EDGE_Z + 0.006])]
       },
-      makeShelfDowelHoles('front-rail', 0.16, BOOKCASE_WIDTH)
+      ...makeShelfDowelHoles('front-rail', 0.16, BOOKCASE_WIDTH)
     ]
   },
   'back-panel': {
@@ -714,18 +740,67 @@ export function derivePartPose(
 
   const assembled = currentStep >= layout.unlockStep;
   const firstVisibleStep = layout.visibleFromStep ?? Math.max(1, layout.unlockStep - 1);
-  const pendingMultiplier = assembled ? 0 : 1.25;
-  const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
-  const multiplier = pendingMultiplier + explodedMultiplier;
   const stepOffset = layout.stepOffsets?.[currentStep] ?? [0, 0, 0];
+  const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
+  const stepParts = new Set(manifest.steps[currentStep - 1]?.partsNeeded.map((entry) => entry.partId) ?? []);
+  const activeThisStep = stepParts.has(partId);
 
+  // Hardware stays in the bin until its install step (GlbModel fly-in handles reveal).
+  if (layout.role === 'hardware') {
+    if (!assembled && explodeLevel === 0) {
+      return { primitives: layout.primitives, offset: [0, 0, 0], visible: false };
+    }
+    if (assembled) {
+      return { primitives: layout.primitives, offset: [0, 0, 0], visible: true };
+    }
+    const multiplier = explodedMultiplier + 0.85;
+    return {
+      primitives: layout.primitives,
+      offset: [
+        layout.explodedOffset[0] * multiplier + stepOffset[0],
+        layout.explodedOffset[1] * multiplier + stepOffset[1],
+        layout.explodedOffset[2] * multiplier + stepOffset[2]
+      ],
+      visible: true
+    };
+  }
+
+  // Panels/back: hide until first visible step unless exploded.
+  if (currentStep < firstVisibleStep && explodeLevel === 0) {
+    return { primitives: layout.primitives, offset: [0, 0, 0], visible: false };
+  }
+
+  if (assembled && explodeLevel === 0) {
+    return { primitives: layout.primitives, offset: [0, 0, 0], visible: true };
+  }
+
+  if (explodeLevel > 0) {
+    const multiplier = explodedMultiplier + (assembled ? 0 : 0.85);
+    return {
+      primitives: layout.primitives,
+      offset: [
+        layout.explodedOffset[0] * multiplier + stepOffset[0],
+        layout.explodedOffset[1] * multiplier + stepOffset[1],
+        layout.explodedOffset[2] * multiplier + stepOffset[2]
+      ],
+      visible: true
+    };
+  }
+
+  // Active work this step: hold at assembly pose (+ small authored nudge).
+  if (activeThisStep && !assembled) {
+    return { primitives: layout.primitives, offset: stepOffset, visible: true };
+  }
+
+  // Waiting off to the side until its step arrives.
+  const stagingMultiplier = 0.55;
   return {
     primitives: layout.primitives,
     offset: [
-      layout.explodedOffset[0] * multiplier + stepOffset[0],
-      layout.explodedOffset[1] * multiplier + stepOffset[1],
-      layout.explodedOffset[2] * multiplier + stepOffset[2]
+      layout.explodedOffset[0] * stagingMultiplier + stepOffset[0],
+      layout.explodedOffset[1] * stagingMultiplier + stepOffset[1],
+      layout.explodedOffset[2] * stagingMultiplier + stepOffset[2]
     ],
-    visible: currentStep >= firstVisibleStep || explodeLevel > 0
+    visible: true
   };
 }

@@ -23,17 +23,18 @@
   color: var(--ink-soft);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  letter-spacing: 0.14em;
 }
 
 .title {
   margin-block-start: var(--s-2);
   max-inline-size: 18rem;
   font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-stretch: 100%;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.08;
+  font-size: var(--text-xl);
+  font-stretch: 105%;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
 }
 
 .debugPanel {
@@ -84,10 +85,13 @@
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  padding: var(--s-2) var(--s-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: var(--r-pill);
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-sm);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -121,17 +125,19 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  padding: var(--s-1) var(--s-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  padding: var(--s-1) var(--s-3) var(--s-1) var(--s-1);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: var(--r-pill);
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   white-space: nowrap;
   cursor: default;
   pointer-events: none;
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 18%, transparent);
+  box-shadow: var(--shadow-sm);
 }
 
 .binCard:hover {
@@ -146,10 +152,11 @@
 .binNumber {
   display: inline-grid;
   place-items: center;
-  inline-size: 1.15rem;
-  block-size: 1.15rem;
+  inline-size: 1.3rem;
+  block-size: 1.3rem;
   border-radius: 50%;
   background: var(--accent);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--accent-ink) 40%, transparent);
   color: #fff;
   font-weight: 600;
 }
@@ -168,9 +175,12 @@
 .annotation > div {
   min-inline-size: 11rem;
   padding: var(--s-2) var(--s-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: var(--r-md);
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-md);
   color: var(--ink);
 }
 

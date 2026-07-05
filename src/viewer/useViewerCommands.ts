@@ -1,4 +1,5 @@
 import type { Part } from '../types/assembly';
+import manifest from '../data/manifest';
 
 export type Vec3 = [number, number, number];
 
@@ -193,6 +194,93 @@ function makeShelfPins(): PartPrimitive[] {
   );
 }
 
+function makeSidePanelCamHoles(side: -1 | 1, prefix: string): PartDetailGroup[] {
+  const levels = [
+    { id: 'bottom', y: 0.22 },
+    { id: 'fixed', y: 2.02 },
+    { id: 'top', y: 3.84 }
+  ];
+  const edges = [
+    { id: 'front', z: 0.21 },
+    { id: 'back', z: -0.18 }
+  ];
+  const faceX = side * (SIDE_X - BOARD_THICKNESS / 2 + 0.008);
+  const ringX = side * (SIDE_X - BOARD_THICKNESS / 2 + 0.014);
+
+  const holes = levels.flatMap((level) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-cam-hole-${level.id}-${edge.id}`,
+        [0.018, 0.018, 0.012],
+        [faceX, level.y, edge.z],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  const rings = levels.flatMap((level) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-cam-ring-${level.id}-${edge.id}`,
+        [0.024, 0.024, 0.003],
+        [ringX, level.y, edge.z],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  return [
+    { id: `${prefix}-cam-holes`, material: 'shadow', primitives: holes },
+    { id: `${prefix}-cam-hole-rings`, material: 'wood', primitives: rings }
+  ];
+}
+
+function makeShelfDowelHoles(prefix: string, y: number, width = INNER_WIDTH): PartDetailGroup[] {
+  const edges = [
+    { id: 'front', z: 0.21 },
+    { id: 'back', z: -0.18 }
+  ];
+
+  const holes = [-1, 1].flatMap((side) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-dowel-hole-${sideName(side)}-${edge.id}`,
+        [0.011, 0.011, 0.01],
+        [side * (width / 2 - 0.02), y, edge.z],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  const rings = [-1, 1].flatMap((side) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-dowel-ring-${sideName(side)}-${edge.id}`,
+        [0.016, 0.016, 0.003],
+        [side * (width / 2 - 0.02), y, edge.z + 0.006],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  return [
+    { id: `${prefix}-dowel-holes`, material: 'shadow', primitives: holes },
+    { id: `${prefix}-dowel-rings`, material: 'wood', primitives: rings }
+  ];
+}
+
+function makeBackPanelNailGuide(): PartDetailGroup {
+  return {
+    id: 'back-nail-guide',
+    material: 'shadow',
+    primitives: [
+      box('back-nail-guide-line', [BOOKCASE_WIDTH - 0.08, 0.004, 0.004], [0, 2.02, BACK_Z - 0.008]),
+      box('back-nail-guide-left', [0.004, 1.9, 0.004], [-0.36, 2.02, BACK_Z - 0.008]),
+      box('back-nail-guide-right', [0.004, 1.9, 0.004], [0.36, 2.02, BACK_Z - 0.008])
+    ]
+  };
+}
+
 function makeSidePanelDetails(side: -1 | 1, prefix: string): PartDetailGroup[] {
   const interiorX = side * (SIDE_X - BOARD_THICKNESS / 2 - 0.002);
   const backGrooveX = side * SIDE_X;
@@ -200,6 +288,7 @@ function makeSidePanelDetails(side: -1 | 1, prefix: string): PartDetailGroup[] {
   const shelfPinDepths = [0.18, -0.18];
 
   return [
+    ...makeSidePanelCamHoles(side, prefix),
     {
       id: `${prefix}-back-groove`,
       material: 'shadow',
@@ -361,7 +450,10 @@ export const partLayouts: Record<string, PartLayout> = {
     primitives: [
       box('bottom', [BOOKCASE_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH], [0, BOARD_THICKNESS / 2, 0])
     ],
-    details: makeShelfEdgeDetails('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+    details: [
+      ...makeShelfEdgeDetails('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH),
+      ...makeShelfDowelHoles('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+    ]
   },
   'top-panel': {
     partId: 'top-panel',
@@ -376,7 +468,10 @@ export const partLayouts: Record<string, PartLayout> = {
     primitives: [
       box('top', [BOOKCASE_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH], [0, BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, 0])
     ],
-    details: makeShelfEdgeDetails('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+    details: [
+      ...makeShelfEdgeDetails('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH),
+      ...makeShelfDowelHoles('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+    ]
   },
   'fixed-shelf': {
     partId: 'fixed-shelf',
@@ -391,7 +486,10 @@ export const partLayouts: Record<string, PartLayout> = {
     primitives: [
       box('fixed-shelf', [INNER_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH - 0.03], [0, 2.02, 0.015])
     ],
-    details: makeShelfEdgeDetails('fixed-shelf', 2.02)
+    details: [
+      ...makeShelfEdgeDetails('fixed-shelf', 2.02),
+      ...makeShelfDowelHoles('fixed-shelf', 2.02)
+    ]
   },
   'adjustable-shelf': {
     partId: 'adjustable-shelf',
@@ -433,7 +531,8 @@ export const partLayouts: Record<string, PartLayout> = {
         id: 'front-rail-top-edge',
         material: 'edge',
         primitives: [box('front-rail-top-edge', [BOOKCASE_WIDTH, 0.018, 0.01], [0, 0.24, FRONT_EDGE_Z + 0.006])]
-      }
+      },
+      ...makeShelfDowelHoles('front-rail', 0.16, BOOKCASE_WIDTH)
     ]
   },
   'back-panel': {
@@ -456,7 +555,8 @@ export const partLayouts: Record<string, PartLayout> = {
         id: 'back-panel-fold-line',
         material: 'shadow',
         primitives: [box('back-panel-fold-line', [BOOKCASE_WIDTH - 0.05, 0.014, 0.006], [0, 2.02, BACK_Z - 0.014])]
-      }
+      },
+      makeBackPanelNailGuide()
     ]
   },
   'cam-screw': {
@@ -639,35 +739,68 @@ export function derivePartPose(
   }
 
   const assembled = currentStep >= layout.unlockStep;
-
-  // Default view: only show installed parts. Hardware in bins flies in via GlbModel.
-  if (!assembled && explodeLevel === 0) {
-    return {
-      primitives: layout.primitives,
-      offset: [0, 0, 0],
-      visible: false
-    };
-  }
-
-  const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
+  const firstVisibleStep = layout.visibleFromStep ?? Math.max(1, layout.unlockStep - 1);
   const stepOffset = layout.stepOffsets?.[currentStep] ?? [0, 0, 0];
+  const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
+  const stepParts = new Set(manifest.steps[currentStep - 1]?.partsNeeded.map((entry) => entry.partId) ?? []);
+  const activeThisStep = stepParts.has(partId);
 
-  if (assembled) {
+  // Hardware stays in the bin until its install step (GlbModel fly-in handles reveal).
+  if (layout.role === 'hardware') {
+    if (!assembled && explodeLevel === 0) {
+      return { primitives: layout.primitives, offset: [0, 0, 0], visible: false };
+    }
+    if (assembled) {
+      return { primitives: layout.primitives, offset: [0, 0, 0], visible: true };
+    }
+    const multiplier = explodedMultiplier + 0.85;
     return {
       primitives: layout.primitives,
-      offset: [0, 0, 0],
+      offset: [
+        layout.explodedOffset[0] * multiplier + stepOffset[0],
+        layout.explodedOffset[1] * multiplier + stepOffset[1],
+        layout.explodedOffset[2] * multiplier + stepOffset[2]
+      ],
       visible: true
     };
   }
 
-  // Explode mode: show not-yet-installed parts pulled apart for inspection.
-  const multiplier = explodedMultiplier + 0.85;
+  // Progressive view: show installed parts and the current workpiece. Other
+  // future panels stay hidden until they are useful or the user explodes the view.
+  if (!assembled && !activeThisStep && currentStep < firstVisibleStep && explodeLevel === 0) {
+    return { primitives: layout.primitives, offset: [0, 0, 0], visible: false };
+  }
+
+  if (assembled && explodeLevel === 0) {
+    return { primitives: layout.primitives, offset: [0, 0, 0], visible: true };
+  }
+
+  if (explodeLevel > 0) {
+    const multiplier = explodedMultiplier + (assembled ? 0 : 0.85);
+    return {
+      primitives: layout.primitives,
+      offset: [
+        layout.explodedOffset[0] * multiplier + stepOffset[0],
+        layout.explodedOffset[1] * multiplier + stepOffset[1],
+        layout.explodedOffset[2] * multiplier + stepOffset[2]
+      ],
+      visible: true
+    };
+  }
+
+  // Active work this step: hold at assembly pose (+ small authored nudge).
+  if (activeThisStep && !assembled) {
+    return { primitives: layout.primitives, offset: stepOffset, visible: true };
+  }
+
+  // Waiting off to the side until its step arrives.
+  const stagingMultiplier = 0.55;
   return {
     primitives: layout.primitives,
     offset: [
-      layout.explodedOffset[0] * multiplier + stepOffset[0],
-      layout.explodedOffset[1] * multiplier + stepOffset[1],
-      layout.explodedOffset[2] * multiplier + stepOffset[2]
+      layout.explodedOffset[0] * stagingMultiplier + stepOffset[0],
+      layout.explodedOffset[1] * stagingMultiplier + stepOffset[1],
+      layout.explodedOffset[2] * stagingMultiplier + stepOffset[2]
     ],
     visible: true
   };

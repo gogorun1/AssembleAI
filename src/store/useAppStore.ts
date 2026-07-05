@@ -155,7 +155,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeViewKey: step.cameraView,
       highlightedPartIds: step.highlightParts,
       cameraFocusScale: 0.76,
-      cameraNonce: state.cameraNonce + 1
+      cameraNonce: state.cameraNonce + 1,
+      selectedBinId: undefined
     }));
     get().logEvent({ type: 'step_change', label: `Step ${stepIndex}`, payload: { step: stepIndex } });
   },

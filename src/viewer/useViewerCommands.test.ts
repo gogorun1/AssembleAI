@@ -68,15 +68,32 @@ describe('step poses', () => {
     expect(pose.visible).toBe(true);
   });
 
+  it('hides binned hardware until its unlock step', () => {
+    const pose = derivePartPose('cam-screw', 1, 0);
+    expect(pose.visible).toBe(false);
+  });
+
+  it('holds active panels at assembly pose during their step', () => {
+    const pose = derivePartPose('side-panel-left', 2, 0);
+    expect(pose.offset).toEqual([0, 0, 0]);
+    expect(pose.visible).toBe(true);
+  });
+
   it('hides not-yet-installed parts until their unlock step', () => {
-    expect(derivePartPose('bottom-panel', 2, 0).visible).toBe(false);
-    expect(derivePartPose('bottom-panel', 3, 0).visible).toBe(true);
-    expect(derivePartPose('bottom-panel', 3, 0).offset).toEqual([0, 0, 0]);
+    expect(derivePartPose('adjustable-shelf', 13, 0).visible).toBe(false);
+    expect(derivePartPose('adjustable-shelf', 14, 0).visible).toBe(true);
+    expect(derivePartPose('adjustable-shelf', 14, 0).offset).toEqual([0, 0, 0]);
   });
 
   it('shows pulled-apart parts only in explode mode', () => {
     const pose = derivePartPose('bottom-panel', 2, 1);
     expect(pose.visible).toBe(true);
     expect(pose.offset).not.toEqual([0, 0, 0]);
+  });
+
+  it('stages inactive panels with a reduced offset before unlock', () => {
+    const pose = derivePartPose('side-panel-right', 3, 0);
+    expect(pose.visible).toBe(true);
+    expect(Math.hypot(pose.offset[0], pose.offset[1], pose.offset[2])).toBeGreaterThan(0.1);
   });
 });

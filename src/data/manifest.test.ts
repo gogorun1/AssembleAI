@@ -1,5 +1,31 @@
 import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
 import manifest from './manifest';
+import { resolveStepOperations } from '../viewer/stepOperations';
+
+function focusedCameraForView(viewKey: string, focusScale: number): THREE.PerspectiveCamera {
+  const view = manifest.cameraViews[viewKey];
+  const camera = new THREE.PerspectiveCamera(38, 657 / 449, 0.1, 80);
+  const target = new THREE.Vector3(...view.target);
+  const position = new THREE.Vector3(...view.position)
+    .sub(target)
+    .multiplyScalar(focusScale)
+    .add(target);
+
+  camera.position.copy(position);
+  camera.lookAt(target);
+  camera.updateMatrixWorld();
+  camera.updateProjectionMatrix();
+  return camera;
+}
+
+function operationLabelAnchor(stepIndex: number): THREE.Vector3 {
+  const [operation] = resolveStepOperations(stepIndex, stepIndex, 0);
+  const normal = new THREE.Vector3(...operation.normal);
+  return new THREE.Vector3(...operation.anchor).add(
+    new THREE.Vector3(normal.x * 0.16 + 0.08, 0.22, normal.z * 0.16 + 0.06)
+  );
+}
 
 describe('billy assembly manifest', () => {
   it('contains the official BILLY AA-1823127-9-2 walkthrough', () => {
@@ -76,5 +102,12 @@ describe('billy assembly manifest', () => {
         { partId: 'washer', quantity: 4 }
       ])
     );
+  });
+
+  it('keeps the first-step common mistake operation label inside the narrow viewer frame', () => {
+    const camera = focusedCameraForView('dowel-prep', 0.76);
+    const projected = operationLabelAnchor(1).project(camera);
+
+    expect(projected.y).toBeGreaterThan(-0.35);
   });
 });

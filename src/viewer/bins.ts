@@ -2,12 +2,11 @@ import { partLayouts, type Vec3 } from './useViewerCommands';
 
 /**
  * Parts bins rendered in the DOM UI layer (see components/PartsBinsPanel). Each
- * bin holds one category of hardware, is labelled with a number + name, and is
- * the launch anchor for the fly-into-slot animation when its step is reached.
+ * bin holds one category of hardware and is the launch anchor for the fly-into-slot
+ * animation when its step is reached.
  */
 export interface PartBin {
   id: string;
-  index: number; // number stamped on the bin card
   name: string;
   /** Manifest part ids stored in this bin. */
   partIds: string[];
@@ -24,7 +23,6 @@ export interface PartBin {
 export const partBins: PartBin[] = [
   {
     id: 'bin-cam-screws',
-    index: 1,
     name: 'Cam screws',
     partIds: ['cam-screw'],
     anchorNdc: [-0.82, 0.55],
@@ -32,7 +30,6 @@ export const partBins: PartBin[] = [
   },
   {
     id: 'bin-cam-locks',
-    index: 2,
     name: 'Cam locks',
     partIds: ['cam-lock'],
     anchorNdc: [-0.82, 0.28],
@@ -40,7 +37,6 @@ export const partBins: PartBin[] = [
   },
   {
     id: 'bin-dowels-pins',
-    index: 3,
     name: 'Dowels & pins',
     partIds: ['wood-dowel', 'shelf-pin'],
     anchorNdc: [-0.82, 0.0],
@@ -48,7 +44,6 @@ export const partBins: PartBin[] = [
   },
   {
     id: 'bin-back-nails',
-    index: 4,
     name: 'Back nails',
     partIds: ['back-nail'],
     anchorNdc: [-0.82, -0.28],
@@ -56,7 +51,6 @@ export const partBins: PartBin[] = [
   },
   {
     id: 'bin-wall-hardware',
-    index: 5,
     name: 'Wall hardware',
     partIds: ['wall-bracket', 'bracket-screw', 'washer'],
     anchorNdc: [-0.82, -0.55],

@@ -73,3 +73,34 @@
   text-decoration-thickness: 2px;
   text-underline-offset: var(--s-1);
 }
+
+.previewBlock {
+  display: grid;
+  gap: var(--s-2);
+  margin-block-start: var(--s-1);
+}
+
+.previewLabel {
+  color: var(--tip-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+
+.previewVideo {
+  inline-size: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-sunken);
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.previewPending {
+  padding: var(--s-3);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-sm);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}

@@ -122,11 +122,11 @@ function normalizeEndpointIntent(
     type,
     language: record.language ?? request.locale ?? detectLanguage(request.utterance),
     reply: trimToTwoSentences(String(record.reply ?? '')),
-    partQuery: isUnknown ? undefined : record.partQuery,
-    stepNumber: isUnknown ? undefined : record.stepNumber,
-    viewQuery: isUnknown ? undefined : record.viewQuery,
-    partIds: isUnknown ? undefined : record.partIds,
-    viewKey: isUnknown ? undefined : record.viewKey ?? currentStep?.cameraView
+    partQuery: isUnknown ? undefined : optionalString(record.partQuery),
+    stepNumber: isUnknown ? undefined : optionalInteger(record.stepNumber),
+    viewQuery: isUnknown ? undefined : optionalString(record.viewQuery),
+    partIds: isUnknown ? undefined : optionalStringArray(record.partIds),
+    viewKey: isUnknown ? undefined : optionalString(record.viewKey) ?? currentStep?.cameraView
   };
   const validation = validateResolvedIntent(candidate, manifest);
 
@@ -223,4 +223,16 @@ function foldText(text: string): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function optionalInteger(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) ? value : undefined;
+}
+
+function optionalStringArray(value: unknown): string[] | undefined {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : undefined;
 }

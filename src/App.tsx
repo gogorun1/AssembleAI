@@ -330,12 +330,6 @@ export default function App() {
             <button className="iconButton" type="button" onClick={store.previousStep} aria-label="Previous step" title="Previous step">
               <ChevronLeft size={20} aria-hidden />
             </button>
-            <VoiceOrb
-              state={voiceState}
-              showHint={!firstVoiceInteraction}
-              onPointerDown={beginPushToTalk}
-              onPointerUp={endPushToTalk}
-            />
             <button className="iconButton" type="button" onClick={store.nextStep} aria-label="Next step" title="Next step">
               <ChevronRight size={20} aria-hidden />
             </button>
@@ -361,6 +355,20 @@ export default function App() {
             onSelectStep={store.goToStep}
           />
           <StepCard step={step} onCommonMistake={triggerMistakeIntent} />
+          <section className="voiceRail" aria-label="Voice input">
+            <div className="voiceRailHeader">
+              <span>VOICE INPUT</span>
+              <span>HOLD TO TALK</span>
+            </div>
+            <div className="voiceRailBody">
+              <VoiceOrb
+                state={voiceState}
+                showHint={!firstVoiceInteraction}
+                onPointerDown={beginPushToTalk}
+                onPointerUp={endPushToTalk}
+              />
+            </div>
+          </section>
           <PresenterPanel
             utterances={presenterUtterances}
             onRunUtterance={runUtterance}

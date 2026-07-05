@@ -11,6 +11,7 @@ interface PhotoCheckPanelProps {
   currentStep: number;
   onMentionParts(partIds: string[]): void;
   onRunUtterance(text: string): void | Promise<void>;
+  onGoToStep?(index: number): void;
   onResult?(result: PhotoCheckResult): void;
   disabled?: boolean;
 }
@@ -29,6 +30,7 @@ export function PhotoCheckPanel({
   currentStep,
   onMentionParts,
   onRunUtterance,
+  onGoToStep,
   onResult,
   disabled = false
 }: PhotoCheckPanelProps) {
@@ -133,6 +135,27 @@ export function PhotoCheckPanel({
               {Math.round(result.confidence * 100)}% confidence
             </span>
           </div>
+
+          {result.detectedStep ? (
+            <div className={styles.detectedStep} data-testid="photo-check-detected-step">
+              <span className={styles.detectedLabel}>Detected step</span>
+              <span className={styles.detectedValue}>
+                Step {result.detectedStep}
+                {result.detectedStepTitle ? `: ${result.detectedStepTitle}` : ''}
+              </span>
+              {onGoToStep && result.detectedStep !== currentStep ? (
+                <button
+                  type="button"
+                  className={styles.jumpButton}
+                  disabled={disabled}
+                  onClick={() => onGoToStep(result.detectedStep as number)}
+                >
+                  Jump to step {result.detectedStep}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
           <p className={styles.summary}>{result.summary}</p>
 
           <ul className={styles.findings}>

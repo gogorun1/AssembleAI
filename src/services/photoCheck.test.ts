@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkAssemblyPhoto, mockPhotoCheck } from './photoCheck';
 
 function makeFile(): File {
@@ -6,7 +6,13 @@ function makeFile(): File {
 }
 
 describe('photoCheck mock service', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('returns a mock result when no endpoint is configured', async () => {
+    // Force the offline path regardless of any local .env.local endpoint.
+    vi.stubEnv('VITE_PHOTO_CHECK_ENDPOINT', '');
     const result = await checkAssemblyPhoto({ file: makeFile(), currentStep: 1 });
 
     expect(result.status).toBeDefined();
@@ -48,5 +54,14 @@ describe('photoCheck mock service', () => {
 
     expect(low.status).toBeDefined();
     expect(high.status).toBeDefined();
+  });
+
+  it('reports the detected step and its title', () => {
+    const result = mockPhotoCheck({ file: makeFile(), currentStep: 3 });
+
+    expect(result.detectedStep).toBe(3);
+    expect(typeof result.detectedStepTitle).toBe('string');
+    expect(result.detectedStepTitle?.length).toBeGreaterThan(0);
+    expect(result.summary).toContain('step 3');
   });
 });

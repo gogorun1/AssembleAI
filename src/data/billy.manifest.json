@@ -12,8 +12,7 @@
       "meshName": "side_panel_left",
       "meshNodes": ["side_panel_left", "SidePanelLeft"],
       "quantity": 1,
-      "manualPiece": 1,
-      "manualFig": "Piece 1 · left side"
+      "manualFig": "Manual · left side panel"
     },
     {
       "id": "side-panel-right",
@@ -22,8 +21,7 @@
       "meshName": "side_panel_right",
       "meshNodes": ["side_panel_right", "SidePanelRight"],
       "quantity": 1,
-      "manualPiece": 2,
-      "manualFig": "Piece 2 · right side"
+      "manualFig": "Manual · right side panel"
     },
     {
       "id": "bottom-panel",
@@ -32,8 +30,7 @@
       "meshName": "bottom_panel",
       "meshNodes": ["bottom_panel", "BottomPanel"],
       "quantity": 1,
-      "manualPiece": 3,
-      "manualFig": "Piece 3 · bottom shelf"
+      "manualFig": "Manual · bottom shelf"
     },
     {
       "id": "top-panel",
@@ -42,8 +39,7 @@
       "meshName": "top_panel",
       "meshNodes": ["top_panel", "TopPanel"],
       "quantity": 1,
-      "manualPiece": 5,
-      "manualFig": "Piece 5 · top shelf"
+      "manualFig": "Manual · top shelf"
     },
     {
       "id": "fixed-shelf",
@@ -52,8 +48,7 @@
       "meshName": "fixed_shelf",
       "meshNodes": ["fixed_shelf", "FixedShelf"],
       "quantity": 1,
-      "manualPiece": 4,
-      "manualFig": "Piece 4 · fixed shelf"
+      "manualFig": "Manual · fixed shelf"
     },
     {
       "id": "front-rail",
@@ -62,8 +57,7 @@
       "meshName": "front_rail",
       "meshNodes": ["front_rail", "FrontRail"],
       "quantity": 1,
-      "manualPiece": 6,
-      "manualFig": "Piece 6 · front rail"
+      "manualFig": "Manual · front rail"
     },
     {
       "id": "back-panel",
@@ -72,8 +66,7 @@
       "meshName": "back_panel",
       "meshNodes": ["back_panel", "BackPanel"],
       "quantity": 1,
-      "manualPiece": 7,
-      "manualFig": "Piece 7 · back panel"
+      "manualFig": "Manual · back panel"
     },
     {
       "id": "adjustable-shelf",
@@ -82,8 +75,7 @@
       "meshName": "adjustable_shelf",
       "meshNodes": ["adjustable_shelf", "AdjustableShelf"],
       "quantity": 4,
-      "manualPiece": 8,
-      "manualFig": "Piece 8 · adjustable shelf (×4)"
+      "manualFig": "Manual · adjustable shelf (×4)"
     },
     {
       "id": "cam-screw",

@@ -18,9 +18,7 @@ export interface Part {
   meshName: string;
   meshNodes?: string[];
   quantity: number;
-  /** IKEA manual diagram piece number (e.g. 1, 2, 3). */
-  manualPiece?: number;
-  /** Short manual figure label shown in UI and 3D annotations. */
+  /** Short manual label for 3D annotations (no sequential piece numbers). */
   manualFig?: string;
 }
 

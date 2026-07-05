@@ -61,11 +61,7 @@ export function PartsBinsPanel() {
   const addTranscript = useAppStore((state) => state.addTranscript);
   const parts = useAppStore((state) => state.manifest.parts);
 
-  const codeFor = (partId: string) => {
-    const part = parts.find((entry) => entry.id === partId);
-    if (!part) return '';
-    return part.manualFig ?? part.code;
-  };
+  const codeFor = (partId: string) => parts.find((part) => part.id === partId)?.code ?? '';
 
   const onSelect = (binId: string) => {
     const bin = partBins.find((entry) => entry.id === binId);
@@ -76,7 +72,7 @@ export function PartsBinsPanel() {
     setActiveView('front');
     addTranscript({
       speaker: 'agent',
-      text: `Bin ${bin.index}, ${bin.name}: highlighted where these go on the model.`,
+      text: `${bin.name}: highlighted where these go on the model.`,
       mentionedPartIds: bin.partIds,
       language: 'en'
     });
@@ -95,7 +91,6 @@ export function PartsBinsPanel() {
             onClick={() => onSelect(bin.id)}
             title={`Highlight where the ${bin.name.toLowerCase()} go`}
           >
-            <span className={styles.badge}>{bin.index}</span>
             <span className={styles.icon}>
               <BinIcon shape={bin.iconShape} />
             </span>

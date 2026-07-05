@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { operationRingRotationAt, operationRingScaleAt } from './OperationIndicators';
 import { resolveStepOperations } from './stepOperations';
 import { toolKindFromNeeded } from './tools';
 
@@ -14,6 +15,19 @@ describe('stepOperations', () => {
     expect(first.operation.tool).toBe('flat-screwdriver');
     expect(first.operation.partId).toBe('side-panel-left');
     expect(first.anchor[0]).toBeLessThan(0);
+  });
+});
+
+describe('operation indicator motion', () => {
+  it('keeps the anchor ring calm and non-rotating', () => {
+    const samples = [0, 0.25, 0.5, 0.75, 1, 1.25].map(operationRingScaleAt);
+
+    expect(Math.max(...samples)).toBeLessThanOrEqual(1.04);
+    expect(Math.min(...samples)).toBeGreaterThanOrEqual(0.96);
+    expect(samples.some((scale) => scale !== 1)).toBe(true);
+
+    expect(operationRingRotationAt(0)).toBe(0);
+    expect(operationRingRotationAt(4.2)).toBe(0);
   });
 });
 

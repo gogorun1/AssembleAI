@@ -186,53 +186,37 @@
   pointer-events: none;
 }
 
+.operationIconBadge {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  inline-size: 1.65rem;
+  block-size: 1.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--paper-raised) 95%, transparent), color-mix(in srgb, var(--accent-wash) 34%, var(--paper-raised))),
+    var(--paper-raised);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent),
+    0 1px 3px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
 .toolIcon {
   display: block;
   flex-shrink: 0;
-  inline-size: 1.1rem;
-  block-size: 1.1rem;
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
   color: var(--accent-ink);
 }
 
-.toolIconTurn {
-  animation: toolIconTurn 1.4s linear infinite;
+.toolIconSecondary {
+  opacity: 0.55;
 }
 
-.toolIconPress {
-  animation: toolIconPress 1.1s ease-in-out infinite;
-}
-
-.toolIconStrike {
-  animation: toolIconStrike 0.55s ease-in-out infinite;
-}
-
-@keyframes toolIconTurn {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes toolIconPress {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(3px);
-  }
-}
-
-@keyframes toolIconStrike {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-8deg);
-  }
-  50% {
-    transform: translateY(4px) rotate(8deg);
-  }
+.toolIconFill {
+  fill: currentColor;
+  opacity: 0.16;
 }
 
 .operationTag {
@@ -245,6 +229,7 @@
   border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
   box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 12%, transparent);
+  animation: operationTagEnter 260ms var(--ease) both;
 }
 
 .operationTagHead {
@@ -264,6 +249,23 @@
   color: var(--ink);
   font-size: 0.68rem;
   line-height: 1.25;
+}
+
+@keyframes operationTagEnter {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operationTag {
+    animation: none;
+  }
 }
 
 .annotationCode {

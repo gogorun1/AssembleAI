@@ -158,13 +158,27 @@ If `VITE_PHOTO_CHECK_ENDPOINT` is present, `src/services/photoCheck.ts` posts th
 
 If no endpoint is configured, the app uses deterministic local intent handling and the offline photo-check mock for the hackathon script.
 
+### Voice through a specific microphone (e.g. Ray-Ban Meta glasses)
+
+The browser Web Speech API can only listen to the operating system's default input device, so it cannot be pointed at a chosen microphone. To route voice commands through a specific device (such as Ray-Ban Meta glasses paired as a Bluetooth headset), set `VITE_STT_ENDPOINT` and pick the device in the Microphone panel:
+
+```bash
+# Terminal 1 - transcription + intent API (needs your OpenAI key)
+OPENAI_API_KEY=sk-... npm run api:dev
+
+# Terminal 2 - the app
+VITE_STT_ENDPOINT=http://localhost:8787/api/stt npm run dev
+```
+
+With `VITE_STT_ENDPOINT` set and a device selected in the Microphone panel, push-to-talk records from that device (`getUserMedia`) and posts the clip to `/api/stt`, which transcribes it with OpenAI (`STT_LLM_MODEL`, default `gpt-4o-mini-transcribe`) and returns `{ text }`. With "System default" selected, or when the endpoint is unset, it falls back to the Web Speech API.
+
 Server-side API keys must stay out of `VITE_*` variables. See `.env.example` for the real-agent backend, hosted STT/TTS, photo-check, and observability keys expected by the next implementation phase.
 
 ## Current Limitations
 
 - The viewer now supports a GLB pipeline, but the included BILLY asset is still generated from simple geometry rather than a production CAD/photogrammetry model.
 - Intent parsing is deterministic by default, with optional endpoint support but no production LLM backend included.
-- Voice input depends on browser Web Speech support, strongest in Chrome.
+- Voice input uses browser Web Speech by default (strongest in Chrome); set `VITE_STT_ENDPOINT` to record from a specific device and transcribe server-side.
 - TTS uses browser voices unless replaced by a real provider.
 - Photo checking currently uses a manifest-aware mock unless `VITE_PHOTO_CHECK_ENDPOINT` points to a real VLM service.
 - No real VLM validation, hosted STT/TTS, manual ingestion, catalog, persistence, accounts, or analytics yet.

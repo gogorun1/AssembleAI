@@ -5,14 +5,13 @@ import {
   detectGlasses,
   getMicPermission,
   listAudioInputs,
-  loadSelectedMicId,
   requestMicPermission,
-  saveSelectedMicId,
   supportsMicSelection,
   type AudioInput,
   type LevelMeter,
   type MicPermission
 } from '../services/microphones';
+import { useAppStore } from '../store/useAppStore';
 import styles from './MicPicker.module.css';
 
 interface MicPickerProps {
@@ -20,10 +19,16 @@ interface MicPickerProps {
   onNotify?(message: string): void;
 }
 
+// When an STT endpoint is configured, a selected device is captured directly and
+// transcribed server-side, so the in-app choice actually drives voice commands.
+const STT_ENDPOINT = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
+
 export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
+  const selectedId = useAppStore((state) => state.selectedMicId);
+  const setSelectedMicId = useAppStore((state) => state.setSelectedMicId);
+
   const [permission, setPermission] = useState<MicPermission>('prompt');
   const [inputs, setInputs] = useState<AudioInput[]>([]);
-  const [selectedId, setSelectedId] = useState<string | undefined>(() => loadSelectedMicId());
   const [testing, setTesting] = useState(false);
   const [level, setLevel] = useState(0);
 
@@ -32,27 +37,22 @@ export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
 
   const selected = inputs.find((input) => input.deviceId === selectedId);
   const selectedIsGlasses = selected ? selected.isLikelyGlasses : false;
+  const recordedModeActive = Boolean(STT_ENDPOINT) && Boolean(selectedId);
 
   const refreshDevices = useCallback(
     async (autoSelectGlasses: boolean) => {
       const list = await listAudioInputs();
       setInputs(list);
-      setSelectedId((current) => {
-        const stillExists = current && list.some((input) => input.deviceId === current);
-        if (stillExists) {
-          return current;
+      const current = useAppStore.getState().selectedMicId;
+      const stillExists = current && list.some((input) => input.deviceId === current);
+      if (!stillExists && autoSelectGlasses) {
+        const glasses = detectGlasses(list);
+        if (glasses) {
+          setSelectedMicId(glasses.deviceId);
         }
-        if (autoSelectGlasses) {
-          const glasses = detectGlasses(list);
-          if (glasses) {
-            saveSelectedMicId(glasses.deviceId);
-            return glasses.deviceId;
-          }
-        }
-        return current;
-      });
+      }
     },
-    []
+    [setSelectedMicId]
   );
 
   useEffect(() => {
@@ -109,13 +109,12 @@ export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
 
   const onSelect = useCallback(
     (deviceId: string) => {
-      setSelectedId(deviceId);
-      saveSelectedMicId(deviceId);
+      setSelectedMicId(deviceId || undefined);
       if (testing) {
         stopMeter();
       }
     },
-    [testing, stopMeter]
+    [testing, stopMeter, setSelectedMicId]
   );
 
   const toggleTest = useCallback(async () => {
@@ -202,7 +201,7 @@ export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
               onChange={(event) => onSelect(event.currentTarget.value)}
               data-testid="mic-select"
             >
-              {inputs.length === 0 && <option value="">No microphones found</option>}
+              <option value="">System default</option>
               {inputs.map((input) => (
                 <option key={input.deviceId} value={input.deviceId}>
                   {input.isLikelyGlasses ? 'GLASSES - ' : ''}
@@ -233,7 +232,7 @@ export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
               type="button"
               className={styles.secondaryButton}
               onClick={() => void toggleTest()}
-              disabled={disabled || inputs.length === 0}
+              disabled={disabled}
               data-testid="mic-test"
               aria-pressed={testing}
             >
@@ -256,10 +255,22 @@ export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
             </div>
           </div>
 
-          <p className={styles.note}>
-            Voice commands use your system's default input. To speak through the glasses, set them as
-            the input in your OS sound settings, then confirm the meter reacts to your voice.
-          </p>
+          {recordedModeActive ? (
+            <p className={styles.note}>
+              Voice commands are captured from this device and transcribed on the server, so your
+              selection is used directly - no OS changes needed.
+            </p>
+          ) : STT_ENDPOINT ? (
+            <p className={styles.note}>
+              Select a specific device above to capture commands from it. With "System default", the
+              browser recognizer uses your OS default input.
+            </p>
+          ) : (
+            <p className={styles.note}>
+              Voice commands use your system's default input. To speak through the glasses, set them
+              as the input in your OS sound settings, then confirm the meter reacts to your voice.
+            </p>
+          )}
         </>
       )}
     </section>

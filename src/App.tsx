@@ -15,7 +15,7 @@ import { DebugOverlay } from './components/DebugOverlay';
 import { presenterUtterances } from './data/presenterUtterances';
 import type { PhotoCheckResult } from './services/photoCheck';
 import { parseIntent } from './services/intent';
-import { createSTTService, type STTService } from './services/stt';
+import { createSTTService, createRecordedSTTService, type STTService } from './services/stt';
 import { createTTSService } from './services/tts';
 import { useAppStore } from './store/useAppStore';
 import type { Part, ResolvedIntent } from './types/assembly';
@@ -71,6 +71,7 @@ export default function App() {
   const explodeLevel = useAppStore((state) => state.explodeLevel);
   const toast = useAppStore((state) => state.toast);
   const firstVoiceInteraction = useAppStore((state) => state.firstVoiceInteraction);
+  const selectedMicId = useAppStore((state) => state.selectedMicId);
   // Select actions individually (stable references) instead of subscribing to
   // the whole store, which previously re-rendered App on every state change.
   const previousStep = useAppStore((state) => state.previousStep);
@@ -280,7 +281,15 @@ export default function App() {
 
   useEffect(() => {
     sttRef.current?.abort();
-    const stt = createSTTService(commandLanguage === 'fr' ? 'fr-FR' : 'en-US');
+    const language = commandLanguage === 'fr' ? 'fr-FR' : 'en-US';
+    const sttEndpoint = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
+    // Recorded mode captures the chosen device and transcribes server-side, which
+    // is the only way to force voice through a specific mic (e.g. Ray-Ban Meta
+    // glasses); the Web Speech fallback always uses the OS default input.
+    const useRecorded = Boolean(sttEndpoint) && Boolean(selectedMicId);
+    const stt = useRecorded
+      ? createRecordedSTTService({ endpoint: sttEndpoint as string, language, deviceId: selectedMicId })
+      : createSTTService(language);
     sttRef.current = stt;
     stt.onResult((text) => {
       clearTimeout(noSpeechTimer.current);
@@ -292,8 +301,10 @@ export default function App() {
         useAppStore.getState().setVoiceState('idle');
       }
     });
-    stt.onError(() => {
-      useAppStore.getState().showToast('Voice capture stopped - click steps and parts instead.');
+    stt.onError((message) => {
+      useAppStore.getState().showToast(
+        useRecorded && message ? message : 'Voice capture stopped - click steps and parts instead.'
+      );
       useAppStore.getState().setVoiceState('idle');
     });
     return () => {
@@ -302,7 +313,7 @@ export default function App() {
         sttRef.current = undefined;
       }
     };
-  }, [runUtterance, commandLanguage]);
+  }, [runUtterance, commandLanguage, selectedMicId]);
 
   useEffect(() => {
     let cancelled = false;

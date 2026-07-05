@@ -6,6 +6,7 @@ import { StepCard } from './components/StepCard';
 import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
+import { MicPicker } from './components/MicPicker';
 import { PartsBinsPanel } from './components/PartsBinsPanel';
 import { CommandPanel, type CommandLanguage } from './components/CommandPanel';
 import { PresenterPanel } from './components/PresenterPanel';
@@ -430,6 +431,7 @@ export default function App() {
                 onPointerUp={endPushToTalk}
               />
             </div>
+            <MicPicker disabled={voiceState !== 'idle'} onNotify={showToast} />
           </section>
           <PresenterPanel
             utterances={presenterUtterances}

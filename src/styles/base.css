@@ -42,11 +42,7 @@ button:focus-visible,
   display: grid;
   grid-template-columns: minmax(var(--viewer-min), 1fr) var(--rail-width);
   block-size: 100%;
-  background:
-    linear-gradient(to right, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
-    var(--paper);
-  background-size: var(--grid-size) var(--grid-size);
+  background: var(--paper);
 }
 
 .viewerStage {
@@ -64,7 +60,7 @@ button:focus-visible,
   min-block-size: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  margin: var(--s-5) var(--s-5) var(--s-5) 0;
+  margin: var(--s-4) var(--s-4) var(--s-4) 0;
 }
 
 .rightRail > * {
@@ -80,7 +76,7 @@ button:focus-visible,
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: var(--paper-raised);
+  background: color-mix(in srgb, var(--paper-raised) 92%, var(--paper));
 }
 
 .partRailHeader {
@@ -122,7 +118,7 @@ button:focus-visible,
   block-size: var(--control-size);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
   color: var(--ink);
   cursor: pointer;
   transition:
@@ -137,6 +133,85 @@ button:focus-visible,
 }
 
 .iconButton:active {
+  transform: translateY(var(--s-1));
+}
+
+.viewControls {
+  position: absolute;
+  inset-block-start: var(--s-5);
+  inset-inline-end: var(--s-5);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--paper-raised) 90%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.viewControlsLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  padding-inline-start: var(--s-1);
+}
+
+.viewButton {
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.viewButton:hover {
+  border-color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.stepNav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.stepNavRail {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.stepNavButton {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+
+.stepNavButton:hover {
+  border-color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.stepNavButton:active {
   transform: translateY(var(--s-1));
 }
 
@@ -164,12 +239,11 @@ button:focus-visible,
 }
 
 .splashNumeral {
-  color: transparent;
+  color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--step-numeral);
   font-weight: 600;
   line-height: 1;
-  -webkit-text-stroke: 2px var(--ink);
 }
 
 .splashText {
@@ -182,6 +256,27 @@ button:focus-visible,
 @media (max-aspect-ratio: 14 / 9) {
   .appShell {
     grid-template-columns: minmax(0, 1fr) minmax(320px, var(--rail-width));
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(360px, 52svh) minmax(0, 1fr);
+  }
+
+  .viewerStage {
+    min-block-size: 360px;
+  }
+
+  .rightRail {
+    margin: 0 var(--s-3) var(--s-3);
+    padding-block-start: var(--s-3);
+  }
+
+  .bottomControls {
+    inset-block-end: var(--s-3);
+    gap: var(--s-2);
   }
 }
 

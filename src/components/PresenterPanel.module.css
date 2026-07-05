@@ -4,14 +4,14 @@
   padding: var(--s-4);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: var(--paper-raised);
+  background: color-mix(in srgb, var(--paper-raised) 94%, var(--paper));
 }
 
 .heading {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--accent-ink);
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -29,7 +29,7 @@
   padding: var(--s-2) var(--s-2);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  background: var(--paper-sunken);
+  background: color-mix(in srgb, var(--paper-sunken) 70%, var(--paper-raised));
   color: var(--ink);
   cursor: pointer;
   font-family: var(--font-mono);

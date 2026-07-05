@@ -1,22 +1,22 @@
 :root {
   /* surfaces */
-  --paper: #F2F1EA;
-  --paper-raised: #FBFAF6;
-  --paper-sunken: #E7E6DD;
+  --paper: #EEF0EF;
+  --paper-raised: #FFFFFF;
+  --paper-sunken: #DFE3E2;
 
   /* ink */
-  --ink: #22303A;
-  --ink-soft: #5C6B74;
-  --line: #C9C8BC;
+  --ink: #1F2A30;
+  --ink-soft: #647077;
+  --line: #CBD1D0;
 
-  /* the one electric ingredient */
-  --accent: #EE5A0E;
-  --accent-ink: #B03F00;
-  --accent-wash: #FBE3D2;
+  /* focused highlight */
+  --accent: #C84B2A;
+  --accent-ink: #8F321B;
+  --accent-wash: #F7E4DE;
 
   /* semantic */
   --ok: #3E7A4C;
-  --warn-wash: #F6ECD3;
+  --warn-wash: #F2E9D6;
 
   --font-display: 'Archivo', sans-serif;
   --font-body: 'Archivo', sans-serif;
@@ -47,7 +47,7 @@
   --t-slow: 800ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
 
-  --rail-width: 400px;
+  --rail-width: 380px;
   --orb-size: 72px;
   --grid-size: 48px;
   --control-size: 44px;

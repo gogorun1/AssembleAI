@@ -15,8 +15,8 @@ export const presenterUtterances: PresenterUtterance[] = [
   {
     id: 'which-screw',
     label: 'Which screw?',
-    utterance: 'Which screw with the washer should I use?',
-    description: 'Highlight the correct screw/washer part.'
+    utterance: 'Which cam screw should I use?',
+    description: 'Highlight the correct cam screw.'
   },
   {
     id: 'where-goes',
@@ -41,5 +41,11 @@ export const presenterUtterances: PresenterUtterance[] = [
     label: 'Repeat',
     utterance: 'Repeat that.',
     description: 'Repeat current step instruction.'
+  },
+  {
+    id: 'fr-screw',
+    label: 'Français',
+    utterance: 'Et cette vis, elle va où ?',
+    description: 'Ask in French where the screw goes (the agent replies in French).'
   }
 ];

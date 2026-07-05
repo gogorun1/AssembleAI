@@ -19,6 +19,11 @@ export function VoiceOrb({ state, showHint, onPointerDown, onPointerUp }: VoiceO
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={() => {
+          if (state === 'listening') {
+            onPointerUp();
+          }
+        }}
         aria-label="Hold to talk"
       >
         {thinking ? <MoreHorizontal size={30} aria-hidden /> : state === 'speaking' ? <Volume2 size={26} aria-hidden /> : <Mic size={28} aria-hidden />}

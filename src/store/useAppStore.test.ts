@@ -9,15 +9,15 @@ describe('useAppStore Orange Sync event', () => {
   });
 
   it('marks the part as mentioned and clears it after the flash window', () => {
-    useAppStore.getState().mentionPart('cam-screw-washer');
+    useAppStore.getState().mentionPart('cam-screw');
 
-    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw-washer');
+    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw');
 
     vi.advanceTimersByTime(1999);
-    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw-washer');
+    expect(useAppStore.getState().mentionedPartIds).toContain('cam-screw');
 
     vi.advanceTimersByTime(1);
-    expect(useAppStore.getState().mentionedPartIds).not.toContain('cam-screw-washer');
+    expect(useAppStore.getState().mentionedPartIds).not.toContain('cam-screw');
   });
 });
 
@@ -38,10 +38,10 @@ describe('Phase 0B — reset semantics', () => {
     expect(useAppStore.getState().voiceState).toBe('idle');
   });
 
-  it('resets explodeLevel to 1', () => {
+  it('resets explodeLevel to 0 (assembled)', () => {
     useAppStore.getState().setExplodeLevel(2);
     useAppStore.getState().resetDemoState();
-    expect(useAppStore.getState().explodeLevel).toBe(1);
+    expect(useAppStore.getState().explodeLevel).toBe(0);
   });
 
   it('resets activeViewKey to first step camera view', () => {

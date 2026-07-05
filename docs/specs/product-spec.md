@@ -4,7 +4,7 @@
 
 AssembleAI is a voice and 3D assembly copilot for furniture assembly. The user has occupied hands, so speech is the primary input and spatial feedback is the primary output. The app answers by changing the model first: camera moves, parts highlight, steps advance, and the spoken response confirms the visual answer.
 
-The current implementation is a single-furniture hackathon demo for a BILLY-style bookcase. It is driven by a hand-authored manifest and does not parse PDF manuals at runtime.
+The current implementation is a single-furniture hackathon demo for the IKEA BILLY 40x28x202 bookcase. It is driven by a hand-authored manifest and does not parse PDF manuals at runtime.
 
 ## 2. Goals
 
@@ -42,12 +42,12 @@ These utterances must resolve deterministically even without a remote LLM endpoi
 
 | Utterance | Expected intent | Viewer behavior |
 | --- | --- | --- |
-| `Which one is the screw with the washer?` | `which_part` | Spin/select `cam-screw-washer`, highlight chip/model/transcript |
+| `Which cam screw should I use?` | `which_part` | Spin/select `cam-screw` (`118331`), highlight chip/model/transcript |
 | `Where does this panel go?` | `where_does_it_go` | Use current step camera and highlight relevant panel |
 | `Show me from the back.` | `show_angle` | Move to `back-panel` camera |
 | `What's next?` | `next_step` | Advance one step |
 | `Did people mess this step up before?` | `common_mistake` | Show common mistake and highlight relevant part |
-| `Et cette vis, elle va ou ?` | `where_does_it_go` | Reply in French and show `cam-screw-washer` |
+| `Et cette vis, elle va ou ?` | `where_does_it_go` | Reply in French and show `cam-screw` (`118331`) |
 
 ## 6. Data Model
 
@@ -63,10 +63,10 @@ Important manifest requirements:
 
 The current manifest includes:
 
-- 13 part records.
-- 9 assembly steps.
-- 6 steps with common mistakes.
-- Manual-style part codes such as `117327` and `M3.5x16`.
+- 16 part records.
+- 14 assembly steps aligned to IKEA manual `AA-1823127-9-2`.
+- Common mistakes for the main assembly and safety steps.
+- Official hardware codes from the manual parts page: `118331`, `101351`, `101201`, `119081`, `131372`, `106989`, `109041`, and `100823`.
 
 ## 7. Intent Contract
 
@@ -160,11 +160,11 @@ All colors, spacing, typography, radii, and motion values are tokens in `src/sty
 
 Design intent:
 
-- Drafting paper background.
-- Blue-black ink.
+- Neutral worktable background.
+- White board material and low-saturation metal hardware.
 - Mono part codes.
 - Squarish controls.
-- One active color: safety orange.
+- One active color: muted safety orange.
 - No decorative gradient/orb backgrounds.
 - Borders over heavy shadows.
 

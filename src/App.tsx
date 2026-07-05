@@ -448,6 +448,7 @@ export default function App() {
             currentStep={currentStep}
             onMentionParts={mentionParts}
             onRunUtterance={runUtterance}
+            onGoToStep={goToStep}
             onResult={onPhotoCheckResult}
             disabled={voiceState !== 'idle'}
           />

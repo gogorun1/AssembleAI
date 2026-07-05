@@ -372,8 +372,8 @@
       "label": "Front assembly view"
     },
     "dowel-prep": {
-      "position": [2.45, 2.3, 6.8],
-      "target": [0, 1.95, 0.08],
+      "position": [2.75, 2.24, 7.6],
+      "target": [0, 0.78, 0.08],
       "label": "Dowel preparation"
     },
     "side-screw-detail": {

@@ -66,7 +66,7 @@ test.describe('Demo smoke tests', () => {
     await expect(page.getByTestId('command-input')).toHaveValue("What's next?");
     await page.getByTestId('command-submit').click();
 
-    await expect(page.getByText('2/9')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('2/14')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Next is step 2:/)).toBeVisible();
   });
 
@@ -77,8 +77,13 @@ test.describe('Demo smoke tests', () => {
     await page.getByTestId('command-input').fill('Et cette vis, elle va où ?');
     await page.getByTestId('command-submit').click();
 
-    await expect(page.getByText(/Cette vis va/i)).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(/rondelle visible/i)).toBeVisible();
+    const transcript = page.getByLabel('Conversation transcript');
+    await expect(
+      transcript.getByText(/Cette vis 118331/i)
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(
+      transcript.getByText(/panneaux lateraux/i)
+    ).toBeVisible();
   });
 
   test('full reset returns to welcome state', async ({ page }) => {

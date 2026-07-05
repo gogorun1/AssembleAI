@@ -1,4 +1,4 @@
-import { Activity, Glasses, Mic, RefreshCw } from 'lucide-react';
+import { Activity, Ear, Glasses, Mic, RefreshCw, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createLevelMeter,
@@ -17,13 +17,22 @@ import styles from './MicPicker.module.css';
 interface MicPickerProps {
   disabled?: boolean;
   onNotify?(message: string): void;
+  /** True while a hands-free (auto-stop) listening session is running. */
+  handsFreeActive?: boolean;
+  /** Start/stop hands-free listening (voice-activity detection). */
+  onToggleHandsFree?(): void;
 }
 
 // When an STT endpoint is configured, a selected device is captured directly and
 // transcribed server-side, so the in-app choice actually drives voice commands.
 const STT_ENDPOINT = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
 
-export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
+export function MicPicker({
+  disabled = false,
+  onNotify,
+  handsFreeActive = false,
+  onToggleHandsFree
+}: MicPickerProps) {
   const selectedId = useAppStore((state) => state.selectedMicId);
   const setSelectedMicId = useAppStore((state) => state.setSelectedMicId);
 
@@ -255,10 +264,35 @@ export function MicPicker({ disabled = false, onNotify }: MicPickerProps) {
             </div>
           </div>
 
+          {recordedModeActive && onToggleHandsFree && (
+            <button
+              type="button"
+              className={styles.handsFreeButton}
+              data-active={handsFreeActive}
+              onClick={onToggleHandsFree}
+              disabled={disabled && !handsFreeActive}
+              data-testid="mic-hands-free"
+              aria-pressed={handsFreeActive}
+            >
+              {handsFreeActive ? (
+                <>
+                  <Square size={13} aria-hidden />
+                  Listening... tap to stop
+                </>
+              ) : (
+                <>
+                  <Ear size={14} aria-hidden />
+                  Hands-free (Meta)
+                </>
+              )}
+            </button>
+          )}
+
           {recordedModeActive ? (
             <p className={styles.note}>
-              Voice commands are captured from this device and transcribed on the server, so your
-              selection is used directly - no OS changes needed.
+              {handsFreeActive
+                ? 'Speak your command - I will detect when you finish and act automatically.'
+                : 'Tap Hands-free and just speak - no need to hold a button. Or hold the voice orb to talk.'}
             </p>
           ) : STT_ENDPOINT ? (
             <p className={styles.note}>

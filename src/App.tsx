@@ -15,7 +15,13 @@ import { DebugOverlay } from './components/DebugOverlay';
 import { presenterUtterances } from './data/presenterUtterances';
 import type { PhotoCheckResult } from './services/photoCheck';
 import { parseIntent } from './services/intent';
-import { createSTTService, createRecordedSTTService, type STTService } from './services/stt';
+import {
+  createSTTService,
+  createRecordedSTTService,
+  startHandsFreeSTT,
+  type HandsFreeSession,
+  type STTService
+} from './services/stt';
 import { createTTSService } from './services/tts';
 import { useAppStore } from './store/useAppStore';
 import type { Part, ResolvedIntent } from './types/assembly';
@@ -86,10 +92,12 @@ export default function App() {
   const showToast = useAppStore((state) => state.showToast);
   const ttsRef = useRef(createTTSService());
   const sttRef = useRef<STTService>();
+  const handsFreeRef = useRef<HandsFreeSession | null>(null);
   const noSpeechTimer = useRef<ReturnType<typeof setTimeout>>();
   const [ready, setReady] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [commandLanguage, setCommandLanguage] = useState<CommandLanguage>('en');
+  const [handsFreeActive, setHandsFreeActive] = useState(false);
 
   const step = manifest.steps[currentStep - 1];
   const partsById = useMemo(
@@ -244,6 +252,9 @@ export default function App() {
   }, []);
 
   const beginPushToTalk = useCallback(() => {
+    if (handsFreeActive) {
+      return;
+    }
     const liveStore = useAppStore.getState();
     liveStore.markVoiceInteraction();
 
@@ -266,7 +277,7 @@ export default function App() {
         useAppStore.getState().setVoiceState('idle');
       }
     }, 5000);
-  }, []);
+  }, [handsFreeActive]);
 
   const endPushToTalk = useCallback(() => {
     const stt = sttRef.current;
@@ -278,6 +289,60 @@ export default function App() {
     useAppStore.getState().setVoiceState('transcribing');
     stt.stop();
   }, []);
+
+  const cancelHandsFree = useCallback(() => {
+    handsFreeRef.current?.cancel();
+  }, []);
+
+  const beginHandsFree = useCallback(() => {
+    const liveStore = useAppStore.getState();
+    liveStore.markVoiceInteraction();
+
+    const endpoint = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
+    const deviceId = liveStore.selectedMicId;
+    if (!endpoint || !deviceId) {
+      liveStore.showToast('Pick your glasses in the Microphone panel to use hands-free.');
+      return;
+    }
+
+    if (liveStore.voiceState === 'speaking') {
+      ttsRef.current.cancel();
+    }
+
+    setHandsFreeActive(true);
+    liveStore.setVoiceState('listening');
+    handsFreeRef.current = startHandsFreeSTT(
+      { endpoint, deviceId, language: commandLanguage === 'fr' ? 'fr-FR' : 'en-US' },
+      {
+        onPhase: (phase) => {
+          useAppStore.getState().setVoiceState(phase === 'transcribing' ? 'transcribing' : 'listening');
+        },
+        onResult: (text) => {
+          void runUtterance(text);
+        },
+        onError: (message) => {
+          useAppStore.getState().showToast(message);
+          useAppStore.getState().setVoiceState('idle');
+        },
+        onEnd: () => {
+          handsFreeRef.current = null;
+          setHandsFreeActive(false);
+          const state = useAppStore.getState().voiceState;
+          if (state === 'listening' || state === 'transcribing') {
+            useAppStore.getState().setVoiceState('idle');
+          }
+        }
+      }
+    );
+  }, [commandLanguage, runUtterance]);
+
+  const toggleHandsFree = useCallback(() => {
+    if (handsFreeActive) {
+      cancelHandsFree();
+    } else {
+      beginHandsFree();
+    }
+  }, [handsFreeActive, cancelHandsFree, beginHandsFree]);
 
   useEffect(() => {
     sttRef.current?.abort();
@@ -329,6 +394,7 @@ export default function App() {
       clearTimeout(noSpeechTimer.current);
       ttsRef.current.cancel();
       sttRef.current?.abort();
+      handsFreeRef.current?.cancel();
     };
   }, []);
 
@@ -442,7 +508,12 @@ export default function App() {
                 onPointerUp={endPushToTalk}
               />
             </div>
-            <MicPicker disabled={voiceState !== 'idle'} onNotify={showToast} />
+            <MicPicker
+              disabled={voiceState !== 'idle'}
+              onNotify={showToast}
+              handsFreeActive={handsFreeActive}
+              onToggleHandsFree={toggleHandsFree}
+            />
           </section>
           <PresenterPanel
             utterances={presenterUtterances}

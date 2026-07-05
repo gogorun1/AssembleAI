@@ -169,3 +169,47 @@
 .meterFill[data-active='true'] {
   background: var(--accent-ink);
 }
+
+.handsFreeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--accent-ink);
+  border-radius: var(--r-sm);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.handsFreeButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-wash) 70%, var(--accent-ink) 12%);
+}
+
+.handsFreeButton[data-active='true'] {
+  background: var(--accent-ink);
+  color: var(--paper);
+  animation: handsFreePulse 1.3s ease-in-out infinite;
+}
+
+.handsFreeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes handsFreePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-ink) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent-ink) 0%, transparent);
+  }
+}

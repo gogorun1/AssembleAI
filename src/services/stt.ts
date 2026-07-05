@@ -269,3 +269,253 @@ async function transcribeClip(blob: Blob, options: RecordedSTTOptions): Promise<
   const payload = (await response.json()) as { text?: unknown };
   return typeof payload.text === 'string' ? payload.text.trim() : '';
 }
+
+export type HandsFreePhase = 'awaiting-speech' | 'recording' | 'transcribing';
+
+export interface HandsFreeHandlers {
+  onResult(text: string): void;
+  onError(message: string): void;
+  onEnd(): void;
+  onPhase?(phase: HandsFreePhase): void;
+}
+
+export interface HandsFreeOptions extends RecordedSTTOptions {
+  /** Normalized level (0..1) above which speech is considered to have started. */
+  startThreshold?: number;
+  /** Normalized level below which audio counts as silence. */
+  stopThreshold?: number;
+  /** Trailing silence after speech that ends the utterance. */
+  silenceMs?: number;
+  /** Give up if no speech is heard within this window. */
+  noSpeechMs?: number;
+  /** Hard cap on a single utterance. */
+  maxMs?: number;
+}
+
+export interface HandsFreeSession {
+  cancel(): void;
+}
+
+function computeLevel(analyser: AnalyserNode, buffer: Uint8Array<ArrayBuffer>): number {
+  analyser.getByteTimeDomainData(buffer);
+  let sumSquares = 0;
+  for (let i = 0; i < buffer.length; i += 1) {
+    const centered = (buffer[i] - 128) / 128;
+    sumSquares += centered * centered;
+  }
+  const rms = Math.sqrt(sumSquares / buffer.length);
+  return Math.min(1, rms * 2.2);
+}
+
+/**
+ * Hands-free capture: start listening, auto-detect end of speech via a silence
+ * threshold (voice activity detection), then transcribe and return the text.
+ * Unlike push-to-talk, the user does not hold a button - they speak and stop.
+ */
+export function startHandsFreeSTT(
+  options: HandsFreeOptions,
+  handlers: HandsFreeHandlers
+): HandsFreeSession {
+  const {
+    endpoint,
+    language,
+    deviceId,
+    startThreshold = 0.12,
+    stopThreshold = 0.06,
+    silenceMs = 900,
+    noSpeechMs = 6000,
+    maxMs = 15000
+  } = options;
+
+  if (!supportsRecording()) {
+    handlers.onError('Recording is not supported in this browser.');
+    handlers.onEnd();
+    return { cancel: () => {} };
+  }
+
+  let cancelled = false;
+  let finished = false;
+  let willTranscribe = false;
+  let stream: MediaStream | null = null;
+  let recorder: MediaRecorder | null = null;
+  let context: AudioContext | null = null;
+  let raf: number | undefined;
+  let chunks: Blob[] = [];
+
+  const cleanup = () => {
+    if (raf !== undefined) {
+      cancelAnimationFrame(raf);
+      raf = undefined;
+    }
+    stream?.getTracks().forEach((track) => track.stop());
+    stream = null;
+    if (context && context.state !== 'closed') {
+      void context.close();
+    }
+    context = null;
+  };
+
+  const finish = (action: () => void) => {
+    if (finished) {
+      return;
+    }
+    finished = true;
+    action();
+  };
+
+  const stopRecorder = (transcribe: boolean) => {
+    willTranscribe = transcribe;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop();
+    } else {
+      cleanup();
+      finish(handlers.onEnd);
+    }
+  };
+
+  void (async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: deviceId ? { deviceId: { exact: deviceId } } : true
+      });
+    } catch {
+      finish(() => {
+        handlers.onError('Could not open the selected microphone.');
+        handlers.onEnd();
+      });
+      return;
+    }
+
+    if (cancelled) {
+      cleanup();
+      finish(handlers.onEnd);
+      return;
+    }
+
+    const AudioContextCtor =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    let analyser: AnalyserNode | null = null;
+    let buffer: Uint8Array<ArrayBuffer> | null = null;
+    if (AudioContextCtor) {
+      context = new AudioContextCtor();
+      const source = context.createMediaStreamSource(stream);
+      analyser = context.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      buffer = new Uint8Array(analyser.fftSize);
+    }
+
+    let localRecorder: MediaRecorder;
+    try {
+      const mimeType = pickMimeType();
+      localRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    } catch {
+      cleanup();
+      finish(() => {
+        handlers.onError('Recording is not supported in this browser.');
+        handlers.onEnd();
+      });
+      return;
+    }
+    recorder = localRecorder;
+
+    localRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    localRecorder.onstop = async () => {
+      const type = localRecorder.mimeType || 'audio/webm';
+      const blob = new Blob(chunks, { type });
+      cleanup();
+
+      if (!willTranscribe || cancelled) {
+        finish(handlers.onEnd);
+        return;
+      }
+      if (blob.size === 0) {
+        finish(() => {
+          handlers.onError("I didn't catch that - try again.");
+          handlers.onEnd();
+        });
+        return;
+      }
+
+      handlers.onPhase?.('transcribing');
+      try {
+        const text = await transcribeClip(blob, { endpoint, language, deviceId });
+        finish(() => {
+          if (text) {
+            handlers.onResult(text);
+          }
+          handlers.onEnd();
+        });
+      } catch {
+        finish(() => {
+          handlers.onError('Transcription failed - check the STT server and try again.');
+          handlers.onEnd();
+        });
+      }
+    };
+
+    localRecorder.start();
+    handlers.onPhase?.('awaiting-speech');
+
+    const startedAt = performance.now();
+    let speaking = false;
+    let speechStart = 0;
+    let lastVoiceAt = 0;
+    let ema = 0;
+
+    const tick = () => {
+      if (finished || cancelled) {
+        return;
+      }
+      const now = performance.now();
+      const level = analyser && buffer ? computeLevel(analyser, buffer) : 0;
+      ema = ema * 0.6 + level * 0.4;
+
+      if (!speaking) {
+        if (ema > startThreshold) {
+          speaking = true;
+          speechStart = now;
+          lastVoiceAt = now;
+          handlers.onPhase?.('recording');
+        } else if (now - startedAt > noSpeechMs) {
+          willTranscribe = false;
+          if (recorder && recorder.state !== 'inactive') {
+            recorder.stop();
+          } else {
+            cleanup();
+            finish(() => {
+              handlers.onError("I didn't hear anything - tap and speak again.");
+              handlers.onEnd();
+            });
+          }
+          return;
+        }
+      } else {
+        if (ema > stopThreshold) {
+          lastVoiceAt = now;
+        }
+        if (now - lastVoiceAt > silenceMs || now - speechStart > maxMs) {
+          stopRecorder(true);
+          return;
+        }
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+  })();
+
+  return {
+    cancel: () => {
+      cancelled = true;
+      stopRecorder(false);
+    }
+  };
+}

@@ -186,6 +186,17 @@
   pointer-events: none;
 }
 
+.handIconWrap {
+  pointer-events: none;
+}
+
+.handIcon {
+  display: block;
+  inline-size: 2rem;
+  block-size: 2rem;
+  filter: drop-shadow(0 2px 5px color-mix(in srgb, var(--ink) 22%, transparent));
+}
+
 .operationTag {
   display: grid;
   gap: 2px;

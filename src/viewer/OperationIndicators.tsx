@@ -63,6 +63,8 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
   });
 
   const spec = toolSpecs[operation.tool];
+  const labelOffset = labelOffsetFromNormal(normal);
+  const showHandIcon = operation.tool !== 'hammer' && operation.tool !== 'drill';
 
   return (
     <group>
@@ -74,16 +76,51 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
         <sphereGeometry args={[0.028, 12, 12]} />
         <meshBasicMaterial color={colors.accent} transparent opacity={0.35} />
       </mesh>
-      <group ref={actorRef} position={approach} userData={{ isOperationGhost: true }}>
-        <VirtualHand tool={operation.tool} />
-        <Html center distanceFactor={4.8} className={styles.operationLabel} zIndexRange={[40, 0]}>
+      <group position={anchor} userData={{ isOperationGhost: true }}>
+        <Html
+          position={labelOffset}
+          center
+          distanceFactor={4.8}
+          className={styles.operationLabel}
+          zIndexRange={[40, 0]}
+        >
           <div className={styles.operationTag}>
             <span className={styles.operationTool}>{spec.shortLabel}</span>
             <span className={styles.operationHint}>{operation.label}</span>
           </div>
         </Html>
       </group>
+      <group ref={actorRef} position={approach} userData={{ isOperationGhost: true }}>
+        {showHandIcon ? (
+          <Html position={[-0.06, 0.1, -0.04]} center distanceFactor={5.2} className={styles.handIconWrap} zIndexRange={[35, 0]}>
+            <HandIcon />
+          </Html>
+        ) : null}
+        <group rotation={[0, Math.PI * 0.15, 0]}>
+          <ToolMesh tool={operation.tool} />
+        </group>
+      </group>
     </group>
+  );
+}
+
+function labelOffsetFromNormal(normal: [number, number, number]): [number, number, number] {
+  const lift = 0.22;
+  const side = 0.16;
+  return [normal[0] * side + 0.08, lift, normal[2] * side + 0.06];
+}
+
+function HandIcon() {
+  return (
+    <svg className={styles.handIcon} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#E8BEAC"
+        stroke="#C99A86"
+        strokeWidth="0.6"
+        d="M4.5 11.2c0-1.2.7-2.2 1.8-2.6.2-.8.9-1.4 1.8-1.4.5 0 1 .2 1.3.5.4-.8 1.2-1.3 2.1-1.3 1.2 0 2.2.9 2.4 2.1.9.4 1.5 1.3 1.5 2.4v3.1c0 1.5-1.2 2.7-2.7 2.7H9.8c-1.8 0-3.3-1.5-3.3-3.3v-3.2z"
+      />
+      <path fill="#F5E6DC" d="M7.2 9.8c.3 1.6.5 3.3.5 5h1.4c.1-1.8.1-3.5-.1-5.2-.6-.1-1-.3-1.4-.6-.2.2-.3.5-.4.8z" />
+    </svg>
   );
 }
 
@@ -106,31 +143,6 @@ function motionOffset(
     default:
       return { amount: 0.5, jitter: [0, 0, 0], rotation: [0, 0, 0] };
   }
-}
-
-function VirtualHand({ tool }: { tool: ToolKind }) {
-  const skin = '#E8BEAC';
-  const glove = '#F5E6DC';
-
-  return (
-    <group rotation={[0, Math.PI * 0.15, 0]}>
-      {tool !== 'hammer' && tool !== 'drill' ? (
-        <>
-          <mesh position={[0, -0.02, 0.02]}>
-            <boxGeometry args={[0.09, 0.035, 0.055]} />
-            <meshStandardMaterial color={skin} roughness={0.72} />
-          </mesh>
-          {[0, 1, 2, 3].map((finger) => (
-            <mesh key={finger} position={[-0.028 + finger * 0.018, 0.01, 0.06]} rotation={[0.35, 0, 0]}>
-              <cylinderGeometry args={[0.007, 0.008, 0.045, 8]} />
-              <meshStandardMaterial color={glove} roughness={0.68} />
-            </mesh>
-          ))}
-        </>
-      ) : null}
-      <ToolMesh tool={tool} />
-    </group>
-  );
 }
 
 function ToolMesh({ tool }: { tool: ToolKind }) {

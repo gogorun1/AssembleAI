@@ -272,9 +272,12 @@ async function transcribeClip(blob: Blob, options: RecordedSTTOptions): Promise<
 
 export type HandsFreePhase = 'awaiting-speech' | 'recording' | 'transcribing';
 
+/** 'no-speech' is recoverable (silence/empty); 'error' is a hard failure. */
+export type HandsFreeErrorKind = 'no-speech' | 'error';
+
 export interface HandsFreeHandlers {
   onResult(text: string): void;
-  onError(message: string): void;
+  onError(message: string, kind: HandsFreeErrorKind): void;
   onEnd(): void;
   onPhase?(phase: HandsFreePhase): void;
 }
@@ -328,7 +331,7 @@ export function startHandsFreeSTT(
   } = options;
 
   if (!supportsRecording()) {
-    handlers.onError('Recording is not supported in this browser.');
+    handlers.onError('Recording is not supported in this browser.', 'error');
     handlers.onEnd();
     return { cancel: () => {} };
   }
@@ -380,7 +383,7 @@ export function startHandsFreeSTT(
       });
     } catch {
       finish(() => {
-        handlers.onError('Could not open the selected microphone.');
+        handlers.onError('Could not open the selected microphone.', 'error');
         handlers.onEnd();
       });
       return;
@@ -413,7 +416,7 @@ export function startHandsFreeSTT(
     } catch {
       cleanup();
       finish(() => {
-        handlers.onError('Recording is not supported in this browser.');
+        handlers.onError('Recording is not supported in this browser.', 'error');
         handlers.onEnd();
       });
       return;
@@ -437,7 +440,7 @@ export function startHandsFreeSTT(
       }
       if (blob.size === 0) {
         finish(() => {
-          handlers.onError("I didn't catch that - try again.");
+          handlers.onError("I didn't catch that - try again.", 'no-speech');
           handlers.onEnd();
         });
         return;
@@ -449,12 +452,14 @@ export function startHandsFreeSTT(
         finish(() => {
           if (text) {
             handlers.onResult(text);
+          } else {
+            handlers.onError("I didn't catch that - try again.", 'no-speech');
           }
           handlers.onEnd();
         });
       } catch {
         finish(() => {
-          handlers.onError('Transcription failed - check the STT server and try again.');
+          handlers.onError('Transcription failed - check the STT server and try again.', 'error');
           handlers.onEnd();
         });
       }
@@ -490,7 +495,7 @@ export function startHandsFreeSTT(
           } else {
             cleanup();
             finish(() => {
-              handlers.onError("I didn't hear anything - tap and speak again.");
+              handlers.onError("I didn't hear anything - tap and speak again.", 'no-speech');
               handlers.onEnd();
             });
           }

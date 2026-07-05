@@ -93,6 +93,9 @@ export default function App() {
   const ttsRef = useRef(createTTSService());
   const sttRef = useRef<STTService>();
   const handsFreeRef = useRef<HandsFreeSession | null>(null);
+  const handsFreeContinuousRef = useRef(false);
+  const silentCyclesRef = useRef(0);
+  const armHandsFreeCycleRef = useRef<() => void>(() => {});
   const noSpeechTimer = useRef<ReturnType<typeof setTimeout>>();
   const [ready, setReady] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
@@ -290,9 +293,97 @@ export default function App() {
     stt.stop();
   }, []);
 
-  const cancelHandsFree = useCallback(() => {
+  // Max consecutive silent listens before conversation mode pauses itself, so it
+  // doesn't hold the mic open forever when the user has walked away.
+  const MAX_SILENT_CYCLES = 3;
+
+  const stopHandsFree = useCallback((message?: string) => {
+    handsFreeContinuousRef.current = false;
+    silentCyclesRef.current = 0;
     handsFreeRef.current?.cancel();
+    handsFreeRef.current = null;
+    setHandsFreeActive(false);
+    const state = useAppStore.getState().voiceState;
+    if (state === 'listening' || state === 'transcribing') {
+      useAppStore.getState().setVoiceState('idle');
+    }
+    if (message) {
+      useAppStore.getState().showToast(message);
+    }
   }, []);
+
+  // Arm one listen -> transcribe -> respond turn. In conversation mode we re-arm
+  // automatically after the spoken reply finishes, so no button press is needed.
+  const armHandsFreeCycle = useCallback(() => {
+    if (!handsFreeContinuousRef.current) {
+      return;
+    }
+    const liveStore = useAppStore.getState();
+    const endpoint = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
+    const deviceId = liveStore.selectedMicId;
+    if (!endpoint || !deviceId) {
+      stopHandsFree('Pick your glasses in the Microphone panel to use hands-free.');
+      return;
+    }
+
+    liveStore.setVoiceState('listening');
+    handsFreeRef.current = startHandsFreeSTT(
+      { endpoint, deviceId, language: commandLanguage === 'fr' ? 'fr-FR' : 'en-US' },
+      {
+        onPhase: (phase) => {
+          if (handsFreeContinuousRef.current) {
+            useAppStore.getState().setVoiceState(phase === 'transcribing' ? 'transcribing' : 'listening');
+          }
+        },
+        onResult: (text) => {
+          silentCyclesRef.current = 0;
+          void (async () => {
+            try {
+              await runUtterance(text);
+            } finally {
+              // Re-arm only after the reply has been spoken, which also prevents
+              // the mic from capturing our own TTS output.
+              if (handsFreeContinuousRef.current) {
+                armHandsFreeCycleRef.current();
+              }
+            }
+          })();
+        },
+        onError: (message, kind) => {
+          if (!handsFreeContinuousRef.current) {
+            useAppStore.getState().showToast(message);
+            useAppStore.getState().setVoiceState('idle');
+            return;
+          }
+          if (kind === 'no-speech') {
+            silentCyclesRef.current += 1;
+            if (silentCyclesRef.current >= MAX_SILENT_CYCLES) {
+              stopHandsFree('Paused hands-free after a quiet moment - tap to talk again.');
+            } else {
+              armHandsFreeCycleRef.current();
+            }
+          } else {
+            stopHandsFree(message);
+          }
+        },
+        onEnd: () => {
+          handsFreeRef.current = null;
+          // In conversation mode the next cycle is armed by onResult/onError.
+          if (!handsFreeContinuousRef.current) {
+            setHandsFreeActive(false);
+            const state = useAppStore.getState().voiceState;
+            if (state === 'listening' || state === 'transcribing') {
+              useAppStore.getState().setVoiceState('idle');
+            }
+          }
+        }
+      }
+    );
+  }, [commandLanguage, runUtterance, stopHandsFree]);
+
+  useEffect(() => {
+    armHandsFreeCycleRef.current = armHandsFreeCycle;
+  }, [armHandsFreeCycle]);
 
   const beginHandsFree = useCallback(() => {
     const liveStore = useAppStore.getState();
@@ -309,40 +400,19 @@ export default function App() {
       ttsRef.current.cancel();
     }
 
+    silentCyclesRef.current = 0;
+    handsFreeContinuousRef.current = true;
     setHandsFreeActive(true);
-    liveStore.setVoiceState('listening');
-    handsFreeRef.current = startHandsFreeSTT(
-      { endpoint, deviceId, language: commandLanguage === 'fr' ? 'fr-FR' : 'en-US' },
-      {
-        onPhase: (phase) => {
-          useAppStore.getState().setVoiceState(phase === 'transcribing' ? 'transcribing' : 'listening');
-        },
-        onResult: (text) => {
-          void runUtterance(text);
-        },
-        onError: (message) => {
-          useAppStore.getState().showToast(message);
-          useAppStore.getState().setVoiceState('idle');
-        },
-        onEnd: () => {
-          handsFreeRef.current = null;
-          setHandsFreeActive(false);
-          const state = useAppStore.getState().voiceState;
-          if (state === 'listening' || state === 'transcribing') {
-            useAppStore.getState().setVoiceState('idle');
-          }
-        }
-      }
-    );
-  }, [commandLanguage, runUtterance]);
+    armHandsFreeCycle();
+  }, [armHandsFreeCycle]);
 
   const toggleHandsFree = useCallback(() => {
-    if (handsFreeActive) {
-      cancelHandsFree();
+    if (handsFreeContinuousRef.current) {
+      stopHandsFree();
     } else {
       beginHandsFree();
     }
-  }, [handsFreeActive, cancelHandsFree, beginHandsFree]);
+  }, [beginHandsFree, stopHandsFree]);
 
   useEffect(() => {
     sttRef.current?.abort();
@@ -394,6 +464,7 @@ export default function App() {
       clearTimeout(noSpeechTimer.current);
       ttsRef.current.cancel();
       sttRef.current?.abort();
+      handsFreeContinuousRef.current = false;
       handsFreeRef.current?.cancel();
     };
   }, []);

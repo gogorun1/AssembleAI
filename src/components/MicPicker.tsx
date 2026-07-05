@@ -277,7 +277,7 @@ export function MicPicker({
               {handsFreeActive ? (
                 <>
                   <Square size={13} aria-hidden />
-                  Listening... tap to stop
+                  Conversation on... tap to stop
                 </>
               ) : (
                 <>
@@ -291,8 +291,8 @@ export function MicPicker({
           {recordedModeActive ? (
             <p className={styles.note}>
               {handsFreeActive
-                ? 'Speak your command - I will detect when you finish and act automatically.'
-                : 'Tap Hands-free and just speak - no need to hold a button. Or hold the voice orb to talk.'}
+                ? 'Conversation mode: speak, I reply, then I listen again automatically - no button presses. Tap to stop.'
+                : 'Tap Hands-free and just talk - after each reply I keep listening so you can continue. Or hold the voice orb.'}
             </p>
           ) : STT_ENDPOINT ? (
             <p className={styles.note}>

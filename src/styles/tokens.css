@@ -17,6 +17,8 @@
   /* semantic */
   --ok: #3E7A4C;
   --warn-wash: #F2E9D6;
+  --tip-wash: #E8EEF1;
+  --tip-ink: #4A6572;
 
   --font-display: 'Archivo', sans-serif;
   --font-body: 'Archivo', sans-serif;

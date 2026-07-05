@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock3, Wrench } from 'lucide-react';
+import { Clock3, Lightbulb, Wrench } from 'lucide-react';
 import type { Step } from '../types/assembly';
 import styles from './StepCard.module.css';
 
@@ -33,9 +33,12 @@ export function StepCard({ step, onCommonMistake }: StepCardProps) {
         </div>
       </div>
       {step.commonMistake ? (
-        <button className={styles.mistake} type="button" onClick={onCommonMistake}>
-          <AlertTriangle size={16} aria-hidden />
-          <span>{step.commonMistake}</span>
+        <button className={styles.tip} type="button" onClick={onCommonMistake}>
+          <Lightbulb size={16} aria-hidden />
+          <span className={styles.tipBody}>
+            <span className={styles.tipLabel}>TIP</span>
+            <span>{step.commonMistake}</span>
+          </span>
         </button>
       ) : null}
     </article>

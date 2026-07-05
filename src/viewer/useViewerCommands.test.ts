@@ -68,9 +68,15 @@ describe('step poses', () => {
     expect(pose.visible).toBe(true);
   });
 
-  it('applies an authored step offset during the active assembly step', () => {
-    const pose = derivePartPose('bottom-panel', 2, 0);
-    expect(pose.offset).not.toEqual([0, 0, 0]);
+  it('hides not-yet-installed parts until their unlock step', () => {
+    expect(derivePartPose('bottom-panel', 2, 0).visible).toBe(false);
+    expect(derivePartPose('bottom-panel', 3, 0).visible).toBe(true);
+    expect(derivePartPose('bottom-panel', 3, 0).offset).toEqual([0, 0, 0]);
+  });
+
+  it('shows pulled-apart parts only in explode mode', () => {
+    const pose = derivePartPose('bottom-panel', 2, 1);
     expect(pose.visible).toBe(true);
+    expect(pose.offset).not.toEqual([0, 0, 0]);
   });
 });

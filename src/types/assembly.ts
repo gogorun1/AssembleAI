@@ -80,6 +80,10 @@ export interface TranscriptLine {
   timestamp: number;
   mentionedPartIds?: string[];
   language?: 'en' | 'fr';
+  /** Step shown in the 3D preview clip attached to this agent reply. */
+  previewStep?: number;
+  previewVideoUrl?: string;
+  skipPreview?: boolean;
 }
 
 export interface ViewerAPI {

@@ -639,12 +639,29 @@ export function derivePartPose(
   }
 
   const assembled = currentStep >= layout.unlockStep;
-  const firstVisibleStep = layout.visibleFromStep ?? Math.max(1, layout.unlockStep - 1);
-  const pendingMultiplier = assembled ? 0 : 1.25;
+
+  // Default view: only show installed parts. Hardware in bins flies in via GlbModel.
+  if (!assembled && explodeLevel === 0) {
+    return {
+      primitives: layout.primitives,
+      offset: [0, 0, 0],
+      visible: false
+    };
+  }
+
   const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
-  const multiplier = pendingMultiplier + explodedMultiplier;
   const stepOffset = layout.stepOffsets?.[currentStep] ?? [0, 0, 0];
 
+  if (assembled) {
+    return {
+      primitives: layout.primitives,
+      offset: [0, 0, 0],
+      visible: true
+    };
+  }
+
+  // Explode mode: show not-yet-installed parts pulled apart for inspection.
+  const multiplier = explodedMultiplier + 0.85;
   return {
     primitives: layout.primitives,
     offset: [
@@ -652,6 +669,6 @@ export function derivePartPose(
       layout.explodedOffset[1] * multiplier + stepOffset[1],
       layout.explodedOffset[2] * multiplier + stepOffset[2]
     ],
-    visible: currentStep >= firstVisibleStep || explodeLevel > 0
+    visible: true
   };
 }

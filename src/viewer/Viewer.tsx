@@ -264,6 +264,7 @@ function CameraRig({
   const manifest = useAppStore((state) => state.manifest);
   const activeViewKey = useAppStore((state) => state.activeViewKey);
   const cameraNonce = useAppStore((state) => state.cameraNonce);
+  const cameraFocusScale = useAppStore((state) => state.cameraFocusScale);
   const reducedMotion = useReducedMotion();
 
   const lastNonce = useRef(-1);
@@ -292,8 +293,9 @@ function CameraRig({
       const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
       startPos.current.copy(camera.position);
       startTarget.current.copy(controls?.target ?? startTarget.current.set(0, 1.1, 0));
-      endPos.current.set(...view.position);
       endTarget.current.set(...view.target);
+      endPos.current.set(...view.position);
+      endPos.current.sub(endTarget.current).multiplyScalar(cameraFocusScale).add(endTarget.current);
       t.current = 0;
       dur.current = reducedMotion ? 0 : 0.85;
       flying.current = true;

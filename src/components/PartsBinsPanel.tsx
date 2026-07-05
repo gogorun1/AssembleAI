@@ -2,6 +2,14 @@ import { useAppStore } from '../store/useAppStore';
 import { partBins, type PartBin } from '../viewer/bins';
 import styles from './PartsBinsPanel.module.css';
 
+const BIN_VIEW_KEYS: Record<string, string> = {
+  'bin-cam-screws': 'side-screw-detail',
+  'bin-cam-locks': 'cam-lock-detail',
+  'bin-dowels-pins': 'dowel-prep',
+  'bin-back-nails': 'back-nails',
+  'bin-wall-hardware': 'wall-anchor'
+};
+
 function BinIcon({ shape }: { shape: PartBin['iconShape'] }) {
   const common = {
     width: 22,
@@ -69,10 +77,10 @@ export function PartsBinsPanel() {
     selectBin(bin.id);
     setHighlightedParts(bin.partIds);
     bin.partIds.forEach((partId) => mentionPart(partId));
-    setActiveView('front');
+    setActiveView(BIN_VIEW_KEYS[bin.id] ?? 'front', { focus: true });
     addTranscript({
       speaker: 'agent',
-      text: `Bin ${bin.index}, ${bin.name}: highlighted where these go on the model.`,
+      text: `${bin.name}: highlighted where these go on the model.`,
       mentionedPartIds: bin.partIds,
       language: 'en'
     });
@@ -91,7 +99,6 @@ export function PartsBinsPanel() {
             onClick={() => onSelect(bin.id)}
             title={`Highlight where the ${bin.name.toLowerCase()} go`}
           >
-            <span className={styles.badge}>{bin.index}</span>
             <span className={styles.icon}>
               <BinIcon shape={bin.iconShape} />
             </span>

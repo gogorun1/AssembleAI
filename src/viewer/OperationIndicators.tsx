@@ -37,8 +37,7 @@ export function OperationIndicators({ colors }: OperationIndicatorsProps) {
 
 function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: TokenColors }) {
   const ringRef = useRef<THREE.Mesh>(null);
-  const actorRef = useRef<THREE.Group>(null);
-  const { operation, anchor, approach, normal } = entry;
+  const { operation, anchor, normal } = entry;
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
@@ -47,24 +46,10 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
       ringRef.current.scale.setScalar(pulse);
       ringRef.current.rotation.z = t * 0.6;
     }
-    if (actorRef.current) {
-      const motion = motionOffset(operation.motion, t);
-      actorRef.current.position.set(
-        THREE.MathUtils.lerp(approach[0], anchor[0], motion.amount) + motion.jitter[0],
-        THREE.MathUtils.lerp(approach[1], anchor[1], motion.amount) + motion.jitter[1],
-        THREE.MathUtils.lerp(approach[2], anchor[2], motion.amount) + motion.jitter[2]
-      );
-      actorRef.current.rotation.set(
-        motion.rotation[0] + Math.atan2(normal[2], normal[0]),
-        motion.rotation[1],
-        motion.rotation[2]
-      );
-    }
   });
 
   const spec = toolSpecs[operation.tool];
   const labelOffset = labelOffsetFromNormal(normal);
-  const showHandIcon = operation.tool !== 'hammer' && operation.tool !== 'drill';
 
   return (
     <group>
@@ -85,20 +70,13 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
           zIndexRange={[40, 0]}
         >
           <div className={styles.operationTag}>
-            <span className={styles.operationTool}>{spec.shortLabel}</span>
+            <div className={styles.operationTagHead}>
+              <ToolIcon tool={operation.tool} motion={operation.motion} />
+              <span className={styles.operationTool}>{spec.label}</span>
+            </div>
             <span className={styles.operationHint}>{operation.label}</span>
           </div>
         </Html>
-      </group>
-      <group ref={actorRef} position={approach} userData={{ isOperationGhost: true }}>
-        {showHandIcon ? (
-          <Html position={[-0.06, 0.1, -0.04]} center distanceFactor={5.2} className={styles.handIconWrap} zIndexRange={[35, 0]}>
-            <HandIcon />
-          </Html>
-        ) : null}
-        <group rotation={[0, Math.PI * 0.15, 0]}>
-          <ToolMesh tool={operation.tool} />
-        </group>
       </group>
     </group>
   );
@@ -110,125 +88,72 @@ function labelOffsetFromNormal(normal: [number, number, number]): [number, numbe
   return [normal[0] * side + 0.08, lift, normal[2] * side + 0.06];
 }
 
-function HandIcon() {
+function ToolIcon({ tool, motion }: { tool: ToolKind; motion: OperationMotion }) {
+  const motionClass =
+    motion === 'turn' ? styles.toolIconTurn : motion === 'strike' ? styles.toolIconStrike : motion === 'press' ? styles.toolIconPress : '';
+
   return (
-    <svg className={styles.handIcon} viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="#E8BEAC"
-        stroke="#C99A86"
-        strokeWidth="0.6"
-        d="M4.5 11.2c0-1.2.7-2.2 1.8-2.6.2-.8.9-1.4 1.8-1.4.5 0 1 .2 1.3.5.4-.8 1.2-1.3 2.1-1.3 1.2 0 2.2.9 2.4 2.1.9.4 1.5 1.3 1.5 2.4v3.1c0 1.5-1.2 2.7-2.7 2.7H9.8c-1.8 0-3.3-1.5-3.3-3.3v-3.2z"
-      />
-      <path fill="#F5E6DC" d="M7.2 9.8c.3 1.6.5 3.3.5 5h1.4c.1-1.8.1-3.5-.1-5.2-.6-.1-1-.3-1.4-.6-.2.2-.3.5-.4.8z" />
+    <svg className={`${styles.toolIcon} ${motionClass}`} viewBox="0 0 24 24" aria-hidden="true">
+      {toolIconPaths(tool)}
     </svg>
   );
 }
 
-function motionOffset(
-  motion: OperationMotion,
-  t: number
-): { amount: number; jitter: [number, number, number]; rotation: [number, number, number] } {
-  const wave = (Math.sin(t * 4) + 1) / 2;
-  switch (motion) {
-    case 'press':
-      return { amount: 0.35 + wave * 0.45, jitter: [0, 0, 0], rotation: [0, 0, 0] };
-    case 'turn':
-      return { amount: 0.55, jitter: [0, 0, 0], rotation: [0, t * 2.4, 0] };
-    case 'slide':
-      return { amount: 0.25 + wave * 0.35, jitter: [Math.sin(t * 3) * 0.02, 0, 0], rotation: [0, 0, 0] };
-    case 'strike':
-      return { amount: 0.4 + (Math.sin(t * 8) > 0.7 ? 0.35 : 0), jitter: [0, Math.max(0, Math.sin(t * 8)) * 0.04, 0], rotation: [0, 0, 0] };
-    case 'mark':
-      return { amount: 0.5, jitter: [Math.sin(t * 5) * 0.03, 0, Math.cos(t * 5) * 0.02], rotation: [0, 0, Math.sin(t * 3) * 0.15] };
-    default:
-      return { amount: 0.5, jitter: [0, 0, 0], rotation: [0, 0, 0] };
-  }
-}
+function toolIconPaths(tool: ToolKind) {
+  const stroke = 'currentColor';
+  const sw = 1.8;
+  const cap = { stroke, strokeWidth: sw, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' };
 
-function ToolMesh({ tool }: { tool: ToolKind }) {
-  if (tool === 'hands') {
-    return (
-      <mesh position={[0.04, 0.02, 0.04]} rotation={[0.2, 0, 0]}>
-        <boxGeometry args={[0.05, 0.028, 0.04]} />
-        <meshStandardMaterial color="#F5E6DC" roughness={0.7} />
-      </mesh>
-    );
+  switch (tool) {
+    case 'hands':
+      return (
+        <>
+          <circle cx="12" cy="12" r="5.5" {...cap} />
+          <path d="M12 8.5v7M9 12h6" {...cap} />
+        </>
+      );
+    case 'flat-screwdriver':
+      return (
+        <>
+          <path d="M6 18l8-8" {...cap} />
+          <path d="M13 9h3.5v3.5" {...cap} />
+        </>
+      );
+    case 'phillips':
+      return (
+        <>
+          <path d="M6 18l8-8" {...cap} />
+          <path d="M12.5 8.5v4M10.5 10.5h4" {...cap} />
+        </>
+      );
+    case 'pencil':
+      return (
+        <>
+          <path d="M5 19l9-9" {...cap} />
+          <path d="M13 9l2 2" {...cap} />
+          <path d="M15 11l2.5 2.5" {...cap} strokeWidth={1.4} />
+        </>
+      );
+    case 'ruler':
+      return (
+        <>
+          <rect x="4" y="10" width="16" height="5" rx="0.8" {...cap} />
+          <path d="M7 10v2M10 10v3M13 10v2M16 10v3M19 10v2" {...cap} strokeWidth={1.4} />
+        </>
+      );
+    case 'hammer':
+      return (
+        <>
+          <path d="M8 18l4-10" {...cap} />
+          <path d="M11 7h6.5a1.5 1.5 0 0 0 0-3H11" {...cap} />
+        </>
+      );
+    case 'drill':
+      return (
+        <>
+          <rect x="5" y="9" width="9" height="6" rx="1.2" {...cap} />
+          <path d="M14 12h5M19 12l2-1.5v3L19 12z" {...cap} fill="currentColor" stroke="none" />
+        </>
+      );
   }
-  if (tool === 'flat-screwdriver') {
-    return (
-      <group position={[0.02, 0, 0.05]} rotation={[0, 0, Math.PI / 2]}>
-        <mesh position={[0, 0, -0.05]}>
-          <cylinderGeometry args={[0.012, 0.012, 0.1, 12]} />
-          <meshStandardMaterial color="#F2C94C" roughness={0.55} />
-        </mesh>
-        <mesh position={[0, 0, 0.04]}>
-          <boxGeometry args={[0.035, 0.006, 0.02]} />
-          <meshStandardMaterial color="#8B9098" metalness={0.55} roughness={0.35} />
-        </mesh>
-      </group>
-    );
-  }
-  if (tool === 'phillips' || tool === 'drill') {
-    return (
-      <group position={[0.02, 0, 0.05]} rotation={[0, 0, Math.PI / 2]}>
-        <mesh position={[0, 0, -0.05]}>
-          <cylinderGeometry args={[0.013, 0.013, 0.11, 12]} />
-          <meshStandardMaterial color={tool === 'drill' ? '#3D4654' : '#F2C94C'} roughness={0.5} />
-        </mesh>
-        <mesh position={[0, 0, 0.045]}>
-          <cylinderGeometry args={[0.004, 0.004, 0.04, 8]} />
-          <meshStandardMaterial color="#8B9098" metalness={0.62} roughness={0.28} />
-        </mesh>
-        {tool === 'drill' ? (
-          <mesh position={[0, 0, -0.12]} rotation={[Math.PI / 2, 0, 0]}>
-            <boxGeometry args={[0.06, 0.05, 0.08]} />
-            <meshStandardMaterial color="#3D4654" roughness={0.45} />
-          </mesh>
-        ) : null}
-      </group>
-    );
-  }
-  if (tool === 'hammer') {
-    return (
-      <group position={[0, 0.04, 0]} rotation={[0.4, 0, 0]}>
-        <mesh position={[0, -0.06, 0]}>
-          <cylinderGeometry args={[0.011, 0.011, 0.14, 10]} />
-          <meshStandardMaterial color="#B8875A" roughness={0.72} />
-        </mesh>
-        <mesh position={[0, 0.02, 0]}>
-          <boxGeometry args={[0.05, 0.028, 0.03]} />
-          <meshStandardMaterial color="#7A8088" metalness={0.5} roughness={0.38} />
-        </mesh>
-      </group>
-    );
-  }
-  if (tool === 'pencil') {
-    return (
-      <group position={[0.03, 0, 0.04]} rotation={[0.3, 0.2, Math.PI / 2]}>
-        <mesh position={[0, 0, -0.04]}>
-          <cylinderGeometry args={[0.005, 0.005, 0.09, 8]} />
-          <meshStandardMaterial color="#E67E22" roughness={0.6} />
-        </mesh>
-        <mesh position={[0, 0, 0.02]}>
-          <coneGeometry args={[0.006, 0.018, 8]} />
-          <meshStandardMaterial color="#4A4A4A" roughness={0.4} />
-        </mesh>
-      </group>
-    );
-  }
-  // ruler
-  return (
-    <group position={[0.04, 0, 0.02]} rotation={[0, 0.4, 0]}>
-      <mesh>
-        <boxGeometry args={[0.16, 0.004, 0.028]} />
-        <meshStandardMaterial color="#D4C4A8" roughness={0.65} />
-      </mesh>
-      {[0, 1, 2, 3, 4].map((tick) => (
-        <mesh key={tick} position={[-0.06 + tick * 0.03, 0.004, 0]}>
-          <boxGeometry args={[0.002, 0.004, 0.012]} />
-          <meshStandardMaterial color="#6F6760" />
-        </mesh>
-      ))}
-    </group>
-  );
 }

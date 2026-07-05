@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import manifest from '../data/manifest';
+import { loadSelectedMicId, saveSelectedMicId } from '../services/microphones';
 import { revokePreviewUrls } from '../services/viewerCapture';
 import type {
   AssemblyManifest,
@@ -47,6 +48,8 @@ interface AppState {
   toast?: ToastState;
   viewer?: ViewerAPI;
   firstVoiceInteraction: boolean;
+  /** Preferred microphone deviceId for recorded STT (e.g. Ray-Ban Meta glasses). */
+  selectedMicId?: string;
   eventLog: DemoEvent[];
   resetDemoState(): void;
   setViewer(viewer: ViewerAPI): void;
@@ -63,6 +66,7 @@ interface AppState {
   setExplodeLevel(level: 0 | 1 | 2): void;
   selectPart(partId?: string): void;
   selectBin(binId?: string): void;
+  setSelectedMicId(deviceId?: string): void;
   showToast(message: string): void;
   clearToast(): void;
   markVoiceInteraction(): void;
@@ -113,6 +117,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   cameraFocusScale: 0.76,
   explodeLevel: 0,
   firstVoiceInteraction: false,
+  selectedMicId: loadSelectedMicId(),
   eventLog: [],
   resetDemoState() {
     for (const timer of mentionTimers.values()) {
@@ -250,6 +255,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   selectBin(binId) {
     set({ selectedBinId: binId });
+  },
+  setSelectedMicId(deviceId) {
+    saveSelectedMicId(deviceId);
+    set({ selectedMicId: deviceId });
   },
   showToast(message) {
     set({ toast: { id: crypto.randomUUID(), message } });

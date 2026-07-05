@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "intent:dev": "node scripts/intent-dev-server.mjs",
+    "api:dev": "node scripts/intent-dev-server.mjs",
     "agent:dev": "node scripts/intent-dev-server.mjs",
     "gemini:models": "node scripts/gemini-check.mjs",
     "build": "tsc -b && vite build",

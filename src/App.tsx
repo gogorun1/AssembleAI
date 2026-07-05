@@ -6,6 +6,7 @@ import { StepCard } from './components/StepCard';
 import { Toast } from './components/Toast';
 import { TranscriptPanel } from './components/TranscriptPanel';
 import { VoiceOrb } from './components/VoiceOrb';
+import { MicPicker } from './components/MicPicker';
 import { PartsBinsPanel } from './components/PartsBinsPanel';
 import { CommandPanel, type CommandLanguage } from './components/CommandPanel';
 import { PresenterPanel } from './components/PresenterPanel';
@@ -14,7 +15,13 @@ import { DebugOverlay } from './components/DebugOverlay';
 import { presenterUtterances } from './data/presenterUtterances';
 import type { PhotoCheckResult } from './services/photoCheck';
 import { parseIntent } from './services/intent';
-import { createSTTService, type STTService } from './services/stt';
+import {
+  createSTTService,
+  createRecordedSTTService,
+  startHandsFreeSTT,
+  type HandsFreeSession,
+  type STTService
+} from './services/stt';
 import { createTTSService } from './services/tts';
 import { useAppStore } from './store/useAppStore';
 import type { Part, ResolvedIntent } from './types/assembly';
@@ -70,6 +77,7 @@ export default function App() {
   const explodeLevel = useAppStore((state) => state.explodeLevel);
   const toast = useAppStore((state) => state.toast);
   const firstVoiceInteraction = useAppStore((state) => state.firstVoiceInteraction);
+  const selectedMicId = useAppStore((state) => state.selectedMicId);
   // Select actions individually (stable references) instead of subscribing to
   // the whole store, which previously re-rendered App on every state change.
   const previousStep = useAppStore((state) => state.previousStep);
@@ -84,10 +92,15 @@ export default function App() {
   const showToast = useAppStore((state) => state.showToast);
   const ttsRef = useRef(createTTSService());
   const sttRef = useRef<STTService>();
+  const handsFreeRef = useRef<HandsFreeSession | null>(null);
+  const handsFreeContinuousRef = useRef(false);
+  const silentCyclesRef = useRef(0);
+  const armHandsFreeCycleRef = useRef<() => void>(() => {});
   const noSpeechTimer = useRef<ReturnType<typeof setTimeout>>();
   const [ready, setReady] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [commandLanguage, setCommandLanguage] = useState<CommandLanguage>('en');
+  const [handsFreeActive, setHandsFreeActive] = useState(false);
 
   const step = manifest.steps[currentStep - 1];
   const partsById = useMemo(
@@ -242,6 +255,9 @@ export default function App() {
   }, []);
 
   const beginPushToTalk = useCallback(() => {
+    if (handsFreeActive) {
+      return;
+    }
     const liveStore = useAppStore.getState();
     liveStore.markVoiceInteraction();
 
@@ -264,7 +280,7 @@ export default function App() {
         useAppStore.getState().setVoiceState('idle');
       }
     }, 5000);
-  }, []);
+  }, [handsFreeActive]);
 
   const endPushToTalk = useCallback(() => {
     const stt = sttRef.current;
@@ -277,9 +293,138 @@ export default function App() {
     stt.stop();
   }, []);
 
+  // Max consecutive silent listens before conversation mode pauses itself, so it
+  // doesn't hold the mic open forever when the user has walked away.
+  const MAX_SILENT_CYCLES = 3;
+
+  const stopHandsFree = useCallback((message?: string) => {
+    handsFreeContinuousRef.current = false;
+    silentCyclesRef.current = 0;
+    handsFreeRef.current?.cancel();
+    handsFreeRef.current = null;
+    setHandsFreeActive(false);
+    const state = useAppStore.getState().voiceState;
+    if (state === 'listening' || state === 'transcribing') {
+      useAppStore.getState().setVoiceState('idle');
+    }
+    if (message) {
+      useAppStore.getState().showToast(message);
+    }
+  }, []);
+
+  // Arm one listen -> transcribe -> respond turn. In conversation mode we re-arm
+  // automatically after the spoken reply finishes, so no button press is needed.
+  const armHandsFreeCycle = useCallback(() => {
+    if (!handsFreeContinuousRef.current) {
+      return;
+    }
+    const liveStore = useAppStore.getState();
+    const endpoint = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
+    const deviceId = liveStore.selectedMicId;
+    if (!endpoint || !deviceId) {
+      stopHandsFree('Pick your glasses in the Microphone panel to use hands-free.');
+      return;
+    }
+
+    liveStore.setVoiceState('listening');
+    handsFreeRef.current = startHandsFreeSTT(
+      { endpoint, deviceId, language: commandLanguage === 'fr' ? 'fr-FR' : 'en-US' },
+      {
+        onPhase: (phase) => {
+          if (handsFreeContinuousRef.current) {
+            useAppStore.getState().setVoiceState(phase === 'transcribing' ? 'transcribing' : 'listening');
+          }
+        },
+        onResult: (text) => {
+          silentCyclesRef.current = 0;
+          void (async () => {
+            try {
+              await runUtterance(text);
+            } finally {
+              // Re-arm only after the reply has been spoken, which also prevents
+              // the mic from capturing our own TTS output.
+              if (handsFreeContinuousRef.current) {
+                armHandsFreeCycleRef.current();
+              }
+            }
+          })();
+        },
+        onError: (message, kind) => {
+          if (!handsFreeContinuousRef.current) {
+            useAppStore.getState().showToast(message);
+            useAppStore.getState().setVoiceState('idle');
+            return;
+          }
+          if (kind === 'no-speech') {
+            silentCyclesRef.current += 1;
+            if (silentCyclesRef.current >= MAX_SILENT_CYCLES) {
+              stopHandsFree('Paused hands-free after a quiet moment - tap to talk again.');
+            } else {
+              armHandsFreeCycleRef.current();
+            }
+          } else {
+            stopHandsFree(message);
+          }
+        },
+        onEnd: () => {
+          handsFreeRef.current = null;
+          // In conversation mode the next cycle is armed by onResult/onError.
+          if (!handsFreeContinuousRef.current) {
+            setHandsFreeActive(false);
+            const state = useAppStore.getState().voiceState;
+            if (state === 'listening' || state === 'transcribing') {
+              useAppStore.getState().setVoiceState('idle');
+            }
+          }
+        }
+      }
+    );
+  }, [commandLanguage, runUtterance, stopHandsFree]);
+
+  useEffect(() => {
+    armHandsFreeCycleRef.current = armHandsFreeCycle;
+  }, [armHandsFreeCycle]);
+
+  const beginHandsFree = useCallback(() => {
+    const liveStore = useAppStore.getState();
+    liveStore.markVoiceInteraction();
+
+    const endpoint = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
+    const deviceId = liveStore.selectedMicId;
+    if (!endpoint || !deviceId) {
+      liveStore.showToast('Pick your glasses in the Microphone panel to use hands-free.');
+      return;
+    }
+
+    if (liveStore.voiceState === 'speaking') {
+      ttsRef.current.cancel();
+    }
+
+    silentCyclesRef.current = 0;
+    handsFreeContinuousRef.current = true;
+    setHandsFreeActive(true);
+    armHandsFreeCycle();
+  }, [armHandsFreeCycle]);
+
+  const toggleHandsFree = useCallback(() => {
+    if (handsFreeContinuousRef.current) {
+      stopHandsFree();
+    } else {
+      beginHandsFree();
+    }
+  }, [beginHandsFree, stopHandsFree]);
+
   useEffect(() => {
     sttRef.current?.abort();
-    const stt = createSTTService(commandLanguage === 'fr' ? 'fr-FR' : 'en-US');
+    const language = commandLanguage === 'fr' ? 'fr-FR' : 'en-US';
+    const sttEndpoint = import.meta.env.VITE_STT_ENDPOINT as string | undefined;
+    // Recorded mode captures the chosen device and transcribes server-side, which
+    // is the only way to force voice through a specific mic (e.g. Ray-Ban Meta
+    // glasses); the Web Speech fallback always uses the OS default input.
+    const useRecorded = Boolean(sttEndpoint) && Boolean(selectedMicId);
+    const stt = useRecorded
+      ? createRecordedSTTService({ endpoint: sttEndpoint as string, language, deviceId: selectedMicId })
+      : createSTTService(language);
     sttRef.current = stt;
     stt.onResult((text) => {
       clearTimeout(noSpeechTimer.current);
@@ -291,8 +436,10 @@ export default function App() {
         useAppStore.getState().setVoiceState('idle');
       }
     });
-    stt.onError(() => {
-      useAppStore.getState().showToast('Voice capture stopped - click steps and parts instead.');
+    stt.onError((message) => {
+      useAppStore.getState().showToast(
+        useRecorded && message ? message : 'Voice capture stopped - click steps and parts instead.'
+      );
       useAppStore.getState().setVoiceState('idle');
     });
     return () => {
@@ -301,7 +448,7 @@ export default function App() {
         sttRef.current = undefined;
       }
     };
-  }, [runUtterance, commandLanguage]);
+  }, [runUtterance, commandLanguage, selectedMicId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -317,6 +464,8 @@ export default function App() {
       clearTimeout(noSpeechTimer.current);
       ttsRef.current.cancel();
       sttRef.current?.abort();
+      handsFreeContinuousRef.current = false;
+      handsFreeRef.current?.cancel();
     };
   }, []);
 
@@ -430,6 +579,12 @@ export default function App() {
                 onPointerUp={endPushToTalk}
               />
             </div>
+            <MicPicker
+              disabled={voiceState !== 'idle'}
+              onNotify={showToast}
+              handsFreeActive={handsFreeActive}
+              onToggleHandsFree={toggleHandsFree}
+            />
           </section>
           <PresenterPanel
             utterances={presenterUtterances}

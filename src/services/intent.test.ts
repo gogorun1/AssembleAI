@@ -36,6 +36,75 @@ describe('parseIntent demo utterances', () => {
     expect(intent.viewKey).toBe('back-panel');
   });
 
+  it('maps the front view request to the front camera preset', async () => {
+    const intent = await parseIntent('Show me the front.', {
+      manifest,
+      currentStep: 7
+    });
+
+    expect(intent.type).toBe('show_angle');
+    expect(intent.viewKey).toBe('front');
+  });
+
+  it('maps a side view request to the side camera preset', async () => {
+    const intent = await parseIntent('Can I see it from the side?', {
+      manifest,
+      currentStep: 3
+    });
+
+    expect(intent.type).toBe('show_angle');
+    expect(intent.viewKey).toBe('side');
+  });
+
+  it('maps a top view request to the top camera preset', async () => {
+    const intent = await parseIntent('Show me the top view.', {
+      manifest,
+      currentStep: 3
+    });
+
+    expect(intent.type).toBe('show_angle');
+    expect(intent.viewKey).toBe('top');
+  });
+
+  it('maps a 3D request to the isometric camera preset', async () => {
+    const intent = await parseIntent('Give me the 3D view.', {
+      manifest,
+      currentStep: 3
+    });
+
+    expect(intent.type).toBe('show_angle');
+    expect(intent.viewKey).toBe('iso');
+  });
+
+  it('maps a zoom-out request to the full overview', async () => {
+    const intent = await parseIntent('Zoom out so I can see the whole thing.', {
+      manifest,
+      currentStep: 3
+    });
+
+    expect(intent.type).toBe('show_angle');
+    expect(intent.viewKey).toBe('complete');
+  });
+
+  it('keeps a zoom-in request framed on the current step', async () => {
+    const intent = await parseIntent('Can you zoom in closer?', {
+      manifest,
+      currentStep: 4
+    });
+
+    expect(intent.type).toBe('show_angle');
+    expect(intent.viewKey).toBe(manifest.steps[3].cameraView);
+  });
+
+  it('does not treat a placement question as a view command', async () => {
+    const intent = await parseIntent('Where does the back panel go?', {
+      manifest,
+      currentStep: 9
+    });
+
+    expect(intent.type).toBe('where_does_it_go');
+  });
+
   it('moves forward on the next-step utterance', async () => {
     const intent = await parseIntent("What's next?", {
       manifest,

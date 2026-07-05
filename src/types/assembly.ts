@@ -18,6 +18,31 @@ export interface Part {
   meshName: string;
   meshNodes?: string[];
   quantity: number;
+  /** Short manual label for 3D annotations (no sequential piece numbers). */
+  manualFig?: string;
+}
+
+export type ToolKind =
+  | 'hands'
+  | 'flat-screwdriver'
+  | 'phillips'
+  | 'pencil'
+  | 'ruler'
+  | 'hammer'
+  | 'drill';
+
+export type OperationMotion = 'press' | 'turn' | 'slide' | 'strike' | 'mark';
+
+export interface StepOperation {
+  id: string;
+  label: string;
+  partId: string;
+  /** Specific hardware instance from partLayouts; omit to use part center. */
+  primitiveId?: string;
+  tool: ToolKind;
+  motion: OperationMotion;
+  /** Approach offset from anchor (hand/tool sits here, moves toward anchor). */
+  approach?: [number, number, number];
 }
 
 export interface Step {
@@ -29,6 +54,8 @@ export interface Step {
   highlightParts: string[];
   commonMistake?: string;
   toolNeeded?: string;
+  /** Manual illustration reference (e.g. "Fig. 3–4"). */
+  manualFig?: string;
   estMinutes?: number;
 }
 
@@ -80,6 +107,10 @@ export interface TranscriptLine {
   timestamp: number;
   mentionedPartIds?: string[];
   language?: 'en' | 'fr';
+  /** Step shown in the 3D preview clip attached to this agent reply. */
+  previewStep?: number;
+  previewVideoUrl?: string;
+  skipPreview?: boolean;
 }
 
 export interface ViewerAPI {

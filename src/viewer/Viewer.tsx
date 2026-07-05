@@ -11,7 +11,9 @@ import {
   type ReactNode
 } from 'react';
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { useAppStore } from '../store/useAppStore';
+import { createRoleMaterial } from './materials';
 import type { Part, ViewerAPI } from '../types/assembly';
 import {
   derivePartPose,
@@ -25,6 +27,7 @@ import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
 import { SlotGhosts } from './PartsBench';
+import { OperationIndicators } from './OperationIndicators';
 import { resolvePickablePartId } from './picking';
 import { isTap, markPointerDown } from './pointer';
 
@@ -115,9 +118,13 @@ export function Viewer() {
     <div className={styles.wrap}>
       <WebGLErrorBoundary>
         <Canvas
-          shadows
+          shadows="soft"
           dpr={[1, 2]}
           camera={{ position: [2.3, 2.5, 7.0], fov: 38, near: 0.1, far: 80 }}
+          onCreated={({ gl }) => {
+            gl.toneMapping = THREE.ACESFilmicToneMapping;
+            gl.toneMappingExposure = 1.06;
+          }}
           onPointerDown={(event) => markPointerDown(event.clientX, event.clientY)}
         >
           <Scene
@@ -213,14 +220,18 @@ function Scene({
   return (
     <>
       <color attach="background" args={[colors.paperSunken]} />
-      <ambientLight intensity={0.74} />
+      <StudioEnvironment />
+      <hemisphereLight args={['#FFFDF7', '#D8D3C8']} intensity={0.5} />
       <directionalLight
         castShadow
         position={[3.2, 6.2, 3.8]}
-        intensity={1.2}
+        intensity={1.35}
+        color="#FFF7EC"
         shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.02}
       />
-      <directionalLight position={[-2.8, 3.2, -2.6]} intensity={0.28} />
+      <directionalLight position={[-2.8, 3.2, -2.6]} intensity={0.22} color="#E8EEF6" />
       {modelPath ? (
         <ModelErrorBoundary fallback={<PrimitiveModel colors={colors} />}>
           <Suspense fallback={<LoadingModel colors={colors} />}>
@@ -232,7 +243,8 @@ function Scene({
       )}
       <GridPlate colors={colors} />
       <SlotGhosts colors={colors} />
-      <ContactShadows position={[0, -0.02, 0]} opacity={0.28} scale={5} blur={2.4} far={3} />
+      <OperationIndicators colors={colors} />
+      <ContactShadows position={[0, -0.02, 0]} opacity={0.34} scale={5.4} blur={2.9} far={2.6} />
       <CameraRig controlsRef={controlsRef} interruptRef={interruptRef} onCameraSnapshot={onCameraSnapshot} />
       <OrbitControls
         ref={controlsRef}
@@ -251,6 +263,30 @@ function Scene({
   );
 }
 
+/**
+ * Image-based lighting from three's built-in RoomEnvironment — gives the
+ * laminate and metal hardware believable reflections without fetching HDRIs.
+ */
+function StudioEnvironment() {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTexture;
+    return () => {
+      if (scene.environment === envTexture) {
+        scene.environment = null;
+      }
+      envTexture.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+
+  return null;
+}
+
 function CameraRig({
   controlsRef,
   interruptRef,
@@ -264,6 +300,7 @@ function CameraRig({
   const manifest = useAppStore((state) => state.manifest);
   const activeViewKey = useAppStore((state) => state.activeViewKey);
   const cameraNonce = useAppStore((state) => state.cameraNonce);
+  const cameraFocusScale = useAppStore((state) => state.cameraFocusScale);
   const reducedMotion = useReducedMotion();
 
   const lastNonce = useRef(-1);
@@ -292,8 +329,9 @@ function CameraRig({
       const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
       startPos.current.copy(camera.position);
       startTarget.current.copy(controls?.target ?? startTarget.current.set(0, 1.1, 0));
-      endPos.current.set(...view.position);
       endTarget.current.set(...view.target);
+      endPos.current.set(...view.position);
+      endPos.current.sub(endTarget.current).multiplyScalar(cameraFocusScale).add(endTarget.current);
       t.current = 0;
       dur.current = reducedMotion ? 0 : 0.85;
       flying.current = true;
@@ -354,6 +392,8 @@ function GlbModel({
   const selectedPartId = useAppStore((state) => state.selectedPartId);
   const highlightedPartIds = useAppStore((state) => state.highlightedPartIds);
   const mentionedPartIds = useAppStore((state) => state.mentionedPartIds);
+  const selectedBinId = useAppStore((state) => state.selectedBinId);
+  const suppressPartHighlight = Boolean(selectedBinId);
 
   const { root, bindings, unmatchedPartIds } = useMemo(
     () => buildBindings(gltf.scene, manifest.parts, colors),
@@ -458,7 +498,7 @@ function GlbModel({
       // not spin. Any residual rotation eases back to zero.
       binding.node.rotation.y = THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
 
-      const mentioned = mentionedPartIds.includes(binding.partId);
+      const mentioned = !suppressPartHighlight && mentionedPartIds.includes(binding.partId);
       const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.03 : 1;
       const s = grow * pulse;
       binding.node.scale.set(
@@ -467,7 +507,9 @@ function GlbModel({
         binding.baseScale.z * s
       );
 
-      const highlight = highlightedPartIds.includes(binding.partId) || mentioned;
+      const highlight =
+        !suppressPartHighlight &&
+        (highlightedPartIds.includes(binding.partId) || mentionedPartIds.includes(binding.partId));
       for (const mesh of binding.meshes) {
         setMeshHighlight(mesh, highlight, colors.accent);
       }
@@ -591,6 +633,8 @@ function PartGroup({
   const groupRef = useRef<THREE.Group>(null);
   const mentioned = useAppStore((state) => state.mentionedPartIds.includes(part.id));
   const highlighted = useAppStore((state) => state.highlightedPartIds.includes(part.id));
+  const selectedBinId = useAppStore((state) => state.selectedBinId);
+  const showHighlight = !selectedBinId && (highlighted || mentioned);
   const pose = derivePartPose(part.id, currentStep, explodeLevel);
   const targetOffset = useMemo(() => new THREE.Vector3(...pose.offset), [pose.offset]);
 
@@ -638,7 +682,7 @@ function PartGroup({
           primitive={primitive}
           layout={layout}
           colors={colors}
-          highlighted={highlighted || mentioned}
+          highlighted={showHighlight}
           pickable
         />
       ))}
@@ -650,7 +694,7 @@ function PartGroup({
             primitive={primitive}
             layout={layout}
             colors={colors}
-            highlighted={highlighted || mentioned}
+            highlighted={showHighlight}
             detailMaterial={detail.material}
             pickable={false}
           />
@@ -658,6 +702,7 @@ function PartGroup({
       )}
       {selected ? (
         <Html position={annotationPosition(layout)} center distanceFactor={5.4} className={styles.annotation}>
+          {part.manualFig ? <div className={styles.annotationManual}>{part.manualFig}</div> : null}
           <div className={styles.annotationCode}>{part.code}</div>
           <div className={styles.annotationLabel}>{part.label}</div>
         </Html>
@@ -683,13 +728,16 @@ function PrimitiveMesh({
   detailMaterial?: DetailMaterial;
   pickable: boolean;
 }) {
-  const materialColor = highlighted
-    ? colors.accent
-    : detailMaterial
-      ? colorForDetail(detailMaterial, colors)
-      : colorForRole(layout.role, colors);
-  const emissive = highlighted ? colors.accent : colors.ink;
-  const emissiveIntensity = highlighted ? 0.42 : 0;
+  const material = useMemo(
+    () => createRoleMaterial(layout.role, colors, detailMaterial),
+    [layout.role, colors, detailMaterial]
+  );
+
+  useEffect(() => () => material.dispose(), [material]);
+
+  useEffect(() => {
+    setMeshMaterialHighlight(material, highlighted, colors.accent);
+  }, [material, highlighted, colors.accent]);
 
   return (
     <mesh
@@ -697,6 +745,7 @@ function PrimitiveMesh({
       receiveShadow
       position={primitive.position}
       rotation={primitive.rotation}
+      material={material}
       userData={{ partId, pickable, isDetail: !pickable }}
     >
       {primitive.shape === 'box' ? (
@@ -704,14 +753,11 @@ function PrimitiveMesh({
       ) : (
         <cylinderGeometry args={[primitive.size[0], primitive.size[1], primitive.size[2], 32]} />
       )}
-      <meshStandardMaterial
-        color={materialColor}
-        roughness={layout.role === 'hardware' ? 0.38 : layout.role === 'back' ? 0.86 : 0.68}
-        metalness={layout.role === 'hardware' ? 0.48 : 0.02}
-        emissive={emissive}
-        emissiveIntensity={emissiveIntensity}
-      />
-      {primitive.shape === 'box' ? <Edges color={colors.line} threshold={18} /> : null}
+      {primitive.shape === 'box' && layout.role !== 'hardware' ? (
+        <Edges threshold={18}>
+          <lineBasicMaterial color={colors.line} transparent opacity={0.4} />
+        </Edges>
+      ) : null}
     </mesh>
   );
 }
@@ -768,32 +814,6 @@ function MeshHelperPanel({ report }: { report: MappingReport }) {
 function annotationPosition(layout: PartLayout): [number, number, number] {
   const first = layout.primitives[0];
   return [first.position[0], first.position[1] + 0.22, first.position[2] + 0.28];
-}
-
-function colorForRole(role: PartLayout['role'], colors: TokenColors): string {
-  if (role === 'hardware') {
-    return colors.inkSoft;
-  }
-  if (role === 'back') {
-    return '#ECEBE6';
-  }
-  if (role === 'strap') {
-    return colors.ok;
-  }
-  return '#FAFAF6';
-}
-
-function colorForDetail(material: DetailMaterial, colors: TokenColors): string {
-  if (material === 'metal') {
-    return '#6F767D';
-  }
-  if (material === 'slot' || material === 'shadow') {
-    return colors.ink;
-  }
-  if (material === 'wood') {
-    return '#C8A97A';
-  }
-  return colors.line;
 }
 
 function isDetailMesh(mesh: THREE.Mesh): boolean {
@@ -871,17 +891,12 @@ function buildBindings(
 
 function applyRoleMaterial(mesh: THREE.Mesh, role: PartLayout['role'], colors: TokenColors): void {
   const detailMaterial = detailMaterialForMesh(mesh);
-  const material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(detailMaterial ? colorForDetail(detailMaterial, colors) : colorForRole(role, colors)),
-    roughness: role === 'hardware' ? 0.38 : role === 'back' ? 0.86 : 0.68,
-    metalness: role === 'hardware' ? 0.48 : 0.02
-  });
-  mesh.material = material;
+  mesh.material = createRoleMaterial(role, colors, detailMaterial);
 
   if ((role === 'panel' || role === 'back') && mesh.geometry) {
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(mesh.geometry, 18),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(colors.line) })
+      new THREE.LineBasicMaterial({ color: new THREE.Color(colors.line), transparent: true, opacity: 0.4 })
     );
     edges.userData.isOutline = true;
     edges.userData.pickable = false;
@@ -889,13 +904,22 @@ function applyRoleMaterial(mesh: THREE.Mesh, role: PartLayout['role'], colors: T
   }
 }
 
-function setMeshHighlight(mesh: THREE.Mesh, on: boolean, accent: string): void {
-  const material = mesh.material as THREE.MeshStandardMaterial | undefined;
-  if (!material || material.emissive === undefined) {
+function setMeshMaterialHighlight(
+  material: THREE.Material | THREE.Material[] | undefined,
+  on: boolean,
+  accent: string
+): void {
+  const single = Array.isArray(material) ? material[0] : material;
+  const standard = single as THREE.MeshStandardMaterial | undefined;
+  if (!standard || standard.emissive === undefined) {
     return;
   }
-  material.emissive.set(on ? accent : '#000000');
-  material.emissiveIntensity = on ? 0.42 : 0;
+  standard.emissive.set(on ? accent : '#000000');
+  standard.emissiveIntensity = on ? 0.38 : 0;
+}
+
+function setMeshHighlight(mesh: THREE.Mesh, on: boolean, accent: string): void {
+  setMeshMaterialHighlight(mesh.material, on, accent);
 }
 
 function getDebugFlag(flag: string): boolean {

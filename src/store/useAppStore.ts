@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import manifest from '../data/manifest';
 import { loadSelectedMicId, saveSelectedMicId } from '../services/microphones';
+import { revokePreviewUrls } from '../services/viewerCapture';
 import type {
   AssemblyManifest,
   TranscriptLine,
@@ -39,6 +40,8 @@ interface AppState {
   /** Bumped whenever a camera preset is (re)requested, so the rig animates once
    *  and then hands control back to the user's orbit/zoom. */
   cameraNonce: number;
+  /** Pull camera closer to target for step/detail views (1 = full preset distance). */
+  cameraFocusScale: number;
   explodeLevel: 0 | 1 | 2;
   selectedPartId?: string;
   selectedBinId?: string;
@@ -54,11 +57,12 @@ interface AppState {
   nextStep(): void;
   previousStep(): void;
   setVoiceState(state: VoiceState): void;
-  addTranscript(line: Omit<TranscriptLine, 'id' | 'timestamp'>): void;
+  addTranscript(line: Omit<TranscriptLine, 'id' | 'timestamp'>): string;
+  updateTranscriptLine(id: string, patch: Partial<TranscriptLine>): void;
   mentionPart(partId: string): void;
   setHighlightedParts(partIds: string[]): void;
   clearHighlights(): void;
-  setActiveView(viewKey: string): void;
+  setActiveView(viewKey: string, options?: { focus?: boolean }): void;
   setExplodeLevel(level: 0 | 1 | 2): void;
   selectPart(partId?: string): void;
   selectBin(binId?: string): void;
@@ -83,8 +87,22 @@ function createWelcomeTranscript(): TranscriptLine {
     speaker: 'agent',
     text: 'I have the BILLY 40x28x202 bookcase loaded. Hold space and ask which part to use, where it goes, or what is next.',
     timestamp: Date.now(),
-    mentionedPartIds: []
+    mentionedPartIds: [],
+    skipPreview: true
   };
+}
+
+function focusScaleForView(viewKey: string, focus?: boolean): number {
+  if (focus === false) {
+    return 1;
+  }
+  if (focus === true) {
+    return 0.72;
+  }
+  if (/(detail|prep|anchor|nails|assembly|rail)/.test(viewKey)) {
+    return 0.74;
+  }
+  return 1;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -96,6 +114,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   highlightedPartIds: manifest.steps[0].highlightParts,
   activeViewKey: manifest.steps[0].cameraView,
   cameraNonce: 0,
+  cameraFocusScale: 0.76,
   explodeLevel: 0,
   firstVoiceInteraction: false,
   selectedMicId: loadSelectedMicId(),
@@ -109,6 +128,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clearTimeout(selectTimer);
       selectTimer = undefined;
     }
+    revokePreviewUrls(get().transcript);
     set({
       currentStep: 1,
       voiceState: 'idle',
@@ -117,6 +137,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       highlightedPartIds: manifest.steps[0].highlightParts,
       activeViewKey: manifest.steps[0].cameraView,
       cameraNonce: get().cameraNonce + 1,
+      cameraFocusScale: 0.76,
       explodeLevel: 0,
       selectedPartId: undefined,
       selectedBinId: undefined,
@@ -138,7 +159,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       currentStep: stepIndex,
       activeViewKey: step.cameraView,
       highlightedPartIds: step.highlightParts,
-      cameraNonce: state.cameraNonce + 1
+      cameraFocusScale: 0.76,
+      cameraNonce: state.cameraNonce + 1,
+      selectedBinId: undefined
     }));
     get().logEvent({ type: 'step_change', label: `Step ${stepIndex}`, payload: { step: stepIndex } });
   },
@@ -152,15 +175,29 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ voiceState });
   },
   addTranscript(line) {
+    const id = crypto.randomUUID();
+    const previewStep = line.previewStep ?? (line.speaker === 'agent' ? get().currentStep : undefined);
+    const entry: TranscriptLine = {
+      ...line,
+      id,
+      timestamp: Date.now(),
+      previewStep
+    };
     set((state) => ({
-      transcript: [
-        ...state.transcript,
-        {
-          ...line,
-          id: crypto.randomUUID(),
-          timestamp: Date.now()
-        }
-      ]
+      transcript: [...state.transcript, entry]
+    }));
+
+    if (line.speaker === 'agent' && !line.skipPreview && previewStep) {
+      void import('../services/viewerCapture').then(({ attachStepPreviewVideo }) =>
+        attachStepPreviewVideo(id, previewStep)
+      );
+    }
+
+    return id;
+  },
+  updateTranscriptLine(id, patch) {
+    set((state) => ({
+      transcript: state.transcript.map((line) => (line.id === id ? { ...line, ...patch } : line))
     }));
   },
   mentionPart(partId) {
@@ -192,8 +229,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ highlightedPartIds: [] });
     get().viewer?.clearHighlights();
   },
-  setActiveView(viewKey) {
-    set((state) => ({ activeViewKey: viewKey, cameraNonce: state.cameraNonce + 1 }));
+  setActiveView(viewKey, options) {
+    set((state) => ({
+      activeViewKey: viewKey,
+      cameraFocusScale: focusScaleForView(viewKey, options?.focus),
+      cameraNonce: state.cameraNonce + 1
+    }));
   },
   setExplodeLevel(level) {
     set({ explodeLevel: level });

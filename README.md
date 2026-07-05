@@ -154,7 +154,7 @@ VITE_PHOTO_CHECK_ENDPOINT=https://example.com/photo-check
 
 If `VITE_INTENT_ENDPOINT` is present, `src/services/intent.ts` posts the utterance, current step, parts, and steps to that endpoint. The endpoint should return the `ResolvedIntent` shape described in `src/types/assembly.ts`.
 
-If `VITE_PHOTO_CHECK_ENDPOINT` is present, `src/services/photoCheck.ts` posts the uploaded photo and current step as multipart form data and expects a `PhotoCheckResult` in response. Without it, the panel returns a deterministic manifest-aware mock.
+If `VITE_PHOTO_CHECK_ENDPOINT` is present, `src/services/photoCheck.ts` posts the uploaded photo (base64) plus the manifest steps and parts as JSON, and expects a `PhotoCheckResult` in response. Without it, the panel returns a deterministic manifest-aware mock.
 
 If no endpoint is configured, the app uses deterministic local intent handling and the offline photo-check mock for the hackathon script.
 
@@ -173,6 +173,33 @@ VITE_STT_ENDPOINT=http://localhost:8787/api/stt npm run dev
 With `VITE_STT_ENDPOINT` set and a device selected in the Microphone panel, push-to-talk records from that device (`getUserMedia`) and posts the clip to `/api/stt`, which transcribes it with OpenAI (`STT_LLM_MODEL`, default `gpt-4o-mini-transcribe`) and returns `{ text }`. With "System default" selected, or when the endpoint is unset, it falls back to the Web Speech API.
 
 Server-side API keys must stay out of `VITE_*` variables. See `.env.example` for the real-agent backend, hosted STT/TTS, photo-check, and observability keys expected by the next implementation phase.
+
+### Photo Check with Google Gemini
+
+The Photo Check panel ("Did I do this right?") can run a real Google Gemini vision model that looks at an uploaded photo, decides **which assembly step the photo shows**, and judges whether it looks correct. The result surfaces a "Detected step" banner with a jump-to-step shortcut.
+
+Setup:
+
+1. Copy the env file and add your key (the key stays server-side, never shipped to the browser):
+
+```bash
+cp .env.example .env.local
+# then edit .env.local
+GEMINI_API_KEY=your_google_gemini_key
+GEMINI_VISION_MODEL=gemini-2.0-flash
+VITE_PHOTO_CHECK_ENDPOINT=http://localhost:8787/api/photo-check
+```
+
+2. Run the agent backend (serves `/api/intent` and `/api/photo-check`) alongside `npm run dev`:
+
+```bash
+npm run agent:dev
+npm run dev
+```
+
+3. Open the app, upload a photo in the Photo Check panel, and click **Check photo**. The backend (`api/photo-check/index.ts`) calls Gemini with the photo and the manifest, then returns a structured `PhotoCheckResult` including `detectedStep`.
+
+Without `GEMINI_API_KEY` (or the backend running), the panel falls back to the offline mock so the demo still works.
 
 ## Current Limitations
 

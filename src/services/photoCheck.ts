@@ -18,6 +18,10 @@ export interface PhotoCheckResult {
   summary: string;
   findings: PhotoCheckFinding[];
   recommendedUtterance?: string;
+  /** 1-based step index the model believes the photo shows. */
+  detectedStep?: number;
+  /** Title of the detected step, derived from the manifest. */
+  detectedStepTitle?: string;
 }
 
 export interface PhotoCheckInput {
@@ -28,11 +32,12 @@ export interface PhotoCheckInput {
 /**
  * Facade for the "Did I do this right?" photo validation.
  *
- * When `VITE_PHOTO_CHECK_ENDPOINT` is set the file and current step are POSTed
- * to a real VLM endpoint (Person B track). Without an endpoint we return a
- * deterministic manifest-aware mock so the demo works fully offline. The mock
- * and the real endpoint share the same `PhotoCheckResult` contract so the UI
- * never needs to change when the backend lands.
+ * When `VITE_PHOTO_CHECK_ENDPOINT` is set, the photo (base64) plus the manifest
+ * steps/parts are POSTed as JSON to the backend, which runs a Gemini vision
+ * model to detect which assembly step the photo shows and whether it looks
+ * correct. Without an endpoint we return a deterministic manifest-aware mock so
+ * the demo works fully offline. Both paths share the same `PhotoCheckResult`
+ * contract (including `detectedStep`) so the UI never changes.
  */
 export async function checkAssemblyPhoto(
   input: PhotoCheckInput
@@ -50,16 +55,20 @@ async function checkWithEndpoint(
   input: PhotoCheckInput
 ): Promise<PhotoCheckResult> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), 20_000);
 
   try {
-    const body = new FormData();
-    body.append('photo', input.file);
-    body.append('currentStep', String(input.currentStep));
-
+    const imageBase64 = await fileToBase64(input.file);
     const response = await fetch(endpoint, {
       method: 'POST',
-      body,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageBase64,
+        mimeType: input.file.type || 'image/jpeg',
+        currentStep: input.currentStep,
+        steps: manifest.steps,
+        parts: manifest.parts
+      }),
       signal: controller.signal
     });
 
@@ -71,8 +80,19 @@ async function checkWithEndpoint(
   } catch {
     return unknownResult(input);
   } finally {
-    window.clearTimeout(timeout);
+    clearTimeout(timeout);
   }
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
 }
 
 function getStep(currentStep: number, source: AssemblyManifest = manifest): Step {
@@ -95,7 +115,7 @@ export function mockPhotoCheck(input: PhotoCheckInput): PhotoCheckResult {
     return {
       status: 'pass',
       confidence: 0.82,
-      summary: `Step ${step.index} looks right. ${step.title} matches the expected assembly state.`,
+      summary: `This looks like step ${step.index}: ${step.title}, and it matches the expected assembly state.`,
       findings: [
         {
           id: 'mock-pass',
@@ -106,14 +126,16 @@ export function mockPhotoCheck(input: PhotoCheckInput): PhotoCheckResult {
           stepIndex: step.index
         }
       ],
-      recommendedUtterance: "What's next?"
+      recommendedUtterance: "What's next?",
+      detectedStep: step.index,
+      detectedStepTitle: step.title
     };
   }
 
   return {
     status: 'warning',
     confidence: 0.58,
-    summary: `Step ${step.index} looks mostly right, but double-check before tightening.`,
+    summary: `This looks like step ${step.index}: ${step.title}, but double-check before tightening.`,
     findings: [
       {
         id: 'mock-common-mistake',
@@ -131,7 +153,9 @@ export function mockPhotoCheck(input: PhotoCheckInput): PhotoCheckResult {
         stepIndex: step.index
       }
     ],
-    recommendedUtterance: 'Did people mess this step up before?'
+    recommendedUtterance: 'Did people mess this step up before?',
+    detectedStep: step.index,
+    detectedStepTitle: step.title
   };
 }
 
@@ -149,6 +173,11 @@ function normalizeResult(
     ? value.status
     : 'unknown';
 
+  const detectedStep = resolveDetectedStep(value.detectedStep);
+  const detectedStepTitle =
+    value.detectedStepTitle ??
+    (detectedStep !== undefined ? manifest.steps[detectedStep - 1]?.title : undefined);
+
   return {
     status,
     confidence:
@@ -157,8 +186,17 @@ function normalizeResult(
         : 0,
     summary: String(value.summary),
     findings: Array.isArray(value.findings) ? value.findings : [],
-    recommendedUtterance: value.recommendedUtterance
+    recommendedUtterance: value.recommendedUtterance,
+    detectedStep,
+    detectedStepTitle
   };
+}
+
+function resolveDetectedStep(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined;
+  }
+  return Math.max(1, Math.min(Math.round(value), manifest.steps.length));
 }
 
 function unknownResult(input: PhotoCheckInput): PhotoCheckResult {

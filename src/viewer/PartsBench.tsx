@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { useAppStore } from '../store/useAppStore';
 import { partBins, slotPositions } from './bins';
 import { partLayouts } from './useViewerCommands';
+import { stepPartIds } from './partWorld';
 import type { TokenColors } from './colors';
 
 interface GhostProps {
@@ -11,13 +12,13 @@ interface GhostProps {
 }
 
 /**
- * Pulsing markers at the install slots for the currently selected bin's parts
- * that haven't been placed yet — the "highlight the slot" affordance. The bins
- * themselves live in the DOM UI layer (components/PartsBinsPanel), not here.
+ * Pulsing markers at install slots for the selected bin — only for hardware
+ * relevant to the current step. Hidden while step operation indicators show.
  */
 export function SlotGhosts({ colors }: GhostProps) {
   const selectedBinId = useAppStore((state) => state.selectedBinId);
   const currentStep = useAppStore((state) => state.currentStep);
+  const explodeLevel = useAppStore((state) => state.explodeLevel);
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
@@ -32,13 +33,14 @@ export function SlotGhosts({ colors }: GhostProps) {
   const bin = partBins.find((entry) => entry.id === selectedBinId);
   if (!bin) return null;
 
+  const stepParts = stepPartIds(currentStep);
   const markers: Array<[number, number, number]> = [];
   for (const partId of bin.partIds) {
     const layout = partLayouts[partId];
     if (!layout) continue;
-    // Only show ghosts for parts not yet seated (their unlock step hasn't arrived).
-    if (currentStep >= layout.unlockStep) continue;
-    for (const pos of slotPositions(partId)) {
+    if (currentStep > layout.unlockStep) continue;
+    if (!stepParts.has(partId)) continue;
+    for (const pos of slotPositions(partId, currentStep, explodeLevel)) {
       markers.push(pos);
     }
   }
@@ -48,9 +50,9 @@ export function SlotGhosts({ colors }: GhostProps) {
   return (
     <group ref={groupRef}>
       {markers.map((pos, i) => (
-        <mesh key={i} position={pos}>
-          <sphereGeometry args={[0.06, 16, 16]} />
-          <meshBasicMaterial color={colors.accent} transparent opacity={0.45} />
+        <mesh key={i} position={pos} userData={{ isSlotGhost: true }}>
+          <sphereGeometry args={[0.045, 14, 14]} />
+          <meshBasicMaterial color={colors.accent} transparent opacity={0.5} />
         </mesh>
       ))}
     </group>

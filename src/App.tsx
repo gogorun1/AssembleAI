@@ -120,7 +120,7 @@ export default function App() {
     liveStore.setVoiceState('acting');
 
     if (intent.viewKey) {
-      liveStore.setActiveView(intent.viewKey);
+      liveStore.setActiveView(intent.viewKey, { focus: true });
     }
 
     if (partIds.length > 0) {
@@ -520,16 +520,16 @@ export default function App() {
           <PartsBinsPanel />
           <div className="viewControls" role="group" aria-label="Camera views">
             <span className="viewControlsLabel">VIEW</span>
-            <button className="viewButton" type="button" onClick={() => setActiveView('front')} title="Recenter (front view)">
+            <button className="viewButton" type="button" onClick={() => setActiveView('front', { focus: false })} title="Recenter (front view)">
               Front
             </button>
-            <button className="viewButton" type="button" onClick={() => setActiveView('side')} title="Side view">
+            <button className="viewButton" type="button" onClick={() => setActiveView('side', { focus: false })} title="Side view">
               Side
             </button>
-            <button className="viewButton" type="button" onClick={() => setActiveView('top')} title="Top view">
+            <button className="viewButton" type="button" onClick={() => setActiveView('top', { focus: false })} title="Top view">
               Top
             </button>
-            <button className="viewButton" type="button" onClick={() => setActiveView('iso')} title="Isometric (3D) view">
+            <button className="viewButton" type="button" onClick={() => setActiveView('iso', { focus: false })} title="Isometric (3D) view">
               3D
             </button>
           </div>
@@ -603,6 +603,7 @@ export default function App() {
             currentStep={currentStep}
             onMentionParts={mentionParts}
             onRunUtterance={runUtterance}
+            onGoToStep={goToStep}
             onResult={onPhotoCheckResult}
             disabled={voiceState !== 'idle'}
           />
@@ -631,7 +632,7 @@ export default function App() {
               })}
             </div>
           </section>
-          <TranscriptPanel transcript={transcript} parts={manifest.parts} />
+          <TranscriptPanel transcript={transcript} parts={manifest.parts} steps={manifest.steps} />
         </aside>
       </div>
       <Toast toast={toast} onDismiss={clearToast} />

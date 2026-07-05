@@ -5,6 +5,7 @@ export function isDecorativePickTarget(object: THREE.Object3D): boolean {
     object.userData?.isOutline ||
     object.userData?.isDetail ||
     object.userData?.isSlotGhost ||
+    object.userData?.isOperationGhost ||
     object.userData?.binId ||
     object.userData?.pickable === false
   );

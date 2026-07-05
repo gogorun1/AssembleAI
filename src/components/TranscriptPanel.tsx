@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useRef } from 'react';
-import type { Part, TranscriptLine } from '../types/assembly';
+import type { AssemblyManifest, Part, TranscriptLine } from '../types/assembly';
 import styles from './TranscriptPanel.module.css';
 
 interface TranscriptPanelProps {
   transcript: TranscriptLine[];
   parts: Part[];
+  steps: AssemblyManifest['steps'];
 }
 
-export function TranscriptPanel({ transcript, parts }: TranscriptPanelProps) {
+export function TranscriptPanel({ transcript, parts, steps }: TranscriptPanelProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const partsById = useMemo(() => new Map(parts.map((part) => [part.id, part])), [parts]);
+  const stepsByIndex = useMemo(
+    () => new Map(steps.map((step) => [step.index, step])),
+    [steps]
+  );
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -32,6 +37,7 @@ export function TranscriptPanel({ transcript, parts }: TranscriptPanelProps) {
       <div className={styles.scroller} ref={scrollerRef}>
         {transcript.map((line) => {
           const mentioned = line.mentionedPartIds?.map((id) => partsById.get(id)).filter(Boolean) as Part[] | undefined;
+          const previewStep = line.previewStep ? stepsByIndex.get(line.previewStep) : undefined;
           return (
             <article key={line.id} className={`${styles.line} ${styles[line.speaker]}`}>
               <time className={styles.time}>{formatTimestamp(line.timestamp)}</time>
@@ -48,6 +54,31 @@ export function TranscriptPanel({ transcript, parts }: TranscriptPanelProps) {
                   </span>
                 ) : null}
               </div>
+              {line.speaker === 'agent' && (line.previewVideoUrl || previewStep) ? (
+                <div className={styles.previewBlock}>
+                  {previewStep ? (
+                    <div className={styles.previewLabel}>
+                      STEP PREVIEW · {previewStep.title}
+                    </div>
+                  ) : (
+                    <div className={styles.previewLabel}>STEP PREVIEW</div>
+                  )}
+                  {line.previewVideoUrl ? (
+                    <video
+                      className={styles.previewVideo}
+                      src={line.previewVideoUrl}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      controls
+                      aria-label={previewStep ? `3D preview for ${previewStep.title}` : '3D step preview'}
+                    />
+                  ) : (
+                    <div className={styles.previewPending}>Recording 3D preview…</div>
+                  )}
+                </div>
+              ) : null}
             </article>
           );
         })}

@@ -101,21 +101,41 @@ export function detectGlasses(inputs: AudioInput[]): AudioInput | undefined {
   return inputs.find((input) => input.isLikelyGlasses);
 }
 
-export function loadSelectedMicId(): string | undefined {
-  if (typeof localStorage === 'undefined') {
+function getPreferenceStorage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | undefined {
+  try {
+    if (typeof localStorage === 'undefined') {
+      return undefined;
+    }
+    if (
+      typeof localStorage.getItem !== 'function' ||
+      typeof localStorage.setItem !== 'function' ||
+      typeof localStorage.removeItem !== 'function'
+    ) {
+      return undefined;
+    }
+    return localStorage;
+  } catch {
     return undefined;
   }
-  return localStorage.getItem(STORAGE_KEY) ?? undefined;
+}
+
+export function loadSelectedMicId(): string | undefined {
+  const storage = getPreferenceStorage();
+  if (!storage) {
+    return undefined;
+  }
+  return storage.getItem(STORAGE_KEY) ?? undefined;
 }
 
 export function saveSelectedMicId(deviceId: string | undefined): void {
-  if (typeof localStorage === 'undefined') {
+  const storage = getPreferenceStorage();
+  if (!storage) {
     return;
   }
   if (deviceId) {
-    localStorage.setItem(STORAGE_KEY, deviceId);
+    storage.setItem(STORAGE_KEY, deviceId);
   } else {
-    localStorage.removeItem(STORAGE_KEY);
+    storage.removeItem(STORAGE_KEY);
   }
 }
 

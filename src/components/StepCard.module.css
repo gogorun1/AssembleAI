@@ -68,7 +68,7 @@
   gap: var(--s-1);
 }
 
-.mistake {
+.tip {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: auto 1fr;
@@ -77,21 +77,41 @@
   padding: var(--s-3) var(--s-4);
   border: 0;
   border-top: 1px solid var(--line);
-  background: var(--warn-wash);
+  background: var(--tip-wash);
   color: var(--ink);
   cursor: pointer;
   font-size: var(--text-sm);
   line-height: 1.35;
   text-align: left;
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
 }
 
-.mistake svg {
-  color: var(--accent-ink);
+.tip svg {
+  margin-top: 2px;
+  color: var(--tip-ink);
 }
 
-.mistake:hover span {
+.tipBody {
+  display: grid;
+  gap: var(--s-1);
+}
+
+.tipLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--tip-ink);
+  letter-spacing: 0.04em;
+}
+
+.tip:hover {
+  background: color-mix(in srgb, var(--tip-wash) 70%, var(--paper-raised));
+}
+
+.tip:hover .tipBody > span:last-child {
   text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 2px;
+  text-decoration-color: var(--tip-ink);
+  text-decoration-thickness: 1px;
   text-underline-offset: var(--s-1);
 }

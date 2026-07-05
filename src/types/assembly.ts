@@ -18,6 +18,33 @@ export interface Part {
   meshName: string;
   meshNodes?: string[];
   quantity: number;
+  /** IKEA manual diagram piece number (e.g. 1, 2, 3). */
+  manualPiece?: number;
+  /** Short manual figure label shown in UI and 3D annotations. */
+  manualFig?: string;
+}
+
+export type ToolKind =
+  | 'hands'
+  | 'flat-screwdriver'
+  | 'phillips'
+  | 'pencil'
+  | 'ruler'
+  | 'hammer'
+  | 'drill';
+
+export type OperationMotion = 'press' | 'turn' | 'slide' | 'strike' | 'mark';
+
+export interface StepOperation {
+  id: string;
+  label: string;
+  partId: string;
+  /** Specific hardware instance from partLayouts; omit to use part center. */
+  primitiveId?: string;
+  tool: ToolKind;
+  motion: OperationMotion;
+  /** Approach offset from anchor (hand/tool sits here, moves toward anchor). */
+  approach?: [number, number, number];
 }
 
 export interface Step {
@@ -29,6 +56,8 @@ export interface Step {
   highlightParts: string[];
   commonMistake?: string;
   toolNeeded?: string;
+  /** Manual illustration reference (e.g. "Fig. 3–4"). */
+  manualFig?: string;
   estMinutes?: number;
 }
 

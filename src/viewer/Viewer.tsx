@@ -25,6 +25,7 @@ import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
 import { SlotGhosts } from './PartsBench';
+import { OperationIndicators } from './OperationIndicators';
 import { resolvePickablePartId } from './picking';
 import { isTap, markPointerDown } from './pointer';
 
@@ -232,6 +233,7 @@ function Scene({
       )}
       <GridPlate colors={colors} />
       <SlotGhosts colors={colors} />
+      <OperationIndicators colors={colors} />
       <ContactShadows position={[0, -0.02, 0]} opacity={0.28} scale={5} blur={2.4} far={3} />
       <CameraRig controlsRef={controlsRef} interruptRef={interruptRef} onCameraSnapshot={onCameraSnapshot} />
       <OrbitControls
@@ -658,6 +660,7 @@ function PartGroup({
       )}
       {selected ? (
         <Html position={annotationPosition(layout)} center distanceFactor={5.4} className={styles.annotation}>
+          {part.manualFig ? <div className={styles.annotationManual}>{part.manualFig}</div> : null}
           <div className={styles.annotationCode}>{part.code}</div>
           <div className={styles.annotationLabel}>{part.label}</div>
         </Html>

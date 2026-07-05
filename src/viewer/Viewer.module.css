@@ -174,6 +174,44 @@
   color: var(--ink);
 }
 
+.annotationManual {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.operationLabel {
+  pointer-events: none;
+}
+
+.operationTag {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 7rem;
+  max-inline-size: 11rem;
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.operationTool {
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.operationHint {
+  color: var(--ink);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
 .annotationCode {
   color: var(--accent-ink);
   font-family: var(--font-mono);

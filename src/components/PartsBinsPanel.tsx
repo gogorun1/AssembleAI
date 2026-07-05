@@ -61,7 +61,11 @@ export function PartsBinsPanel() {
   const addTranscript = useAppStore((state) => state.addTranscript);
   const parts = useAppStore((state) => state.manifest.parts);
 
-  const codeFor = (partId: string) => parts.find((part) => part.id === partId)?.code ?? '';
+  const codeFor = (partId: string) => {
+    const part = parts.find((entry) => entry.id === partId);
+    if (!part) return '';
+    return part.manualFig ?? part.code;
+  };
 
   const onSelect = (binId: string) => {
     const bin = partBins.find((entry) => entry.id === binId);

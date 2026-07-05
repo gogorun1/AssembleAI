@@ -1,4 +1,4 @@
-import { Clock3, Lightbulb, Wrench } from 'lucide-react';
+import { BookOpen, Clock3, Lightbulb, Wrench } from 'lucide-react';
 import type { Step } from '../types/assembly';
 import styles from './StepCard.module.css';
 
@@ -18,6 +18,12 @@ export function StepCard({ step, onCommonMistake }: StepCardProps) {
         <h1 className={styles.title}>{step.title}</h1>
         <p className={styles.action}>{step.action}</p>
         <div className={styles.meta}>
+          {step.manualFig ? (
+            <span>
+              <BookOpen size={14} aria-hidden />
+              Manual {step.manualFig}
+            </span>
+          ) : null}
           {step.toolNeeded ? (
             <span>
               <Wrench size={14} aria-hidden />

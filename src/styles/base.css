@@ -72,6 +72,31 @@ button:focus-visible,
   min-block-size: 220px;
 }
 
+.voiceRail {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper-raised);
+}
+
+.voiceRailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.voiceRailBody {
+  display: grid;
+  justify-items: center;
+  padding: var(--s-4);
+}
+
 .partRail {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -106,7 +131,7 @@ button:focus-visible,
   inset-inline-start: 50%;
   z-index: 12;
   display: flex;
-  align-items: end;
+  align-items: center;
   gap: var(--s-3);
   transform: translateX(-50%);
 }

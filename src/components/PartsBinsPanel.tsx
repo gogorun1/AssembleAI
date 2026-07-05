@@ -65,6 +65,7 @@ export function PartsBinsPanel() {
   const setHighlightedParts = useAppStore((state) => state.setHighlightedParts);
   const setActiveView = useAppStore((state) => state.setActiveView);
   const addTranscript = useAppStore((state) => state.addTranscript);
+  const mentionPart = useAppStore((state) => state.mentionPart);
   const parts = useAppStore((state) => state.manifest.parts);
 
   const codeFor = (partId: string) => parts.find((part) => part.id === partId)?.code ?? '';
@@ -79,6 +80,7 @@ export function PartsBinsPanel() {
       return;
     }
     setHighlightedParts(bin.partIds);
+    bin.partIds.forEach((partId) => mentionPart(partId));
     setActiveView(bin.focusView, { focus: true });
     addTranscript({
       speaker: 'agent',

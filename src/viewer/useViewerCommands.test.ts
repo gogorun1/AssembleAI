@@ -79,6 +79,18 @@ describe('step poses', () => {
     expect(pose.visible).toBe(true);
   });
 
+  it('hides not-yet-installed parts until their unlock step', () => {
+    expect(derivePartPose('adjustable-shelf', 13, 0).visible).toBe(false);
+    expect(derivePartPose('adjustable-shelf', 14, 0).visible).toBe(true);
+    expect(derivePartPose('adjustable-shelf', 14, 0).offset).toEqual([0, 0, 0]);
+  });
+
+  it('shows pulled-apart parts only in explode mode', () => {
+    const pose = derivePartPose('bottom-panel', 2, 1);
+    expect(pose.visible).toBe(true);
+    expect(pose.offset).not.toEqual([0, 0, 0]);
+  });
+
   it('stages inactive panels with a reduced offset before unlock', () => {
     const pose = derivePartPose('side-panel-right', 3, 0);
     expect(pose.visible).toBe(true);

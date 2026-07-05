@@ -3,7 +3,8 @@ import type { Vec3 } from './useViewerCommands';
 
 /**
  * Parts bins rendered in the DOM UI layer (see components/PartsBinsPanel). Each
- * bin holds one category of hardware and is the launch anchor for the fly-into-slot animation when its step is reached.
+ * bin holds one category of hardware and is the launch anchor for the fly-into-slot
+ * animation when its step is reached.
  */
 export interface PartBin {
   id: string;

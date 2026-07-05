@@ -765,8 +765,9 @@ export function derivePartPose(
     };
   }
 
-  // Panels/back: hide until first visible step unless exploded.
-  if (currentStep < firstVisibleStep && explodeLevel === 0) {
+  // Progressive view: show installed parts and the current workpiece. Other
+  // future panels stay hidden until they are useful or the user explodes the view.
+  if (!assembled && !activeThisStep && currentStep < firstVisibleStep && explodeLevel === 0) {
     return { primitives: layout.primitives, offset: [0, 0, 0], visible: false };
   }
 

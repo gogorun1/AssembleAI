@@ -25,10 +25,34 @@ export const presenterUtterances: PresenterUtterance[] = [
     description: 'Show placement guidance for current step.'
   },
   {
+    id: 'front-view',
+    label: 'Front view',
+    utterance: 'Show me the front.',
+    description: 'Move camera to the straight-on front view.'
+  },
+  {
     id: 'back-view',
     label: 'Back view',
     utterance: 'Show me the back view.',
     description: 'Move camera to rear/back-panel view.'
+  },
+  {
+    id: 'side-view',
+    label: 'Side view',
+    utterance: 'Show me the side view.',
+    description: 'Move camera to the side profile view.'
+  },
+  {
+    id: 'top-view',
+    label: 'Top view',
+    utterance: 'Show me the top view.',
+    description: 'Move camera to the top-down view.'
+  },
+  {
+    id: 'iso-view',
+    label: '3D view',
+    utterance: 'Give me the 3D view.',
+    description: 'Move camera to the isometric 3D angle.'
   },
   {
     id: 'common-mistake',

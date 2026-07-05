@@ -113,26 +113,6 @@ function parsePresetIntent(utterance: string, context: IntentContext): ResolvedI
     };
   }
 
-  if (includesAny(phrase, ['from the back', 'back view', 'behind', 'rear'])) {
-    return {
-      type: 'show_angle',
-      viewQuery: 'back',
-      viewKey: 'back-panel',
-      language,
-      reply: 'Here is the back view, with the rear groove and panel edge visible.'
-    };
-  }
-
-  if (includesAny(phrase, ['closer', 'close up', 'zoom'])) {
-    return {
-      type: 'show_angle',
-      viewQuery: 'closer',
-      viewKey: step.cameraView,
-      language,
-      reply: `Zooming into ${context.manifest.cameraViews[step.cameraView].label}.`
-    };
-  }
-
   if (includesAny(phrase, ['mess this step', 'mistake', 'wrong', 'people mess'])) {
     const partIds = resolveMistakePartIds(step);
     return {
@@ -168,6 +148,11 @@ function parsePresetIntent(utterance: string, context: IntentContext): ResolvedI
       viewKey: step.cameraView,
       reply: `It goes in step ${step.index}: ${step.title}. I highlighted the exact part and moved the camera there.`
     };
+  }
+
+  const viewIntent = resolveViewIntent(phrase, context, language);
+  if (viewIntent) {
+    return viewIntent;
   }
 
   if (includesAny(phrase, ['repeat', 'say again'])) {
@@ -271,6 +256,109 @@ function resolvePartIds(phrase: string, context: IntentContext): string[] {
   }
 
   return step.highlightParts.slice(0, 1);
+}
+
+interface ViewRule {
+  /** Preferred camera view; falls back through the list until one exists. */
+  viewKeys: string[];
+  /** Regex patterns (already normalized/lowercased) that trigger this view. */
+  patterns: RegExp[];
+  viewQuery: string;
+  reply: string;
+}
+
+/**
+ * Ordered camera-view rules. Placed after the part/placement branches so that
+ * questions like "where does the back panel go" still win, while pure camera
+ * commands ("show me the front", "top view", "3d", "zoom out") move the camera.
+ */
+const viewRules: ViewRule[] = [
+  {
+    viewKeys: ['back-panel', 'back-mark', 'back'],
+    patterns: [/\bback view\b/, /\bfrom the back\b/, /\bfrom behind\b/, /\bbehind\b/, /\brear\b/, /\bturn (it |the model )?around\b/, /\bspin (it |the model )?around\b/],
+    viewQuery: 'back',
+    reply: 'Here is the back view, with the rear groove and panel edge visible.'
+  },
+  {
+    viewKeys: ['side', 'first-side-assembly'],
+    patterns: [/\bside view\b/, /\bfrom the side\b/, /\bthe side\b/, /\bleft side\b/, /\bright side\b/, /\bfrom the left\b/, /\bfrom the right\b/, /\bprofile\b/],
+    viewQuery: 'side',
+    reply: 'Swinging around to the side profile of the bookcase.'
+  },
+  {
+    viewKeys: ['top'],
+    patterns: [/\btop view\b/, /\bfrom the top\b/, /\bfrom above\b/, /\bfrom overhead\b/, /\boverhead\b/, /\btop down\b/, /\bbirds eye\b/, /\blooking down\b/, /\btop of\b/],
+    viewQuery: 'top',
+    reply: 'Looking straight down from the top view now.'
+  },
+  {
+    viewKeys: ['iso', 'exploded'],
+    patterns: [/\b3 ?d\b/, /\bthree d\b/, /\bisometric\b/, /\biso view\b/, /\bperspective\b/, /\bangled view\b/, /\bcorner view\b/, /\bdiagonal\b/],
+    viewQuery: 'iso',
+    reply: 'Here is the 3D isometric angle so you can see depth.'
+  },
+  {
+    viewKeys: ['exploded'],
+    patterns: [/\bexploded?\b/, /\bblow (it |the model )?apart\b/, /\bapart view\b/, /\bbreak(down| it down| it apart)\b/],
+    viewQuery: 'exploded',
+    reply: 'Exploding the assembly so each part separates.'
+  },
+  {
+    viewKeys: ['complete'],
+    patterns: [/\bzoom(ed)? out\b/, /\boverview\b/, /\bwide view\b/, /\bwhole thing\b/, /\bwhole bookcase\b/, /\bsee (the )?(whole|everything|full)\b/, /\bfull view\b/, /\bstep back\b/, /\bpull back\b/, /\bzoom away\b/],
+    viewQuery: 'overview',
+    reply: 'Pulling back to the full bookcase overview.'
+  },
+  {
+    viewKeys: ['front'],
+    patterns: [/\bfront view\b/, /\bfrom the front\b/, /\bthe front\b/, /\bfront side\b/, /\bhead on\b/, /\bface on\b/, /\bstraight on\b/, /\brecenter\b/, /\bre center\b/, /\breset (the )?view\b/, /\bcenter (it|the model|the view)\b/, /\bdefault view\b/],
+    viewQuery: 'front',
+    reply: 'Back to the straight-on front view.'
+  }
+];
+
+/**
+ * Resolve a spoken camera command to a manifest camera view. Returns undefined
+ * when the phrase is not a view request so the caller can keep matching.
+ */
+function resolveViewIntent(
+  phrase: string,
+  context: IntentContext,
+  language: 'en' | 'fr'
+): ResolvedIntent | undefined {
+  const step = getStep(context);
+
+  // "closer / zoom in" keeps the current step framing but signals a tighter shot.
+  if (includesAny(phrase, ['closer', 'close up', 'close-up', 'zoom in', 'move in', 'nearer']) && !/\bzoom(ed)? out\b/.test(phrase)) {
+    return {
+      type: 'show_angle',
+      viewQuery: 'closer',
+      viewKey: step.cameraView,
+      language,
+      reply: `Zooming into ${context.manifest.cameraViews[step.cameraView].label}.`
+    };
+  }
+
+  for (const rule of viewRules) {
+    if (!rule.patterns.some((pattern) => pattern.test(phrase))) {
+      continue;
+    }
+
+    const viewKey = rule.viewKeys.find((key) => key in context.manifest.cameraViews);
+    if (!viewKey) {
+      continue;
+    }
+
+    return {
+      type: 'show_angle',
+      viewQuery: rule.viewQuery,
+      viewKey,
+      language,
+      reply: rule.reply
+    };
+  }
+
+  return undefined;
 }
 
 function resolveMistakePartIds(step: Step): string[] {

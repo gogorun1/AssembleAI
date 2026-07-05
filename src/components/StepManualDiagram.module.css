@@ -15,73 +15,12 @@
   text-transform: uppercase;
 }
 
-.svg {
+.image {
   display: block;
   inline-size: 100%;
-  block-size: auto;
-}
-
-.panel {
-  fill: #f5f3ec;
-  stroke: #b9b7ad;
-  stroke-width: 1.2;
-}
-
-.back {
-  fill: #ecebe6;
-  stroke: #b9b7ad;
-  stroke-width: 1.2;
-}
-
-.shelf {
-  fill: #f0ede4;
-  stroke: #b9b7ad;
-  stroke-width: 1;
-}
-
-.smallHole {
-  fill: #2f3438;
-}
-
-.largeHole {
-  fill: #3d4248;
-  stroke: #8b9098;
-  stroke-width: 1;
-}
-
-.cam {
-  fill: #6f767d;
-  stroke: #2f3438;
-  stroke-width: 1;
-}
-
-.dowel {
-  fill: #c8a97a;
-  stroke: #8b6914;
-  stroke-width: 0.8;
-}
-
-.toolLine,
-.guide,
-.arrow {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-
-.toolHead {
-  fill: #f2c94c;
-  stroke: #8b6914;
-  stroke-width: 0.8;
-}
-
-.nail {
-  fill: #6f767d;
-}
-
-.label {
-  fill: var(--ink-soft);
-  font-family: var(--font-mono);
-  font-size: 8px;
+  aspect-ratio: 4 / 3;
+  border-radius: calc(var(--r-sm) - 2px);
+  background: var(--paper-raised);
+  object-fit: cover;
+  user-select: none;
 }

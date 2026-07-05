@@ -32,7 +32,7 @@ describe('parts bins', () => {
   it('exposes at least one install slot for each binned part', () => {
     for (const bin of partBins) {
       for (const partId of bin.partIds) {
-        expect(slotPositions(partId).length, `slots for ${partId}`).toBeGreaterThan(0);
+        expect(slotPositions(partId, 1, 0).length, `slots for ${partId}`).toBeGreaterThan(0);
       }
     }
   });

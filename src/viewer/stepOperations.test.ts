@@ -15,7 +15,8 @@ describe('stepOperations', () => {
   it('anchors cam screw operations near side panel hardware', () => {
     const [first] = resolveStepOperations(2, 2, 0);
     expect(first.operation.tool).toBe('flat-screwdriver');
-    expect(Math.abs(first.anchor[0])).toBeGreaterThan(0.3);
+    expect(first.operation.partId).toBe('side-panel-left');
+    expect(first.anchor[0]).toBeLessThan(0);
   });
 });
 

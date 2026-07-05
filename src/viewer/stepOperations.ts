@@ -1,5 +1,6 @@
 import type { StepOperation } from '../types/assembly';
 import { derivePartPose, partLayouts, type Vec3 } from './useViewerCommands';
+import { findWorldPoint, worldPoint, collectLayoutPoints } from './partWorld';
 
 /** Representative operation hotspots per assembly step — anchors tie to partLayouts primitives. */
 export const stepOperations: Record<number, StepOperation[]> = {
@@ -7,40 +8,40 @@ export const stepOperations: Record<number, StepOperation[]> = {
     {
       id: 'dowel-bottom-front-left',
       label: 'Press dowel into edge hole',
-      partId: 'wood-dowel',
-      primitiveId: 'dowel-bottom-left-front',
+      partId: 'bottom-panel',
+      primitiveId: 'bottom-dowel-hole-left-front',
       tool: 'hands',
       motion: 'press',
-      approach: [0.12, 0.06, 0.14]
+      approach: [0.1, 0.08, 0.12]
     },
     {
       id: 'dowel-fixed-back-right',
       label: 'Press dowel into fixed shelf edge',
-      partId: 'wood-dowel',
-      primitiveId: 'dowel-fixed-right-back',
+      partId: 'fixed-shelf',
+      primitiveId: 'fixed-shelf-dowel-hole-right-back',
       tool: 'hands',
       motion: 'press',
-      approach: [-0.1, 0.06, -0.12]
+      approach: [-0.08, 0.08, -0.1]
     }
   ],
   2: [
     {
       id: 'cam-screw-left-bottom-front',
       label: 'Thread cam screw into side panel',
-      partId: 'cam-screw',
-      primitiveId: 'cam-screw-left-bottom-front',
+      partId: 'side-panel-left',
+      primitiveId: 'left-cam-hole-bottom-front',
       tool: 'flat-screwdriver',
       motion: 'turn',
-      approach: [-0.14, 0, 0.18]
+      approach: [-0.12, 0.06, 0.14]
     },
     {
       id: 'cam-screw-right-top-back',
       label: 'Thread cam screw into second side',
-      partId: 'cam-screw',
-      primitiveId: 'cam-screw-right-top-back',
+      partId: 'side-panel-right',
+      primitiveId: 'right-cam-hole-top-back',
       tool: 'flat-screwdriver',
       motion: 'turn',
-      approach: [0.14, 0, -0.16]
+      approach: [0.12, 0.06, -0.12]
     }
   ],
   3: [
@@ -58,10 +59,10 @@ export const stepOperations: Record<number, StepOperation[]> = {
       id: 'cam-lock-bottom-left-front',
       label: 'Insert and turn cam lock',
       partId: 'cam-lock',
-      primitiveId: 'cam-lock-bottom-left-front',
+      primitiveId: 'cam-lock-bottom-left-front-slot',
       tool: 'phillips',
       motion: 'turn',
-      approach: [0.16, 0.08, 0.2]
+      approach: [0.12, 0.08, 0.16]
     }
   ],
   5: [
@@ -69,10 +70,10 @@ export const stepOperations: Record<number, StepOperation[]> = {
       id: 'cam-lock-rail-left',
       label: 'Lock front rail cam',
       partId: 'cam-lock',
-      primitiveId: 'cam-lock-bottom-left-front',
+      primitiveId: 'cam-lock-bottom-left-front-slot',
       tool: 'phillips',
       motion: 'turn',
-      approach: [0.14, 0.06, 0.22]
+      approach: [0.1, 0.06, 0.18]
     }
   ],
   6: [
@@ -90,10 +91,10 @@ export const stepOperations: Record<number, StepOperation[]> = {
       id: 'cam-lock-fixed-right-back',
       label: 'Turn remaining cam lock',
       partId: 'cam-lock',
-      primitiveId: 'cam-lock-fixed-right-back',
+      primitiveId: 'cam-lock-fixed-right-back-slot',
       tool: 'phillips',
       motion: 'turn',
-      approach: [-0.16, 0.08, -0.18]
+      approach: [-0.12, 0.08, -0.14]
     }
   ],
   8: [
@@ -101,9 +102,10 @@ export const stepOperations: Record<number, StepOperation[]> = {
       id: 'mark-back-center',
       label: 'Mark nail guide line',
       partId: 'back-panel',
+      primitiveId: 'back-nail-guide-line',
       tool: 'pencil',
       motion: 'mark',
-      approach: [0.18, 0.1, -0.22]
+      approach: [0.14, 0.08, -0.16]
     }
   ],
   9: [
@@ -121,20 +123,21 @@ export const stepOperations: Record<number, StepOperation[]> = {
       id: 'rule-nail-line',
       label: 'Rule the nail guide line',
       partId: 'back-panel',
+      primitiveId: 'back-nail-guide-line',
       tool: 'ruler',
       motion: 'mark',
-      approach: [0.22, 0.08, -0.2]
+      approach: [0.16, 0.08, -0.16]
     }
   ],
   11: [
     {
       id: 'nail-center-row',
       label: 'Hammer back panel nail',
-      partId: 'back-nail',
-      primitiveId: 'back-nail-center-3',
+      partId: 'back-panel',
+      primitiveId: 'back-nail-guide-line',
       tool: 'hammer',
       motion: 'strike',
-      approach: [0.12, 0.18, -0.14]
+      approach: [0.1, 0.16, -0.12]
     }
   ],
   12: [
@@ -152,11 +155,11 @@ export const stepOperations: Record<number, StepOperation[]> = {
     {
       id: 'shelf-pin-left-front',
       label: 'Push shelf support pin',
-      partId: 'shelf-pin',
-      primitiveId: 'pin-bottom-left-front',
+      partId: 'side-panel-left',
+      primitiveId: 'left-shelf-pin-hole-1-1',
       tool: 'hands',
       motion: 'press',
-      approach: [-0.12, 0.08, 0.16]
+      approach: [-0.1, 0.08, 0.12]
     }
   ],
   14: [
@@ -178,32 +181,38 @@ export interface ResolvedOperation {
   visible: boolean;
 }
 
-function partCenter(partId: string): Vec3 {
-  const layout = partLayouts[partId];
-  if (!layout || layout.primitives.length === 0) {
-    return [0, 0, 0];
+function resolveOperationAnchor(
+  operation: StepOperation,
+  currentStep: number,
+  explodeLevel: 0 | 1 | 2
+): Vec3 | undefined {
+  if (operation.primitiveId) {
+    const exact = findWorldPoint(operation.partId, operation.primitiveId, currentStep, explodeLevel);
+    if (exact) return exact;
   }
-  const sum = layout.primitives.reduce(
-    (acc, primitive) => {
-      acc[0] += primitive.position[0];
-      acc[1] += primitive.position[1];
-      acc[2] += primitive.position[2];
+
+  const layout = partLayouts[operation.partId];
+  if (!layout) return undefined;
+
+  const points = collectLayoutPoints(operation.partId);
+  if (points.length === 0) return undefined;
+
+  const center = points.reduce(
+    (acc, point) => {
+      acc[0] += point.position[0];
+      acc[1] += point.position[1];
+      acc[2] += point.position[2];
       return acc;
     },
     [0, 0, 0] as Vec3
   );
-  const count = layout.primitives.length;
-  return [sum[0] / count, sum[1] / count, sum[2] / count];
-}
-
-function primitivePosition(partId: string, primitiveId?: string): Vec3 {
-  const layout = partLayouts[partId];
-  if (!layout) return [0, 0, 0];
-  if (primitiveId) {
-    const match = layout.primitives.find((entry) => entry.id === primitiveId);
-    if (match) return [...match.position];
-  }
-  return partCenter(partId);
+  const count = points.length;
+  return worldPoint(
+    operation.partId,
+    [center[0] / count, center[1] / count, center[2] / count],
+    currentStep,
+    explodeLevel
+  );
 }
 
 export function resolveStepOperations(
@@ -212,25 +221,21 @@ export function resolveStepOperations(
   explodeLevel: 0 | 1 | 2
 ): ResolvedOperation[] {
   const ops = stepOperations[stepIndex] ?? [];
-  return ops.map((operation) => {
+  return ops.flatMap((operation) => {
+    const anchor = resolveOperationAnchor(operation, currentStep, explodeLevel);
+    if (!anchor) return [];
+
     const pose = derivePartPose(operation.partId, currentStep, explodeLevel);
-    const local = primitivePosition(operation.partId, operation.primitiveId);
-    const anchor: Vec3 = [
-      local[0] + pose.offset[0],
-      local[1] + pose.offset[1],
-      local[2] + pose.offset[2]
-    ];
+    if (!pose.visible || stepIndex !== currentStep) {
+      return [];
+    }
+
     const approachDelta = operation.approach ?? [0.14, 0.08, 0.16];
     const approach: Vec3 = [
       anchor[0] + approachDelta[0],
       anchor[1] + approachDelta[1],
       anchor[2] + approachDelta[2]
     ];
-    return {
-      operation,
-      anchor,
-      approach,
-      visible: pose.visible && stepIndex === currentStep
-    };
+    return [{ operation, anchor, approach, visible: true }];
   });
 }

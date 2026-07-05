@@ -18,6 +18,7 @@ interface GhostProps {
 export function SlotGhosts({ colors }: GhostProps) {
   const selectedBinId = useAppStore((state) => state.selectedBinId);
   const currentStep = useAppStore((state) => state.currentStep);
+  const explodeLevel = useAppStore((state) => state.explodeLevel);
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
@@ -38,7 +39,7 @@ export function SlotGhosts({ colors }: GhostProps) {
     if (!layout) continue;
     // Only show ghosts for parts not yet seated (their unlock step hasn't arrived).
     if (currentStep >= layout.unlockStep) continue;
-    for (const pos of slotPositions(partId)) {
+    for (const pos of slotPositions(partId, currentStep, explodeLevel)) {
       markers.push(pos);
     }
   }

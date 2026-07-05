@@ -1,4 +1,5 @@
-import { partLayouts, type Vec3 } from './useViewerCommands';
+import { installSlotPositions } from './partWorld';
+import type { Vec3 } from './useViewerCommands';
 
 /**
  * Parts bins rendered in the DOM UI layer (see components/PartsBinsPanel). Each
@@ -68,7 +69,7 @@ export const binForPart: Record<string, PartBin> = (() => {
   return map;
 })();
 
-/** Representative install-slot positions for a part (from its primitive layout). */
-export function slotPositions(partId: string): Vec3[] {
-  return partLayouts[partId]?.primitives.map((primitive) => primitive.position) ?? [];
+/** Representative install-slot positions for a part in world space. */
+export function slotPositions(partId: string, currentStep: number, explodeLevel: 0 | 1 | 2): Vec3[] {
+  return installSlotPositions(partId, currentStep, explodeLevel);
 }

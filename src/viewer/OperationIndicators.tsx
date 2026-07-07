@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Html } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useAppStore } from '../store/useAppStore';
 import { VIEWER_UI_SCALE } from './billyDimensions';
@@ -15,6 +15,20 @@ const RING_TUBE = 0.012 * VIEWER_UI_SCALE;
 const ANCHOR_RADIUS = 0.028 * VIEWER_UI_SCALE;
 /** Html scales with camera distance; keep labels subtle on the smaller bookcase. */
 const LABEL_DISTANCE_FACTOR = 4.8 * VIEWER_UI_SCALE * 0.72;
+
+/** Seconds to keep the label fully visible after a step change. */
+export const OPERATION_LABEL_HOLD_S = 2.2;
+/** Seconds to fade the label out after the hold window. */
+export const OPERATION_LABEL_FADE_S = 2.4;
+
+const HOVER_RADIUS = RING_RADIUS * 3.2;
+
+export function operationLabelOpacityAt(secondsSinceStep: number, hovered: boolean): number {
+  if (hovered) return 1;
+  if (secondsSinceStep < OPERATION_LABEL_HOLD_S) return 1;
+  const fadeT = (secondsSinceStep - OPERATION_LABEL_HOLD_S) / OPERATION_LABEL_FADE_S;
+  return Math.max(0, 1 - fadeT);
+}
 
 interface OperationIndicatorsProps {
   colors: TokenColors;
@@ -35,7 +49,7 @@ export function OperationIndicators({ colors }: OperationIndicatorsProps) {
   return (
     <group userData={{ isOperationGhost: true }}>
       {resolved.map((entry) => (
-        <OperationMarker key={entry.operation.id} entry={entry} colors={colors} />
+        <OperationMarker key={entry.operation.id} entry={entry} colors={colors} currentStep={currentStep} />
       ))}
     </group>
   );
@@ -49,28 +63,84 @@ export function operationRingRotationAt(_elapsedTime: number): number {
   return 0;
 }
 
-function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: TokenColors }) {
+function OperationMarker({
+  entry,
+  colors,
+  currentStep
+}: {
+  entry: ResolvedOperation;
+  colors: TokenColors;
+  currentStep: number;
+}) {
   const ringRef = useRef<THREE.Mesh>(null);
+  const anchorRef = useRef<THREE.Mesh>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
+  const hoveredRef = useRef(false);
+  const stepStartedAtRef = useRef(performance.now() / 1000);
+  const gl = useThree((state) => state.gl);
   const { operation, anchor, normal } = entry;
 
+  useEffect(() => {
+    stepStartedAtRef.current = performance.now() / 1000;
+    hoveredRef.current = false;
+  }, [currentStep, operation.id]);
+
   useFrame((state) => {
+    const secondsSinceStep = performance.now() / 1000 - stepStartedAtRef.current;
+    const opacity = operationLabelOpacityAt(secondsSinceStep, hoveredRef.current);
     const t = state.clock.elapsedTime;
+
     if (ringRef.current) {
       ringRef.current.scale.setScalar(operationRingScaleAt(t));
       ringRef.current.rotation.z = operationRingRotationAt(t);
+      (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.72 * opacity;
+    }
+    if (anchorRef.current) {
+      (anchorRef.current.material as THREE.MeshBasicMaterial).opacity = 0.35 * opacity;
+    }
+    if (tagRef.current) {
+      tagRef.current.style.opacity = String(opacity);
+      tagRef.current.style.visibility = opacity < 0.04 ? 'hidden' : 'visible';
     }
   });
+
+  const setHovered = (hovered: boolean) => {
+    hoveredRef.current = hovered;
+    gl.domElement.style.cursor = hovered ? 'pointer' : '';
+    if (!hovered) {
+      stepStartedAtRef.current = performance.now() / 1000;
+    }
+  };
+
+  useEffect(() => () => {
+    gl.domElement.style.cursor = '';
+  }, [gl]);
 
   const spec = toolSpecs[operation.tool];
   const labelOffset = labelOffsetFromNormal(normal);
 
   return (
     <group>
+      <mesh
+        position={anchor}
+        userData={{ isOperationGhost: true }}
+        onPointerOver={(event) => {
+          event.stopPropagation();
+          setHovered(true);
+        }}
+        onPointerOut={(event) => {
+          event.stopPropagation();
+          setHovered(false);
+        }}
+      >
+        <sphereGeometry args={[HOVER_RADIUS, 14, 14]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       <mesh ref={ringRef} position={anchor} rotation={[Math.PI / 2, 0, 0]} userData={{ isOperationGhost: true }}>
         <torusGeometry args={[RING_RADIUS, RING_TUBE, 12, 32]} />
         <meshBasicMaterial color={colors.accent} transparent opacity={0.72} />
       </mesh>
-      <mesh position={anchor} userData={{ isOperationGhost: true }}>
+      <mesh ref={anchorRef} position={anchor} userData={{ isOperationGhost: true }}>
         <sphereGeometry args={[ANCHOR_RADIUS, 12, 12]} />
         <meshBasicMaterial color={colors.accent} transparent opacity={0.35} />
       </mesh>
@@ -82,7 +152,7 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
           className={styles.operationLabel}
           zIndexRange={[40, 0]}
         >
-          <div className={styles.operationTag}>
+          <div ref={tagRef} className={styles.operationTag}>
             <div className={styles.operationTagHead}>
               <span className={styles.operationIconBadge}>
                 <ToolIcon tool={operation.tool} />

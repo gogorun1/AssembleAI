@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { operationRingRotationAt, operationRingScaleAt } from './OperationIndicators';
+import { operationLabelOpacityAt, operationRingRotationAt, operationRingScaleAt } from './OperationIndicators';
 import { resolveStepOperations } from './stepOperations';
 import { toolKindFromNeeded } from './tools';
 
@@ -28,6 +28,14 @@ describe('operation indicator motion', () => {
 
     expect(operationRingRotationAt(0)).toBe(0);
     expect(operationRingRotationAt(4.2)).toBe(0);
+  });
+
+  it('holds the label, fades it out, and restores it on hover', () => {
+    expect(operationLabelOpacityAt(0, false)).toBe(1);
+    expect(operationLabelOpacityAt(1, false)).toBe(1);
+    expect(operationLabelOpacityAt(3, false)).toBeLessThan(1);
+    expect(operationLabelOpacityAt(10, false)).toBe(0);
+    expect(operationLabelOpacityAt(10, true)).toBe(1);
   });
 });
 

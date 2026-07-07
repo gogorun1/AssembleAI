@@ -240,6 +240,7 @@
   background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 10%, transparent);
   animation: operationTagEnter 260ms var(--ease) both;
+  transition: opacity 180ms linear;
 }
 
 .operationTagHead {

@@ -12,6 +12,35 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import {
+  BACK_Z,
+  BOARD_THICKNESS,
+  BOOKCASE_DEPTH,
+  BOOKCASE_HEIGHT,
+  BOOKCASE_WIDTH,
+  CENTER_Y,
+  FRONT_EDGE_Z,
+  INNER_WIDTH,
+  SIDE_HARDWARE_X,
+  SIDE_X,
+  Y_ADJ_SHELVES,
+  Y_BACK_FOLD,
+  Y_BACK_LOWER,
+  Y_BACK_UPPER,
+  Y_CAM_LOCK,
+  Y_CAM_SCREW,
+  Y_DOWEL_PANEL,
+  Y_FIXED_SHELF,
+  Y_FRONT_RAIL,
+  Y_FRONT_RAIL_TOP,
+  Y_RAIL_DOWEL_LOWER,
+  Y_RAIL_DOWEL_UPPER,
+  Y_SHELF_PIN,
+  Y_TOP_PANEL,
+  Y_WALL,
+  Z_BACK_NAIL_ROWS,
+  Z_PANEL_EDGE
+} from '../src/viewer/billyDimensions.ts';
 
 // GLTFExporter targets the browser and expects FileReader when writing GLB.
 // Node ships a global Blob but no FileReader, so provide a minimal shim.
@@ -47,19 +76,6 @@ const outPath = resolve(root, 'public/models/billy.glb');
 
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
-// Geometry per part id. Mirrors partLayouts in src/viewer/useViewerCommands.ts.
-// size for box: [x, y, z]; for cylinder: [radiusTop, radiusBottom, height].
-const BOOKCASE_WIDTH = 0.8;
-const BOOKCASE_HEIGHT = 4.04;
-const BOOKCASE_DEPTH = 0.56;
-const BOARD_THICKNESS = 0.055;
-const INNER_WIDTH = BOOKCASE_WIDTH - BOARD_THICKNESS * 2;
-const SIDE_X = BOOKCASE_WIDTH / 2 - BOARD_THICKNESS / 2;
-const CENTER_Y = BOOKCASE_HEIGHT / 2;
-const BACK_Z = -BOOKCASE_DEPTH / 2 - 0.018;
-const FRONT_EDGE_Z = BOOKCASE_DEPTH / 2 + 0.035;
-const SIDE_HARDWARE_X = SIDE_X + 0.035;
-
 const sideName = (side) => (side < 0 ? 'left' : 'right');
 
 function box(id, size, position, rotation) {
@@ -72,17 +88,17 @@ function cylinder(id, size, position, rotation) {
 
 function makeWoodDowels() {
   const panelLevels = [
-    { id: 'bottom', y: 0.07 },
-    { id: 'fixed', y: 2.02 },
-    { id: 'top', y: 3.98 }
+    { id: 'bottom', y: Y_DOWEL_PANEL[0] },
+    { id: 'fixed', y: Y_DOWEL_PANEL[1] },
+    { id: 'top', y: Y_DOWEL_PANEL[2] }
   ];
   const panelEdges = [
-    { id: 'front', z: 0.21 },
-    { id: 'back', z: -0.18 }
+    { id: 'front', z: Z_PANEL_EDGE.front },
+    { id: 'back', z: Z_PANEL_EDGE.back }
   ];
   const railHoles = [
-    { id: 'upper', y: 0.205 },
-    { id: 'lower', y: 0.115 }
+    { id: 'upper', y: Y_RAIL_DOWEL_UPPER },
+    { id: 'lower', y: Y_RAIL_DOWEL_LOWER }
   ];
 
   return [
@@ -91,8 +107,8 @@ function makeWoodDowels() {
         panelEdges.map((edge) =>
           cylinder(
             `dowel-${level.id}-${sideName(side)}-${edge.id}`,
-            [0.017, 0.017, 0.18],
-            [side * 0.33, level.y, edge.z],
+            [0.008, 0.008, 0.09],
+            [side * 0.165, level.y, edge.z],
             [0, 0, 1.57]
           )
         )
@@ -102,8 +118,8 @@ function makeWoodDowels() {
       railHoles.map((hole) =>
         cylinder(
           `dowel-rail-${sideName(side)}-${hole.id}`,
-          [0.017, 0.017, 0.18],
-          [side * 0.34, hole.y, FRONT_EDGE_Z],
+          [0.008, 0.008, 0.09],
+          [side * 0.17, hole.y, FRONT_EDGE_Z],
           [0, 0, 1.57]
         )
       )
@@ -113,13 +129,13 @@ function makeWoodDowels() {
 
 function makeCamScrews() {
   const levels = [
-    { id: 'bottom', y: 0.22 },
-    { id: 'fixed', y: 2.02 },
-    { id: 'top', y: 3.84 }
+    { id: 'bottom', y: Y_CAM_SCREW[0] },
+    { id: 'fixed', y: Y_CAM_SCREW[1] },
+    { id: 'top', y: Y_CAM_SCREW[2] }
   ];
   const edges = [
-    { id: 'front', z: 0.21 },
-    { id: 'back', z: -0.18 }
+    { id: 'front', z: Z_PANEL_EDGE.front },
+    { id: 'back', z: Z_PANEL_EDGE.back }
   ];
 
   return [-1, 1].flatMap((side) =>
@@ -127,7 +143,7 @@ function makeCamScrews() {
       edges.map((edge) =>
         cylinder(
           `cam-screw-${sideName(side)}-${level.id}-${edge.id}`,
-          [0.014, 0.014, 0.16],
+          [0.007, 0.007, 0.08],
           [side * SIDE_HARDWARE_X, level.y, edge.z],
           [0, 0, 1.57]
         )
@@ -138,13 +154,13 @@ function makeCamScrews() {
 
 function makeCamLocks() {
   const levels = [
-    { id: 'bottom', y: 0.075 },
-    { id: 'fixed', y: 2.02 },
-    { id: 'top', y: 3.965 }
+    { id: 'bottom', y: Y_CAM_LOCK[0] },
+    { id: 'fixed', y: Y_CAM_LOCK[1] },
+    { id: 'top', y: Y_CAM_LOCK[2] }
   ];
   const edges = [
-    { id: 'front', z: 0.23 },
-    { id: 'back', z: -0.19 }
+    { id: 'front', z: Z_PANEL_EDGE.front + 0.012 },
+    { id: 'back', z: Z_PANEL_EDGE.back - 0.01 }
   ];
 
   return levels.flatMap((level) =>
@@ -152,8 +168,8 @@ function makeCamLocks() {
       edges.map((edge) =>
         cylinder(
           `cam-lock-${level.id}-${sideName(side)}-${edge.id}`,
-          [0.032, 0.032, 0.018],
-          [side * 0.29, level.y, edge.z],
+          [0.016, 0.016, 0.009],
+          [side * 0.145, level.y, edge.z],
           [1.57, 0, 0]
         )
       )
@@ -163,18 +179,17 @@ function makeCamLocks() {
 
 function makeBackNails() {
   const columns = [
-    { id: 'left', x: -0.36 },
+    { id: 'left', x: -0.18 },
     { id: 'center', x: 0 },
-    { id: 'right', x: 0.36 }
+    { id: 'right', x: 0.18 }
   ];
-  const rows = [0.35, 0.95, 1.55, 2.15, 2.75, 3.35];
 
   return columns.flatMap((column) =>
-    rows.map((y, index) =>
+    Z_BACK_NAIL_ROWS.map((y, index) =>
       cylinder(
         `back-nail-${column.id}-${index + 1}`,
-        [0.011, 0.011, 0.028],
-        [column.x, y, BACK_Z - 0.02],
+        [0.0055, 0.0055, 0.014],
+        [column.x, y, BACK_Z - 0.01],
         [1.57, 0, 0]
       )
     )
@@ -182,24 +197,18 @@ function makeBackNails() {
 }
 
 function makeShelfPins() {
-  const levels = [
-    { id: 'bottom', y: 0.74 },
-    { id: 'low', y: 1.36 },
-    { id: 'high', y: 2.68 },
-    { id: 'top', y: 3.28 }
-  ];
   const edges = [
-    { id: 'front', z: 0.18 },
-    { id: 'back', z: -0.18 }
+    { id: 'front', z: 0.09 },
+    { id: 'back', z: -0.09 }
   ];
 
-  return levels.flatMap((level) =>
+  return Y_SHELF_PIN.flatMap((y, levelIndex) =>
     [-1, 1].flatMap((side) =>
       edges.map((edge) =>
         cylinder(
-          `pin-${level.id}-${sideName(side)}-${edge.id}`,
-          [0.012, 0.012, 0.1],
-          [side * 0.34, level.y, edge.z],
+          `pin-${['bottom', 'low', 'high', 'top'][levelIndex]}-${sideName(side)}-${edge.id}`,
+          [0.006, 0.006, 0.05],
+          [side * 0.17, y, edge.z],
           [0, 0, 1.57]
         )
       )
@@ -209,52 +218,77 @@ function makeShelfPins() {
 
 function makeSidePanelCamHoles(side, prefix) {
   const levels = [
-    { id: 'bottom', y: 0.22 },
-    { id: 'fixed', y: 2.02 },
-    { id: 'top', y: 3.84 }
+    { id: 'bottom', y: Y_CAM_SCREW[0] },
+    { id: 'fixed', y: Y_CAM_SCREW[1] },
+    { id: 'top', y: Y_CAM_SCREW[2] }
   ];
   const edges = [
-    { id: 'front', z: 0.21 },
-    { id: 'back', z: -0.18 }
+    { id: 'front', z: Z_PANEL_EDGE.front },
+    { id: 'back', z: Z_PANEL_EDGE.back }
   ];
-  const faceX = side * (SIDE_X - BOARD_THICKNESS / 2 + 0.008);
+  const faceX = side * (SIDE_X - BOARD_THICKNESS / 2 + 0.004);
+  const ringX = side * (SIDE_X - BOARD_THICKNESS / 2 + 0.007);
 
-  return {
-    id: `${prefix}-cam-holes`,
-    material: 'shadow',
-    primitives: levels.flatMap((level) =>
-      edges.map((edge) =>
-        cylinder(
-          `${prefix}-cam-hole-${level.id}-${edge.id}`,
-          [0.018, 0.018, 0.012],
-          [faceX, level.y, edge.z],
-          [0, 0, 1.57]
-        )
+  const holes = levels.flatMap((level) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-cam-hole-${level.id}-${edge.id}`,
+        [0.009, 0.009, 0.006],
+        [faceX, level.y, edge.z],
+        [0, 0, 1.57]
       )
     )
-  };
+  );
+
+  const rings = levels.flatMap((level) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-cam-ring-${level.id}-${edge.id}`,
+        [0.012, 0.012, 0.0015],
+        [ringX, level.y, edge.z],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  return [
+    { id: `${prefix}-cam-holes`, material: 'shadow', primitives: holes },
+    { id: `${prefix}-cam-hole-rings`, material: 'wood', primitives: rings }
+  ];
 }
 
 function makeShelfDowelHoles(prefix, y, width = INNER_WIDTH) {
   const edges = [
-    { id: 'front', z: 0.21 },
-    { id: 'back', z: -0.18 }
+    { id: 'front', z: Z_PANEL_EDGE.front },
+    { id: 'back', z: Z_PANEL_EDGE.back }
   ];
 
-  return {
-    id: `${prefix}-dowel-holes`,
-    material: 'shadow',
-    primitives: [-1, 1].flatMap((side) =>
-      edges.map((edge) =>
-        cylinder(
-          `${prefix}-dowel-hole-${sideName(side)}-${edge.id}`,
-          [0.011, 0.011, 0.01],
-          [side * (width / 2 - 0.02), y, edge.z],
-          [0, 0, 1.57]
-        )
+  const holes = [-1, 1].flatMap((side) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-dowel-hole-${sideName(side)}-${edge.id}`,
+        [0.0055, 0.0055, 0.005],
+        [side * (width / 2 - 0.01), y, edge.z],
+        [0, 0, 1.57]
       )
     )
-  };
+  );
+
+  const rings = [-1, 1].flatMap((side) =>
+    edges.map((edge) =>
+      cylinder(
+        `${prefix}-dowel-ring-${sideName(side)}-${edge.id}`,
+        [0.008, 0.008, 0.0015],
+        [side * (width / 2 - 0.01), y, edge.z + 0.003],
+        [0, 0, 1.57]
+      )
+    )
+  );
+
+  return [
+    { id: `${prefix}-dowel-holes`, material: 'shadow', primitives: holes },
+    { id: `${prefix}-dowel-rings`, material: 'wood', primitives: rings }
+  ];
 }
 
 function makeBackPanelNailGuide() {
@@ -262,40 +296,39 @@ function makeBackPanelNailGuide() {
     id: 'back-nail-guide',
     material: 'shadow',
     primitives: [
-      box('back-nail-guide-line', [BOOKCASE_WIDTH - 0.08, 0.004, 0.004], [0, 2.02, BACK_Z - 0.008]),
-      box('back-nail-guide-left', [0.004, 1.9, 0.004], [-0.36, 2.02, BACK_Z - 0.008]),
-      box('back-nail-guide-right', [0.004, 1.9, 0.004], [0.36, 2.02, BACK_Z - 0.008])
+      box('back-nail-guide-line', [BOOKCASE_WIDTH - 0.04, 0.002, 0.002], [0, Y_BACK_FOLD, BACK_Z - 0.004]),
+      box('back-nail-guide-left', [0.002, 0.95, 0.002], [-0.18, Y_BACK_FOLD, BACK_Z - 0.004]),
+      box('back-nail-guide-right', [0.002, 0.95, 0.002], [0.18, Y_BACK_FOLD, BACK_Z - 0.004])
     ]
   };
 }
 
 function makeSidePanelDetails(side, prefix) {
-  const interiorX = side * (SIDE_X - BOARD_THICKNESS / 2 - 0.002);
+  const interiorX = side * (SIDE_X - BOARD_THICKNESS / 2 - 0.001);
   const backGrooveX = side * SIDE_X;
-  const shelfPinLevels = [0.74, 1.36, 2.68, 3.28];
-  const shelfPinDepths = [0.18, -0.18];
+  const shelfPinDepths = [0.09, -0.09];
 
   return [
-    makeSidePanelCamHoles(side, prefix),
+    ...makeSidePanelCamHoles(side, prefix),
     {
       id: `${prefix}-back-groove`,
       material: 'shadow',
       primitives: [
         box(
           `${prefix}-back-groove-strip`,
-          [0.01, BOOKCASE_HEIGHT - 0.18, 0.014],
-          [backGrooveX, CENTER_Y, -BOOKCASE_DEPTH / 2 + 0.018]
+          [0.005, BOOKCASE_HEIGHT - 0.09, 0.007],
+          [backGrooveX, CENTER_Y, -BOOKCASE_DEPTH / 2 + 0.009]
         )
       ]
     },
     {
       id: `${prefix}-shelf-pin-holes`,
       material: 'shadow',
-      primitives: shelfPinLevels.flatMap((y, levelIndex) =>
+      primitives: Y_SHELF_PIN.flatMap((y, levelIndex) =>
         shelfPinDepths.map((z, depthIndex) =>
           cylinder(
             `${prefix}-shelf-pin-hole-${levelIndex + 1}-${depthIndex + 1}`,
-            [0.014, 0.014, 0.006],
+            [0.007, 0.007, 0.003],
             [interiorX, y, z],
             [0, 0, 1.57]
           )
@@ -387,10 +420,10 @@ function makeWasherDetails() {
       id: 'washer-center-holes',
       material: 'slot',
       primitives: [
-        cylinder('washer-left-wall-hole', [0.011, 0.011, 0.009], [-0.28, 4.18, BACK_Z - 0.079], [1.57, 0, 0]),
-        cylinder('washer-right-wall-hole', [0.011, 0.011, 0.009], [0.28, 4.18, BACK_Z - 0.079], [1.57, 0, 0]),
-        cylinder('washer-left-case-hole', [0.009, 0.009, 0.009], [-0.2, 4.08, BACK_Z - 0.057], [1.57, 0, 0]),
-        cylinder('washer-right-case-hole', [0.009, 0.009, 0.009], [0.2, 4.08, BACK_Z - 0.057], [1.57, 0, 0])
+        cylinder('washer-left-wall-hole', [0.0055, 0.0055, 0.0045], [-0.14, Y_WALL, BACK_Z - 0.04], [1.57, 0, 0]),
+        cylinder('washer-right-wall-hole', [0.0055, 0.0055, 0.0045], [0.14, Y_WALL, BACK_Z - 0.04], [1.57, 0, 0]),
+        cylinder('washer-left-case-hole', [0.0045, 0.0045, 0.0045], [-0.1, Y_WALL - 0.1, BACK_Z - 0.028], [1.57, 0, 0]),
+        cylinder('washer-right-case-hole', [0.0045, 0.0045, 0.0045], [0.1, Y_WALL - 0.1, BACK_Z - 0.028], [1.57, 0, 0])
       ]
     }
   ];
@@ -412,7 +445,7 @@ const geometryByPart = {
     primitives: [box('bottom', [BOOKCASE_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH], [0, BOARD_THICKNESS / 2, 0])],
     details: [
       ...makeShelfEdgeDetails('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH),
-      makeShelfDowelHoles('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+      ...makeShelfDowelHoles('bottom', BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
     ]
   },
   'top-panel': {
@@ -420,57 +453,55 @@ const geometryByPart = {
     primitives: [box('top', [BOOKCASE_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH], [0, BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, 0])],
     details: [
       ...makeShelfEdgeDetails('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH),
-      makeShelfDowelHoles('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
+      ...makeShelfDowelHoles('top', BOOKCASE_HEIGHT - BOARD_THICKNESS / 2, BOOKCASE_WIDTH)
     ]
   },
   'fixed-shelf': {
     role: 'panel',
-    primitives: [box('fixed-shelf', [INNER_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH - 0.03], [0, 2.02, 0.015])],
+    primitives: [box('fixed-shelf', [INNER_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH - 0.015], [0, Y_FIXED_SHELF, 0.008])],
     details: [
-      ...makeShelfEdgeDetails('fixed-shelf', 2.02),
-      makeShelfDowelHoles('fixed-shelf', 2.02)
+      ...makeShelfEdgeDetails('fixed-shelf', Y_FIXED_SHELF),
+      ...makeShelfDowelHoles('fixed-shelf', Y_FIXED_SHELF)
     ]
   },
   'adjustable-shelf': {
     role: 'panel',
     primitives: [
-      box('adjustable-bottom', [INNER_WIDTH, 0.05, BOOKCASE_DEPTH - 0.045], [0, 0.74, 0.02]),
-      box('adjustable-low', [INNER_WIDTH, 0.05, BOOKCASE_DEPTH - 0.045], [0, 1.36, 0.02]),
-      box('adjustable-high', [INNER_WIDTH, 0.05, BOOKCASE_DEPTH - 0.045], [0, 2.68, 0.02]),
-      box('adjustable-top', [INNER_WIDTH, 0.05, BOOKCASE_DEPTH - 0.045], [0, 3.28, 0.02])
+      box('adjustable-bottom', [INNER_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH - 0.022], [0, Y_ADJ_SHELVES[0], 0.01]),
+      box('adjustable-low', [INNER_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH - 0.022], [0, Y_ADJ_SHELVES[1], 0.01]),
+      box('adjustable-high', [INNER_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH - 0.022], [0, Y_ADJ_SHELVES[2], 0.01]),
+      box('adjustable-top', [INNER_WIDTH, BOARD_THICKNESS, BOOKCASE_DEPTH - 0.022], [0, Y_ADJ_SHELVES[3], 0.01])
     ],
     details: [
-      ...makeShelfEdgeDetails('adjustable-bottom', 0.74),
-      ...makeShelfEdgeDetails('adjustable-low', 1.36),
-      ...makeShelfEdgeDetails('adjustable-high', 2.68),
-      ...makeShelfEdgeDetails('adjustable-top', 3.28)
+      ...makeShelfEdgeDetails('adjustable-bottom', Y_ADJ_SHELVES[0]),
+      ...makeShelfEdgeDetails('adjustable-low', Y_ADJ_SHELVES[1]),
+      ...makeShelfEdgeDetails('adjustable-high', Y_ADJ_SHELVES[2]),
+      ...makeShelfEdgeDetails('adjustable-top', Y_ADJ_SHELVES[3])
     ]
   },
   'front-rail': {
     role: 'panel',
-    primitives: [
-      box('front-rail', [BOOKCASE_WIDTH, 0.16, 0.05], [0, 0.16, FRONT_EDGE_Z])
-    ],
+    primitives: [box('front-rail', [BOOKCASE_WIDTH, 0.08, 0.025], [0, Y_FRONT_RAIL, FRONT_EDGE_Z])],
     details: [
       {
         id: 'front-rail-top-edge',
         material: 'edge',
-        primitives: [box('front-rail-top-edge', [BOOKCASE_WIDTH, 0.018, 0.01], [0, 0.24, FRONT_EDGE_Z + 0.006])]
+        primitives: [box('front-rail-top-edge', [BOOKCASE_WIDTH, 0.009, 0.005], [0, Y_FRONT_RAIL_TOP, FRONT_EDGE_Z + 0.003])]
       },
-      makeShelfDowelHoles('front-rail', 0.16, BOOKCASE_WIDTH)
+      ...makeShelfDowelHoles('front-rail', Y_FRONT_RAIL, BOOKCASE_WIDTH)
     ]
   },
   'back-panel': {
     role: 'back',
     primitives: [
-      box('back-lower', [BOOKCASE_WIDTH - 0.03, 1.96, 0.022], [0, 1.02, BACK_Z]),
-      box('back-upper', [BOOKCASE_WIDTH - 0.03, 1.96, 0.022], [0, 3.02, BACK_Z])
+      box('back-lower', [BOOKCASE_WIDTH - 0.015, 0.98, 0.011], [0, Y_BACK_LOWER, BACK_Z]),
+      box('back-upper', [BOOKCASE_WIDTH - 0.015, 0.98, 0.011], [0, Y_BACK_UPPER, BACK_Z])
     ],
     details: [
       {
         id: 'back-panel-fold-line',
         material: 'shadow',
-        primitives: [box('back-panel-fold-line', [BOOKCASE_WIDTH - 0.05, 0.014, 0.006], [0, 2.02, BACK_Z - 0.014])]
+        primitives: [box('back-panel-fold-line', [BOOKCASE_WIDTH - 0.025, 0.007, 0.003], [0, Y_BACK_FOLD, BACK_Z - 0.007])]
       },
       makeBackPanelNailGuide()
     ]
@@ -501,26 +532,26 @@ const geometryByPart = {
   'wall-bracket': {
     role: 'hardware',
     primitives: [
-      box('wall-bracket-left-flat', [0.17, 0.035, 0.018], [-0.2, 4.08, BACK_Z - 0.03]),
-      box('wall-bracket-left-up', [0.035, 0.18, 0.018], [-0.28, 4.15, BACK_Z - 0.03]),
-      box('wall-bracket-right-flat', [0.17, 0.035, 0.018], [0.2, 4.08, BACK_Z - 0.03]),
-      box('wall-bracket-right-up', [0.035, 0.18, 0.018], [0.28, 4.15, BACK_Z - 0.03])
+      box('wall-bracket-left-flat', [0.085, 0.019, 0.01], [-0.1, Y_WALL - 0.1, BACK_Z - 0.015]),
+      box('wall-bracket-left-up', [0.019, 0.09, 0.01], [-0.14, Y_WALL - 0.03, BACK_Z - 0.015]),
+      box('wall-bracket-right-flat', [0.085, 0.019, 0.01], [0.1, Y_WALL - 0.1, BACK_Z - 0.015]),
+      box('wall-bracket-right-up', [0.019, 0.09, 0.01], [0.14, Y_WALL - 0.03, BACK_Z - 0.015])
     ]
   },
   'bracket-screw': {
     role: 'hardware',
     primitives: [
-      cylinder('bracket-screw-left', [0.014, 0.014, 0.03], [-0.28, 4.18, BACK_Z - 0.052], [1.57, 0, 0]),
-      cylinder('bracket-screw-right', [0.014, 0.014, 0.03], [0.28, 4.18, BACK_Z - 0.052], [1.57, 0, 0])
+      cylinder('bracket-screw-left', [0.007, 0.007, 0.015], [-0.14, Y_WALL, BACK_Z - 0.026], [1.57, 0, 0]),
+      cylinder('bracket-screw-right', [0.007, 0.007, 0.015], [0.14, Y_WALL, BACK_Z - 0.026], [1.57, 0, 0])
     ]
   },
   washer: {
     role: 'hardware',
     primitives: [
-      cylinder('washer-left-wall', [0.026, 0.026, 0.008], [-0.28, 4.18, BACK_Z - 0.074], [1.57, 0, 0]),
-      cylinder('washer-right-wall', [0.026, 0.026, 0.008], [0.28, 4.18, BACK_Z - 0.074], [1.57, 0, 0]),
-      cylinder('washer-left-case', [0.02, 0.02, 0.008], [-0.2, 4.08, BACK_Z - 0.052], [1.57, 0, 0]),
-      cylinder('washer-right-case', [0.02, 0.02, 0.008], [0.2, 4.08, BACK_Z - 0.052], [1.57, 0, 0])
+      cylinder('washer-left-wall', [0.013, 0.013, 0.004], [-0.14, Y_WALL, BACK_Z - 0.037], [1.57, 0, 0]),
+      cylinder('washer-right-wall', [0.013, 0.013, 0.004], [0.14, Y_WALL, BACK_Z - 0.037], [1.57, 0, 0]),
+      cylinder('washer-left-case', [0.01, 0.01, 0.004], [-0.1, Y_WALL - 0.1, BACK_Z - 0.026], [1.57, 0, 0]),
+      cylinder('washer-right-case', [0.01, 0.01, 0.004], [0.1, Y_WALL - 0.1, BACK_Z - 0.026], [1.57, 0, 0])
     ],
     details: makeWasherDetails()
   }

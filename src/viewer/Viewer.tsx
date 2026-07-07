@@ -26,6 +26,7 @@ import {
 import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
+import { hardwareApproachDelta } from './stepPoses';
 import { SlotGhosts } from './PartsBench';
 import { OperationIndicators } from './OperationIndicators';
 import { resolvePickablePartId } from './picking';
@@ -52,8 +53,8 @@ interface FlightState {
   from: THREE.Vector3;
 }
 
-const FLIGHT_SECONDS = 1.5;
-const FLIGHT_ARC_LIFT = 1.1;
+const FLIGHT_SECONDS = 0.9;
+const FLIGHT_ARC_LIFT = 0.08;
 
 function easeInOutCubic(x: number): number {
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -120,7 +121,7 @@ export function Viewer() {
         <Canvas
           shadows="soft"
           dpr={[1, 2]}
-          camera={{ position: [2.3, 2.5, 7.0], fov: 38, near: 0.1, far: 80 }}
+          camera={{ position: [1.4, 1.35, 4.2], fov: 38, near: 0.05, far: 40 }}
           onCreated={({ gl }) => {
             gl.toneMapping = THREE.ACESFilmicToneMapping;
             gl.toneMappingExposure = 1.06;
@@ -299,6 +300,7 @@ function CameraRig({
   const camera = useThree((state) => state.camera);
   const manifest = useAppStore((state) => state.manifest);
   const activeViewKey = useAppStore((state) => state.activeViewKey);
+  const stepCamera = useAppStore((state) => state.stepCamera);
   const cameraNonce = useAppStore((state) => state.cameraNonce);
   const cameraFocusScale = useAppStore((state) => state.cameraFocusScale);
   const reducedMotion = useReducedMotion();
@@ -326,9 +328,9 @@ function CameraRig({
     // A new camera command (view button, step, bin, reset) starts a one-shot flight.
     if (cameraNonce !== lastNonce.current) {
       lastNonce.current = cameraNonce;
-      const view = manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
+      const view = stepCamera ?? manifest.cameraViews[activeViewKey] ?? manifest.cameraViews.front;
       startPos.current.copy(camera.position);
-      startTarget.current.copy(controls?.target ?? startTarget.current.set(0, 1.1, 0));
+      startTarget.current.copy(controls?.target ?? startTarget.current.set(0, 1.01, 0));
       endTarget.current.set(...view.target);
       endPos.current.set(...view.position);
       endPos.current.sub(endTarget.current).multiplyScalar(cameraFocusScale).add(endTarget.current);
@@ -428,6 +430,7 @@ function GlbModel({
         binding.basePosition.y + pose.offset[1],
         binding.basePosition.z + pose.offset[2]
       );
+      const targetRot = pose.rotation;
 
       const bin = binForPart[binding.partId];
       const installed = layout ? currentStep >= layout.unlockStep : true;
@@ -435,8 +438,6 @@ function GlbModel({
       let grow = 1;
 
       if (bin && explodeLevel === 0) {
-        // Binned hardware: sits in its tray until its step arrives, then flies
-        // into the slot along an arc with a scale-up "install" pop.
         let fs = flight.current.get(binding.partId);
         if (!fs) {
           fs = { seeded: false, prev: installed, flying: false, t: 1, from: new THREE.Vector3() };
@@ -450,11 +451,8 @@ function GlbModel({
         } else if (installed && !fs.prev) {
           fs.flying = true;
           fs.t = 0;
-          // Launch from the bin's on-screen (UI) position, projected ~4.5 units
-          // in front of the camera so the part appears to fly from the UI card.
-          binVec.current.set(bin.anchorNdc[0], bin.anchorNdc[1], 0.5).unproject(state.camera);
-          binVec.current.sub(state.camera.position).normalize().multiplyScalar(4.5).add(state.camera.position);
-          fs.from.copy(binVec.current);
+          const approach = hardwareApproachDelta(binding.partId);
+          fs.from.set(slot.x + approach[0], slot.y + approach[1], slot.z + approach[2]);
         }
         fs.prev = installed;
         visible = installed || fs.flying;
@@ -462,18 +460,8 @@ function GlbModel({
         if (fs.flying) {
           fs.t = Math.min(1, fs.t + delta / FLIGHT_SECONDS);
           const e = easeInOutCubic(fs.t);
-          const inv = 1 - e;
-          // quadratic bezier from bin -> lifted control point -> slot
-          const cx = (fs.from.x + slot.x) / 2;
-          const cy = Math.max(fs.from.y, slot.y) + FLIGHT_ARC_LIFT;
-          const cz = (fs.from.z + slot.z) / 2;
-          binVec.current.set(
-            inv * inv * fs.from.x + 2 * inv * e * cx + e * e * slot.x,
-            inv * inv * fs.from.y + 2 * inv * e * cy + e * e * slot.y,
-            inv * inv * fs.from.z + 2 * inv * e * cz + e * e * slot.z
-          );
-          binding.node.position.copy(binVec.current);
-          grow = 0.5 + 0.5 * e;
+          binding.node.position.lerpVectors(fs.from, slot, e);
+          grow = 0.85 + 0.15 * e;
           if (fs.t >= 1) {
             fs.flying = false;
             binding.node.position.copy(slot);
@@ -494,9 +482,9 @@ function GlbModel({
       }
 
       binding.node.visible = visible;
-      // Selected state is highlight-only — the part stays axis-aligned and does
-      // not spin. Any residual rotation eases back to zero.
-      binding.node.rotation.y = THREE.MathUtils.lerp(binding.node.rotation.y, 0, alpha);
+      binding.node.rotation.x = THREE.MathUtils.lerp(binding.node.rotation.x, targetRot[0], alpha);
+      binding.node.rotation.y = THREE.MathUtils.lerp(binding.node.rotation.y, targetRot[1], alpha);
+      binding.node.rotation.z = THREE.MathUtils.lerp(binding.node.rotation.z, targetRot[2], alpha);
 
       const mentioned = !suppressPartHighlight && mentionedPartIds.includes(binding.partId);
       const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.03 : 1;
@@ -637,6 +625,7 @@ function PartGroup({
   const showHighlight = !selectedBinId && (highlighted || mentioned);
   const pose = derivePartPose(part.id, currentStep, explodeLevel);
   const targetOffset = useMemo(() => new THREE.Vector3(...pose.offset), [pose.offset]);
+  const targetRotation = useMemo(() => pose.rotation, [pose.rotation]);
 
   useFrame((state, delta) => {
     const group = groupRef.current;
@@ -647,8 +636,9 @@ function PartGroup({
     const alpha = 1 - Math.exp(-delta * 8);
     group.position.lerp(targetOffset, alpha);
     group.visible = pose.visible;
-    // Selected state is highlight-only — no spin.
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, 0, alpha);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, targetRotation[0], alpha);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, targetRotation[1], alpha);
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, targetRotation[2], alpha);
     const pulse = mentioned ? 1 + Math.sin(state.clock.elapsedTime * 12) * 0.035 : 1;
     group.scale.setScalar(pulse);
   });
@@ -764,10 +754,16 @@ function PrimitiveMesh({
 
 function GridPlate({ colors }: { colors: TokenColors }) {
   return (
-    <mesh position={[0, -0.035, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[4.6, 4.6, 16, 16]} />
-      <meshBasicMaterial color={colors.paperSunken} transparent opacity={0.34} />
-    </mesh>
+    <>
+      <mesh position={[-0.22, -0.002, 0.18]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[0.55, 0.42]} />
+        <meshStandardMaterial color={colors.line} transparent opacity={0.12} roughness={0.9} />
+      </mesh>
+      <mesh position={[0, -0.035, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[2.4, 2.4, 16, 16]} />
+        <meshBasicMaterial color={colors.paperSunken} transparent opacity={0.34} />
+      </mesh>
+    </>
   );
 }
 

@@ -64,7 +64,7 @@ export function isHostAnchored(partId: string, currentStep: number, explodeLevel
   const active = stepPartIds(currentStep).has(partId);
   if (active) return true;
   const magnitude = Math.hypot(pose.offset[0], pose.offset[1], pose.offset[2]);
-  return magnitude < 0.22;
+  return magnitude < 0.12;
 }
 
 /** Nudge marker outward along the panel face so rings sit on the surface, not inside the board. */

@@ -14,7 +14,7 @@
     "test": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "model:billy": "node scripts/model-billy.mjs"
+    "model:billy": "node --experimental-strip-types scripts/model-billy.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

@@ -10,7 +10,10 @@
       "code": "PANEL-L",
       "label": "First side panel",
       "meshName": "side_panel_left",
-      "meshNodes": ["side_panel_left", "SidePanelLeft"],
+      "meshNodes": [
+        "side_panel_left",
+        "SidePanelLeft"
+      ],
       "quantity": 1,
       "manualFig": "Manual · left side panel"
     },
@@ -19,7 +22,10 @@
       "code": "PANEL-R",
       "label": "Second side panel",
       "meshName": "side_panel_right",
-      "meshNodes": ["side_panel_right", "SidePanelRight"],
+      "meshNodes": [
+        "side_panel_right",
+        "SidePanelRight"
+      ],
       "quantity": 1,
       "manualFig": "Manual · right side panel"
     },
@@ -28,7 +34,10 @@
       "code": "BASE",
       "label": "Bottom shelf panel",
       "meshName": "bottom_panel",
-      "meshNodes": ["bottom_panel", "BottomPanel"],
+      "meshNodes": [
+        "bottom_panel",
+        "BottomPanel"
+      ],
       "quantity": 1,
       "manualFig": "Manual · bottom shelf"
     },
@@ -37,7 +46,10 @@
       "code": "TOP",
       "label": "Top shelf panel",
       "meshName": "top_panel",
-      "meshNodes": ["top_panel", "TopPanel"],
+      "meshNodes": [
+        "top_panel",
+        "TopPanel"
+      ],
       "quantity": 1,
       "manualFig": "Manual · top shelf"
     },
@@ -46,7 +58,10 @@
       "code": "FIXED",
       "label": "Fixed center shelf",
       "meshName": "fixed_shelf",
-      "meshNodes": ["fixed_shelf", "FixedShelf"],
+      "meshNodes": [
+        "fixed_shelf",
+        "FixedShelf"
+      ],
       "quantity": 1,
       "manualFig": "Manual · fixed shelf"
     },
@@ -55,7 +70,10 @@
       "code": "PLINTH",
       "label": "Front bottom rail",
       "meshName": "front_rail",
-      "meshNodes": ["front_rail", "FrontRail"],
+      "meshNodes": [
+        "front_rail",
+        "FrontRail"
+      ],
       "quantity": 1,
       "manualFig": "Manual · front rail"
     },
@@ -64,7 +82,10 @@
       "code": "BACK",
       "label": "Folded back panel",
       "meshName": "back_panel",
-      "meshNodes": ["back_panel", "BackPanel"],
+      "meshNodes": [
+        "back_panel",
+        "BackPanel"
+      ],
       "quantity": 1,
       "manualFig": "Manual · back panel"
     },
@@ -73,7 +94,10 @@
       "code": "SHELF",
       "label": "Adjustable shelf",
       "meshName": "adjustable_shelf",
-      "meshNodes": ["adjustable_shelf", "AdjustableShelf"],
+      "meshNodes": [
+        "adjustable_shelf",
+        "AdjustableShelf"
+      ],
       "quantity": 4,
       "manualFig": "Manual · adjustable shelf (×4)"
     },
@@ -82,7 +106,10 @@
       "code": "118331",
       "label": "Cam screw",
       "meshName": "cam_screw",
-      "meshNodes": ["cam_screw", "CamScrew"],
+      "meshNodes": [
+        "cam_screw",
+        "CamScrew"
+      ],
       "quantity": 12,
       "manualFig": "118331 · cam screw"
     },
@@ -91,7 +118,10 @@
       "code": "101351",
       "label": "Wood dowel",
       "meshName": "wood_dowel",
-      "meshNodes": ["wood_dowel", "WoodDowel"],
+      "meshNodes": [
+        "wood_dowel",
+        "WoodDowel"
+      ],
       "quantity": 16,
       "manualFig": "101351 · wood dowel"
     },
@@ -100,7 +130,10 @@
       "code": "101201",
       "label": "Back panel nail",
       "meshName": "back_nail",
-      "meshNodes": ["back_nail", "BackNail"],
+      "meshNodes": [
+        "back_nail",
+        "BackNail"
+      ],
       "quantity": 18,
       "manualFig": "101201 · back nail"
     },
@@ -109,7 +142,10 @@
       "code": "119081",
       "label": "Cam lock",
       "meshName": "cam_lock",
-      "meshNodes": ["cam_lock", "CamLock"],
+      "meshNodes": [
+        "cam_lock",
+        "CamLock"
+      ],
       "quantity": 12,
       "manualFig": "119081 · cam lock"
     },
@@ -118,7 +154,10 @@
       "code": "131372",
       "label": "Shelf support pin",
       "meshName": "shelf_pin",
-      "meshNodes": ["shelf_pin", "ShelfPin"],
+      "meshNodes": [
+        "shelf_pin",
+        "ShelfPin"
+      ],
       "quantity": 16,
       "manualFig": "131372 · shelf pin"
     },
@@ -127,7 +166,10 @@
       "code": "106989",
       "label": "Wall attachment bracket",
       "meshName": "wall_bracket",
-      "meshNodes": ["wall_bracket", "WallBracket"],
+      "meshNodes": [
+        "wall_bracket",
+        "WallBracket"
+      ],
       "quantity": 2,
       "manualFig": "106989 · wall bracket"
     },
@@ -136,7 +178,10 @@
       "code": "109041",
       "label": "Bracket screw",
       "meshName": "bracket_screw",
-      "meshNodes": ["bracket_screw", "BracketScrew"],
+      "meshNodes": [
+        "bracket_screw",
+        "BracketScrew"
+      ],
       "quantity": 2,
       "manualFig": "109041 · bracket screw"
     },
@@ -145,7 +190,10 @@
       "code": "100823",
       "label": "Washer",
       "meshName": "washer",
-      "meshNodes": ["washer", "Washer"],
+      "meshNodes": [
+        "washer",
+        "Washer"
+      ],
       "quantity": 4,
       "manualFig": "100823 · washer"
     }
@@ -156,14 +204,35 @@
       "title": "Insert the wood dowels",
       "action": "Press all 16 wood dowels into the edge holes of the bottom shelf, fixed shelf, top shelf, and front bottom rail.",
       "partsNeeded": [
-        { "partId": "bottom-panel", "quantity": 1 },
-        { "partId": "fixed-shelf", "quantity": 1 },
-        { "partId": "top-panel", "quantity": 1 },
-        { "partId": "front-rail", "quantity": 1 },
-        { "partId": "wood-dowel", "quantity": 16 }
+        {
+          "partId": "bottom-panel",
+          "quantity": 1
+        },
+        {
+          "partId": "fixed-shelf",
+          "quantity": 1
+        },
+        {
+          "partId": "top-panel",
+          "quantity": 1
+        },
+        {
+          "partId": "front-rail",
+          "quantity": 1
+        },
+        {
+          "partId": "wood-dowel",
+          "quantity": 16
+        }
       ],
       "cameraView": "dowel-prep",
-      "highlightParts": ["bottom-panel", "fixed-shelf", "top-panel", "front-rail", "wood-dowel"],
+      "highlightParts": [
+        "bottom-panel",
+        "fixed-shelf",
+        "top-panel",
+        "front-rail",
+        "wood-dowel"
+      ],
       "commonMistake": "Use the small edge holes shown in the manual. Do not put dowels into the larger cam-lock holes.",
       "toolNeeded": "Hands",
       "manualFig": "Fig. 3",
@@ -174,12 +243,25 @@
       "title": "Install the cam screws",
       "action": "Thread the 12 cam screws into the marked holes on the two tall side panels.",
       "partsNeeded": [
-        { "partId": "side-panel-left", "quantity": 1 },
-        { "partId": "side-panel-right", "quantity": 1 },
-        { "partId": "cam-screw", "quantity": 12 }
+        {
+          "partId": "side-panel-left",
+          "quantity": 1
+        },
+        {
+          "partId": "side-panel-right",
+          "quantity": 1
+        },
+        {
+          "partId": "cam-screw",
+          "quantity": 12
+        }
       ],
       "cameraView": "side-screw-detail",
-      "highlightParts": ["side-panel-left", "side-panel-right", "cam-screw"],
+      "highlightParts": [
+        "side-panel-left",
+        "side-panel-right",
+        "cam-screw"
+      ],
       "commonMistake": "Drive each cam screw straight. A tilted cam screw will not catch the cam lock later.",
       "toolNeeded": "Flat screwdriver",
       "manualFig": "Fig. 4",
@@ -190,14 +272,35 @@
       "title": "Seat the shelves on the first side",
       "action": "With the first side panel lying on the floor, seat the dowelled bottom shelf, fixed shelf, and top shelf into the matching holes.",
       "partsNeeded": [
-        { "partId": "side-panel-left", "quantity": 1 },
-        { "partId": "bottom-panel", "quantity": 1 },
-        { "partId": "fixed-shelf", "quantity": 1 },
-        { "partId": "top-panel", "quantity": 1 },
-        { "partId": "wood-dowel", "quantity": 12 }
+        {
+          "partId": "side-panel-left",
+          "quantity": 1
+        },
+        {
+          "partId": "bottom-panel",
+          "quantity": 1
+        },
+        {
+          "partId": "fixed-shelf",
+          "quantity": 1
+        },
+        {
+          "partId": "top-panel",
+          "quantity": 1
+        },
+        {
+          "partId": "wood-dowel",
+          "quantity": 12
+        }
       ],
       "cameraView": "first-side-assembly",
-      "highlightParts": ["side-panel-left", "bottom-panel", "fixed-shelf", "top-panel", "wood-dowel"],
+      "highlightParts": [
+        "side-panel-left",
+        "bottom-panel",
+        "fixed-shelf",
+        "top-panel",
+        "wood-dowel"
+      ],
       "commonMistake": "Keep the dowels straight as the panels go in. The manual calls out the correct upright dowel orientation here.",
       "toolNeeded": "Hands",
       "manualFig": "Fig. 5",
@@ -208,10 +311,18 @@
       "title": "Lock the first four cams",
       "action": "Insert four cam locks and turn them to pull the bottom and shelf panels tight to the first side panel.",
       "partsNeeded": [
-        { "partId": "cam-lock", "quantity": 4 }
+        {
+          "partId": "cam-lock",
+          "quantity": 4
+        }
       ],
       "cameraView": "cam-lock-detail",
-      "highlightParts": ["cam-lock", "side-panel-left", "bottom-panel", "fixed-shelf"],
+      "highlightParts": [
+        "cam-lock",
+        "side-panel-left",
+        "bottom-panel",
+        "fixed-shelf"
+      ],
       "commonMistake": "The cam lock opening must face the cam screw before you turn it. If it spins freely, rotate it back and reseat it.",
       "toolNeeded": "Phillips screwdriver",
       "manualFig": "Fig. 6",
@@ -222,11 +333,20 @@
       "title": "Fit the front rail",
       "action": "Seat the front bottom rail on its dowels and lock it with two cam locks.",
       "partsNeeded": [
-        { "partId": "front-rail", "quantity": 1 },
-        { "partId": "cam-lock", "quantity": 2 }
+        {
+          "partId": "front-rail",
+          "quantity": 1
+        },
+        {
+          "partId": "cam-lock",
+          "quantity": 2
+        }
       ],
       "cameraView": "front-rail",
-      "highlightParts": ["front-rail", "cam-lock"],
+      "highlightParts": [
+        "front-rail",
+        "cam-lock"
+      ],
       "commonMistake": "The rail belongs on the front edge of the base assembly. Match the manual notch before locking.",
       "toolNeeded": "Phillips screwdriver",
       "manualFig": "Fig. 7",
@@ -237,12 +357,25 @@
       "title": "Lower the second side panel",
       "action": "Lower the second side panel over the exposed dowels and cam screws, keeping all shelf ends aligned.",
       "partsNeeded": [
-        { "partId": "side-panel-right", "quantity": 1 },
-        { "partId": "wood-dowel", "quantity": 12 },
-        { "partId": "cam-screw", "quantity": 6 }
+        {
+          "partId": "side-panel-right",
+          "quantity": 1
+        },
+        {
+          "partId": "wood-dowel",
+          "quantity": 12
+        },
+        {
+          "partId": "cam-screw",
+          "quantity": 6
+        }
       ],
       "cameraView": "second-side-panel",
-      "highlightParts": ["side-panel-right", "wood-dowel", "cam-screw"],
+      "highlightParts": [
+        "side-panel-right",
+        "wood-dowel",
+        "cam-screw"
+      ],
       "commonMistake": "Do not force the side panel down. If it resists, lift it and realign the dowels.",
       "toolNeeded": "Hands",
       "manualFig": "Fig. 8",
@@ -253,10 +386,16 @@
       "title": "Lock the remaining cams",
       "action": "Insert and turn the remaining six cam locks along the second side panel.",
       "partsNeeded": [
-        { "partId": "cam-lock", "quantity": 6 }
+        {
+          "partId": "cam-lock",
+          "quantity": 6
+        }
       ],
       "cameraView": "remaining-cams",
-      "highlightParts": ["cam-lock", "side-panel-right"],
+      "highlightParts": [
+        "cam-lock",
+        "side-panel-right"
+      ],
       "commonMistake": "Tighten the cams evenly across the side instead of fully tightening one end first.",
       "toolNeeded": "Phillips screwdriver",
       "manualFig": "Fig. 6",
@@ -267,10 +406,17 @@
       "title": "Mark the back panel line",
       "action": "Use a pencil to mark the center lines on the rear edges where the folded back panel will be nailed.",
       "partsNeeded": [
-        { "partId": "back-panel", "quantity": 1 }
+        {
+          "partId": "back-panel",
+          "quantity": 1
+        }
       ],
       "cameraView": "back-mark",
-      "highlightParts": ["back-panel", "side-panel-left", "side-panel-right"],
+      "highlightParts": [
+        "back-panel",
+        "side-panel-left",
+        "side-panel-right"
+      ],
       "commonMistake": "Make the marks before the back panel covers the rails. The nail line keeps the nails in the frame.",
       "toolNeeded": "Pencil",
       "manualFig": "Fig. 9",
@@ -281,10 +427,15 @@
       "title": "Slide in the folded back panel",
       "action": "Unfold the back panel and slide it into the rear grooves with the finished face toward the shelves.",
       "partsNeeded": [
-        { "partId": "back-panel", "quantity": 1 }
+        {
+          "partId": "back-panel",
+          "quantity": 1
+        }
       ],
       "cameraView": "back-panel",
-      "highlightParts": ["back-panel"],
+      "highlightParts": [
+        "back-panel"
+      ],
       "commonMistake": "Keep the smooth face toward the inside of the bookcase. The folded seam should sit flat before nailing.",
       "toolNeeded": "Hands",
       "manualFig": "Fig. 10",
@@ -295,10 +446,15 @@
       "title": "Rule the nail guide line",
       "action": "Use a ruler and pencil to continue the nail guide line across the back panel.",
       "partsNeeded": [
-        { "partId": "back-panel", "quantity": 1 }
+        {
+          "partId": "back-panel",
+          "quantity": 1
+        }
       ],
       "cameraView": "nail-line",
-      "highlightParts": ["back-panel"],
+      "highlightParts": [
+        "back-panel"
+      ],
       "commonMistake": "Do not guess the nail line. The manual uses a ruler so the nails land in the center support.",
       "toolNeeded": "Pencil and ruler",
       "manualFig": "Fig. 11",
@@ -309,11 +465,20 @@
       "title": "Nail the back panel",
       "action": "Hammer all 18 back panel nails along the marked lines to square and stiffen the bookcase.",
       "partsNeeded": [
-        { "partId": "back-panel", "quantity": 1 },
-        { "partId": "back-nail", "quantity": 18 }
+        {
+          "partId": "back-panel",
+          "quantity": 1
+        },
+        {
+          "partId": "back-nail",
+          "quantity": 18
+        }
       ],
       "cameraView": "back-nails",
-      "highlightParts": ["back-panel", "back-nail"],
+      "highlightParts": [
+        "back-panel",
+        "back-nail"
+      ],
       "commonMistake": "Keep the back panel flush with the outer edges before nailing. A shifted back panel will twist the case.",
       "toolNeeded": "Hammer",
       "manualFig": "Fig. 12",
@@ -324,12 +489,25 @@
       "title": "Install the wall brackets",
       "action": "Stand the bookcase upright. Attach the two wall brackets with bracket screws and washers, then use suitable wall screws and plugs for your wall.",
       "partsNeeded": [
-        { "partId": "wall-bracket", "quantity": 2 },
-        { "partId": "bracket-screw", "quantity": 2 },
-        { "partId": "washer", "quantity": 4 }
+        {
+          "partId": "wall-bracket",
+          "quantity": 2
+        },
+        {
+          "partId": "bracket-screw",
+          "quantity": 2
+        },
+        {
+          "partId": "washer",
+          "quantity": 4
+        }
       ],
       "cameraView": "wall-anchor",
-      "highlightParts": ["wall-bracket", "bracket-screw", "washer"],
+      "highlightParts": [
+        "wall-bracket",
+        "bracket-screw",
+        "washer"
+      ],
       "commonMistake": "The wall screws and plugs are not included. Use fasteners suitable for the wall material before loading the bookcase.",
       "toolNeeded": "Phillips screwdriver and drill",
       "manualFig": "Fig. 13",
@@ -340,10 +518,17 @@
       "title": "Insert the shelf pins",
       "action": "Push all 16 shelf support pins into matching holes on the left and right sides.",
       "partsNeeded": [
-        { "partId": "shelf-pin", "quantity": 16 }
+        {
+          "partId": "shelf-pin",
+          "quantity": 16
+        }
       ],
       "cameraView": "shelf-pin-detail",
-      "highlightParts": ["shelf-pin", "side-panel-left", "side-panel-right"],
+      "highlightParts": [
+        "shelf-pin",
+        "side-panel-left",
+        "side-panel-right"
+      ],
       "commonMistake": "Each shelf needs four pins at the same height. One hole off will make the shelf rock.",
       "toolNeeded": "Hands",
       "manualFig": "Fig. 14",
@@ -354,11 +539,20 @@
       "title": "Place the adjustable shelves",
       "action": "Lower the four adjustable shelves onto the support pins and check that each shelf sits flat.",
       "partsNeeded": [
-        { "partId": "adjustable-shelf", "quantity": 4 },
-        { "partId": "shelf-pin", "quantity": 16 }
+        {
+          "partId": "adjustable-shelf",
+          "quantity": 4
+        },
+        {
+          "partId": "shelf-pin",
+          "quantity": 16
+        }
       ],
       "cameraView": "complete",
-      "highlightParts": ["adjustable-shelf", "shelf-pin"],
+      "highlightParts": [
+        "adjustable-shelf",
+        "shelf-pin"
+      ],
       "commonMistake": "Do not load books until the wall attachment is complete and all shelves sit on four pins.",
       "toolNeeded": "Hands",
       "manualFig": "Fig. 15",
@@ -367,98 +561,250 @@
   ],
   "cameraViews": {
     "front": {
-      "position": [2.3, 2.5, 7.0],
-      "target": [0, 2.02, 0],
+      "position": [
+        1.15,
+        1.25,
+        3.5
+      ],
+      "target": [
+        0,
+        1.01,
+        0
+      ],
       "label": "Front assembly view"
     },
     "dowel-prep": {
-      "position": [2.75, 2.24, 7.6],
-      "target": [0, 0.78, 0.08],
+      "position": [
+        1.375,
+        1.12,
+        3.8
+      ],
+      "target": [
+        0,
+        0.39,
+        0.04
+      ],
       "label": "Dowel preparation"
     },
     "side-screw-detail": {
-      "position": [-2.9, 2.15, 3.7],
-      "target": [-0.45, 1.15, 0.1],
+      "position": [
+        -1.45,
+        1.075,
+        1.85
+      ],
+      "target": [
+        -0.225,
+        0.575,
+        0.05
+      ],
       "label": "Side panel cam screws"
     },
     "first-side-assembly": {
-      "position": [2.05, 2.25, 5.8],
-      "target": [0, 2.02, 0.08],
+      "position": [
+        1.025,
+        1.125,
+        2.9
+      ],
+      "target": [
+        0,
+        1.01,
+        0.04
+      ],
       "label": "First side assembly"
     },
     "cam-lock-detail": {
-      "position": [1.15, 1.12, 1.75],
-      "target": [0.28, 0.72, 0.22],
+      "position": [
+        0.575,
+        0.56,
+        0.875
+      ],
+      "target": [
+        0.14,
+        0.36,
+        0.11
+      ],
       "label": "Cam lock close-up"
     },
     "front-rail": {
-      "position": [1.2, 0.64, 2.35],
-      "target": [0, 0.22, 0.25],
+      "position": [
+        0.6,
+        0.32,
+        1.175
+      ],
+      "target": [
+        0,
+        0.11,
+        0.125
+      ],
       "label": "Front bottom rail"
     },
     "second-side-panel": {
-      "position": [2.0, 2.18, 5.8],
-      "target": [0.18, 2.02, 0.08],
+      "position": [
+        1,
+        1.09,
+        2.9
+      ],
+      "target": [
+        0.09,
+        1.01,
+        0.04
+      ],
       "label": "Second side panel"
     },
     "remaining-cams": {
-      "position": [1.5, 2.25, 2.8],
-      "target": [0.34, 2.02, 0.2],
+      "position": [
+        0.75,
+        1.125,
+        1.4
+      ],
+      "target": [
+        0.17,
+        1.01,
+        0.1
+      ],
       "label": "Remaining side cams"
     },
     "back-mark": {
-      "position": [0.02, 2.55, 7.0],
-      "target": [0, 2.02, -0.2],
+      "position": [
+        0.01,
+        1.275,
+        3.5
+      ],
+      "target": [
+        0,
+        1.01,
+        -0.1
+      ],
       "label": "Back panel pencil marks"
     },
     "back-panel": {
-      "position": [-1.7, 2.45, -6.2],
-      "target": [0, 2.02, -0.3],
+      "position": [
+        -0.85,
+        1.225,
+        -3.1
+      ],
+      "target": [
+        0,
+        1.01,
+        -0.15
+      ],
       "label": "Folded back panel"
     },
     "nail-line": {
-      "position": [-1.3, 2.25, -3.6],
-      "target": [0, 2.02, -0.32],
+      "position": [
+        -0.65,
+        1.125,
+        -1.8
+      ],
+      "target": [
+        0,
+        1.01,
+        -0.16
+      ],
       "label": "Back panel nail line"
     },
     "back-nails": {
-      "position": [-1.15, 2.05, -2.9],
-      "target": [-0.18, 2.02, -0.32],
+      "position": [
+        -0.575,
+        1.025,
+        -1.45
+      ],
+      "target": [
+        -0.09,
+        1.01,
+        -0.16
+      ],
       "label": "Back panel nails"
     },
     "wall-anchor": {
-      "position": [0.05, 4.12, -4.25],
-      "target": [0, 4.1, -0.34],
+      "position": [
+        0.025,
+        2.06,
+        -2.125
+      ],
+      "target": [
+        0,
+        2.05,
+        -0.17
+      ],
       "label": "Wall bracket view"
     },
     "shelf-pin-detail": {
-      "position": [1.12, 2.45, 1.95],
-      "target": [0.34, 2.1, 0.18],
+      "position": [
+        0.56,
+        1.225,
+        0.975
+      ],
+      "target": [
+        0.17,
+        1.05,
+        0.09
+      ],
       "label": "Shelf support pins"
     },
     "complete": {
-      "position": [2.3, 2.55, 7.0],
-      "target": [0, 2.02, 0],
+      "position": [
+        1.15,
+        1.275,
+        3.5
+      ],
+      "target": [
+        0,
+        1.01,
+        0
+      ],
       "label": "Completed BILLY bookcase"
     },
     "exploded": {
-      "position": [2.8, 3.1, 7.3],
-      "target": [0, 2.02, 0],
+      "position": [
+        1.4,
+        1.55,
+        3.65
+      ],
+      "target": [
+        0,
+        1.01,
+        0
+      ],
       "label": "Exploded overview"
     },
     "side": {
-      "position": [8.6, 2.4, 0.3],
-      "target": [0, 2.02, 0],
+      "position": [
+        4.3,
+        1.2,
+        0.15
+      ],
+      "target": [
+        0,
+        1.01,
+        0
+      ],
       "label": "Side view"
     },
     "top": {
-      "position": [0.2, 9.4, 0.5],
-      "target": [0, 2.02, 0],
+      "position": [
+        0.1,
+        4.7,
+        0.25
+      ],
+      "target": [
+        0,
+        1.01,
+        0
+      ],
       "label": "Top view"
     },
     "iso": {
-      "position": [5.4, 4.8, 5.4],
-      "target": [0, 2.02, 0],
+      "position": [
+        2.7,
+        2.4,
+        2.7
+      ],
+      "target": [
+        0,
+        1.01,
+        0
+      ],
       "label": "Isometric view"
     }
   }

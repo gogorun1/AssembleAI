@@ -63,8 +63,9 @@ describe('official hardware quantities', () => {
 
 describe('step poses', () => {
   it('seats a part at its base once its unlock step is reached without exploding', () => {
-    const pose = derivePartPose('side-panel-left', 5, 0);
+    const pose = derivePartPose('side-panel-left', 6, 0);
     expect(pose.offset).toEqual([0, 0, 0]);
+    expect(pose.rotation).toEqual([0, 0, 0]);
     expect(pose.visible).toBe(true);
   });
 
@@ -75,7 +76,13 @@ describe('step poses', () => {
 
   it('holds active panels at assembly pose during their step', () => {
     const pose = derivePartPose('side-panel-left', 2, 0);
-    expect(pose.offset).toEqual([0, 0, 0]);
+    expect(pose.rotation[2]).toBeCloseTo(0.14, 2);
+    expect(pose.visible).toBe(true);
+  });
+
+  it('lies the first side panel flat during steps 3–5', () => {
+    const pose = derivePartPose('side-panel-left', 3, 0);
+    expect(pose.rotation[0]).toBeCloseTo(-Math.PI / 2, 2);
     expect(pose.visible).toBe(true);
   });
 

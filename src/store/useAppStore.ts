@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import manifest from '../data/manifest';
 import { loadSelectedMicId, saveSelectedMicId } from '../services/microphones';
 import { revokePreviewUrls } from '../services/viewerCapture';
+import { resolveStepCamera, type StepCameraFrame } from '../viewer/stepCamera';
 import type {
   AssemblyManifest,
   TranscriptLine,
@@ -42,6 +43,8 @@ interface AppState {
   cameraNonce: number;
   /** Pull camera closer to target for step/detail views (1 = full preset distance). */
   cameraFocusScale: number;
+  /** Dynamic per-step camera frame; overrides manifest preset position/target. */
+  stepCamera?: StepCameraFrame;
   explodeLevel: 0 | 1 | 2;
   selectedPartId?: string;
   selectedBinId?: string;
@@ -152,14 +155,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   goToStep(index) {
     const stepIndex = Math.max(1, Math.min(index, manifest.steps.length));
     const step = manifest.steps[stepIndex - 1];
-    // The <Viewer /> subscribes to these fields directly, so a single set()
-    // drives the camera + highlights; the imperative ViewerAPI calls were
-    // redundant double-writes. Explode level is left to the user's control.
+    const stepCamera = resolveStepCamera(stepIndex);
     set((state) => ({
       currentStep: stepIndex,
       activeViewKey: step.cameraView,
       highlightedPartIds: step.highlightParts,
-      cameraFocusScale: 0.76,
+      cameraFocusScale: 0.88,
+      stepCamera,
       cameraNonce: state.cameraNonce + 1,
       selectedBinId: undefined
     }));

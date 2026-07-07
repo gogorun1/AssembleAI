@@ -91,9 +91,9 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
 }
 
 function labelOffsetFromNormal(normal: [number, number, number]): [number, number, number] {
-  const lift = 0.22;
-  const side = 0.16;
-  return [normal[0] * side + 0.08, lift, normal[2] * side + 0.06];
+  const lift = 0.11;
+  const side = 0.08;
+  return [normal[0] * side + 0.04, lift, normal[2] * side + 0.03];
 }
 
 function ToolIcon({ tool }: { tool: ToolKind }) {

@@ -200,8 +200,8 @@
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
-  inline-size: 1.65rem;
-  block-size: 1.65rem;
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
   border-radius: 50%;
   background:
@@ -215,8 +215,8 @@
 .toolIcon {
   display: block;
   flex-shrink: 0;
-  inline-size: 1.15rem;
-  block-size: 1.15rem;
+  inline-size: 0.82rem;
+  block-size: 0.82rem;
   color: var(--accent-ink);
 }
 
@@ -231,34 +231,38 @@
 
 .operationTag {
   display: grid;
-  gap: 4px;
-  min-inline-size: 7rem;
-  max-inline-size: 11rem;
-  padding: var(--s-1) var(--s-2);
+  gap: 2px;
+  min-inline-size: 4.5rem;
+  max-inline-size: 7.5rem;
+  padding: 3px 6px;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
   border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 12%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 10%, transparent);
   animation: operationTagEnter 260ms var(--ease) both;
 }
 
 .operationTagHead {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .operationTool {
   color: var(--accent-ink);
-  font-size: 0.68rem;
+  font-size: 0.56rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .operationHint {
   color: var(--ink);
-  font-size: 0.68rem;
-  line-height: 1.25;
+  font-size: 0.56rem;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 @keyframes operationTagEnter {

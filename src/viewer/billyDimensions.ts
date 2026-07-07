@@ -36,6 +36,9 @@ export const Z_BACK_NAIL_ROWS = [0.175, 0.475, 0.775, 1.075, 1.375, 1.675];
 /** Floor work-mat anchor for pre-assembly staging. */
 export const WORK_MAT = [-0.22, 0, 0.18];
 
+/** Relative to the legacy 4.04 m demo cabinet — scales 3D UI chrome (rings, HTML labels). */
+export const VIEWER_UI_SCALE = BOOKCASE_HEIGHT / 4.04;
+
 /** Drop from assembled centre to floor when a panel lies flat. */
 export const FLOOR_DROP_Y = BOARD_THICKNESS / 2 - CENTER_Y;
 

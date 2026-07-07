@@ -5,6 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { partBins, slotPositions } from './bins';
 import { partLayouts } from './useViewerCommands';
 import { stepPartIds } from './partWorld';
+import { VIEWER_UI_SCALE } from './billyDimensions';
 import type { TokenColors } from './colors';
 
 interface GhostProps {
@@ -51,7 +52,7 @@ export function SlotGhosts({ colors }: GhostProps) {
     <group ref={groupRef}>
       {markers.map((pos, i) => (
         <mesh key={i} position={pos} userData={{ isSlotGhost: true }}>
-          <sphereGeometry args={[0.045, 14, 14]} />
+          <sphereGeometry args={[0.045 * VIEWER_UI_SCALE, 12, 12]} />
           <meshBasicMaterial color={colors.accent} transparent opacity={0.5} />
         </mesh>
       ))}

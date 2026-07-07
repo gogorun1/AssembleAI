@@ -3,11 +3,18 @@ import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useAppStore } from '../store/useAppStore';
+import { VIEWER_UI_SCALE } from './billyDimensions';
 import { resolveStepOperations, type ResolvedOperation } from './stepOperations';
 import { toolSpecs } from './tools';
 import type { ToolKind } from '../types/assembly';
 import type { TokenColors } from './colors';
 import styles from './Viewer.module.css';
+
+const RING_RADIUS = 0.07 * VIEWER_UI_SCALE;
+const RING_TUBE = 0.012 * VIEWER_UI_SCALE;
+const ANCHOR_RADIUS = 0.028 * VIEWER_UI_SCALE;
+/** Html scales with camera distance; keep labels subtle on the smaller bookcase. */
+const LABEL_DISTANCE_FACTOR = 4.8 * VIEWER_UI_SCALE * 0.72;
 
 interface OperationIndicatorsProps {
   colors: TokenColors;
@@ -60,18 +67,18 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
   return (
     <group>
       <mesh ref={ringRef} position={anchor} rotation={[Math.PI / 2, 0, 0]} userData={{ isOperationGhost: true }}>
-        <torusGeometry args={[0.07, 0.012, 12, 32]} />
+        <torusGeometry args={[RING_RADIUS, RING_TUBE, 12, 32]} />
         <meshBasicMaterial color={colors.accent} transparent opacity={0.72} />
       </mesh>
       <mesh position={anchor} userData={{ isOperationGhost: true }}>
-        <sphereGeometry args={[0.028, 12, 12]} />
+        <sphereGeometry args={[ANCHOR_RADIUS, 12, 12]} />
         <meshBasicMaterial color={colors.accent} transparent opacity={0.35} />
       </mesh>
       <group position={anchor} userData={{ isOperationGhost: true }}>
         <Html
           position={labelOffset}
           center
-          distanceFactor={4.8}
+          distanceFactor={LABEL_DISTANCE_FACTOR}
           className={styles.operationLabel}
           zIndexRange={[40, 0]}
         >
@@ -91,10 +98,12 @@ function OperationMarker({ entry, colors }: { entry: ResolvedOperation; colors: 
 }
 
 function labelOffsetFromNormal(normal: [number, number, number]): [number, number, number] {
-  const lift = 0.11;
-  const side = 0.08;
-  return [normal[0] * side + 0.04, lift, normal[2] * side + 0.03];
+  const lift = 0.11 * VIEWER_UI_SCALE;
+  const side = 0.08 * VIEWER_UI_SCALE;
+  return [normal[0] * side + 0.04 * VIEWER_UI_SCALE, lift, normal[2] * side + 0.03 * VIEWER_UI_SCALE];
 }
+
+export { labelOffsetFromNormal };
 
 function ToolIcon({ tool }: { tool: ToolKind }) {
   return (

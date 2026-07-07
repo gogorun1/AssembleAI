@@ -27,6 +27,7 @@ import styles from './Viewer.module.css';
 import { useTokenColors, type TokenColors } from './colors';
 import { binForPart } from './bins';
 import { hardwareApproachDelta } from './stepPoses';
+import { VIEWER_UI_SCALE } from './billyDimensions';
 import { SlotGhosts } from './PartsBench';
 import { OperationIndicators } from './OperationIndicators';
 import { resolvePickablePartId } from './picking';
@@ -559,7 +560,7 @@ function GlbModel({
         <Html
           position={[selectedBinding.center.x, selectedBinding.center.y + 0.24, selectedBinding.center.z + 0.28]}
           center
-          distanceFactor={5.4}
+          distanceFactor={5.4 * VIEWER_UI_SCALE}
           className={styles.annotation}
         >
           <div className={styles.annotationCode}>{selectedPart.code}</div>
@@ -691,7 +692,7 @@ function PartGroup({
         ))
       )}
       {selected ? (
-        <Html position={annotationPosition(layout)} center distanceFactor={5.4} className={styles.annotation}>
+        <Html position={annotationPosition(layout)} center distanceFactor={5.4 * VIEWER_UI_SCALE} className={styles.annotation}>
           {part.manualFig ? <div className={styles.annotationManual}>{part.manualFig}</div> : null}
           <div className={styles.annotationCode}>{part.code}</div>
           <div className={styles.annotationLabel}>{part.label}</div>

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import manifest from './manifest';
 import { resolveStepOperations } from '../viewer/stepOperations';
 import { resolveStepCamera } from '../viewer/stepCamera';
+import { labelOffsetFromNormal } from '../viewer/OperationIndicators';
 
 function focusedCameraForView(viewKey: string, focusScale: number): THREE.PerspectiveCamera {
   const view = manifest.cameraViews[viewKey];
@@ -23,9 +24,8 @@ function focusedCameraForView(viewKey: string, focusScale: number): THREE.Perspe
 function operationLabelAnchor(stepIndex: number): THREE.Vector3 {
   const [operation] = resolveStepOperations(stepIndex, stepIndex, 0);
   const normal = new THREE.Vector3(...operation.normal);
-  return new THREE.Vector3(...operation.anchor).add(
-    new THREE.Vector3(normal.x * 0.08 + 0.04, 0.11, normal.z * 0.08 + 0.03)
-  );
+  const offset = labelOffsetFromNormal(operation.normal);
+  return new THREE.Vector3(...operation.anchor).add(new THREE.Vector3(...offset));
 }
 
 describe('billy assembly manifest', () => {

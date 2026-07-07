@@ -30,7 +30,7 @@ import {
   Z_PANEL_EDGE,
   scaleOffset
 } from './billyDimensions';
-import { hardwareStagingOffset, resolveStepPoseOverride } from './stepPoses';
+import { hardwareApproachDelta, resolveStepPoseOverride } from './stepPoses';
 
 export type Vec3 = [number, number, number];
 
@@ -752,11 +752,14 @@ export function derivePartPose(
   }
 
   const assembled = currentStep >= layout.unlockStep;
+  const hardwareSeated = currentStep > layout.unlockStep;
   const firstVisibleStep = layout.visibleFromStep ?? Math.max(1, layout.unlockStep - 1);
   const stepOffset = layout.stepOffsets?.[currentStep] ?? [0, 0, 0];
   const explodedMultiplier = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 0.45 : 1.0;
   const stepParts = new Set(manifest.steps[currentStep - 1]?.partsNeeded.map((entry) => entry.partId) ?? []);
   const activeThisStep = stepParts.has(partId);
+  const highlightedThisStep =
+    manifest.steps[currentStep - 1]?.highlightParts.includes(partId) ?? false;
 
   const finalize = (pose: Omit<PartPose, 'rotation'> & { rotation?: Vec3 }): PartPose => {
     const base: PartPose = {
@@ -777,17 +780,14 @@ export function derivePartPose(
   };
 
   if (layout.role === 'hardware') {
-    if (!assembled && explodeLevel === 0) {
+    if (!hardwareSeated && explodeLevel === 0) {
+      // On the install step, keep bulk hardware out of the scene — indicators show targets.
       if (currentStep === layout.unlockStep && activeThisStep) {
-        return finalize({
-          primitives: layout.primitives,
-          offset: hardwareStagingOffset(partId),
-          visible: true
-        });
+        return finalize({ primitives: layout.primitives, offset: [0, 0, 0], visible: false });
       }
       return finalize({ primitives: layout.primitives, offset: [0, 0, 0], visible: false });
     }
-    if (assembled) {
+    if (hardwareSeated) {
       return finalize({ primitives: layout.primitives, offset: [0, 0, 0], visible: true });
     }
     const multiplier = explodedMultiplier + 0.85;
@@ -827,13 +827,17 @@ export function derivePartPose(
     return finalize({ primitives: layout.primitives, offset: stepOffset, visible: true });
   }
 
-  // Floor staging for panels early in the build
-  if (layout.role === 'panel' && currentStep <= 6 && explodeLevel === 0) {
+  // Floor staging for panels early in the build — only when relevant to this step
+  if (layout.role === 'panel' && currentStep <= 6 && explodeLevel === 0 && (activeThisStep || highlightedThisStep)) {
     return finalize({
       primitives: layout.primitives,
       offset: scaleOffset(layout.explodedOffset, 0.35),
       visible: true
     });
+  }
+
+  if (explodeLevel === 0 && !activeThisStep && !highlightedThisStep && currentStep < layout.unlockStep) {
+    return finalize({ primitives: layout.primitives, offset: [0, 0, 0], visible: false });
   }
 
   const stagingMultiplier = 0.45;

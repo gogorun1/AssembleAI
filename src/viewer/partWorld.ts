@@ -58,7 +58,13 @@ export function isHostAnchored(partId: string, currentStep: number, explodeLevel
   const layout = partLayouts[partId];
   if (!layout) return false;
   const pose = derivePartPose(partId, currentStep, explodeLevel);
-  if (!pose.visible) return false;
+  if (!pose.visible) {
+    if (layout.role === 'hardware' && currentStep === layout.unlockStep) {
+      // Install markers stay valid on the hardware's own step even when meshes are hidden.
+    } else {
+      return false;
+    }
+  }
   if (explodeLevel > 0) return true;
   if (currentStep >= layout.unlockStep) return true;
   const active = stepPartIds(currentStep).has(partId);

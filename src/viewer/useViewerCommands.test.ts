@@ -98,9 +98,13 @@ describe('step poses', () => {
     expect(pose.offset).not.toEqual([0, 0, 0]);
   });
 
-  it('stages inactive panels with a reduced offset before unlock', () => {
+  it('hides panels that are not part of the current step', () => {
     const pose = derivePartPose('side-panel-right', 3, 0);
-    expect(pose.visible).toBe(true);
-    expect(Math.hypot(pose.offset[0], pose.offset[1], pose.offset[2])).toBeGreaterThan(0.1);
+    expect(pose.visible).toBe(false);
+  });
+
+  it('shows wood dowels only after the dowel step is complete', () => {
+    expect(derivePartPose('wood-dowel', 1, 0).visible).toBe(false);
+    expect(derivePartPose('wood-dowel', 2, 0).visible).toBe(true);
   });
 });

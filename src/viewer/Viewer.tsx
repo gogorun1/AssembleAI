@@ -433,7 +433,7 @@ function GlbModel({
       const targetRot = pose.rotation;
 
       const bin = binForPart[binding.partId];
-      const installed = layout ? currentStep >= layout.unlockStep : true;
+      const installed = layout ? currentStep > layout.unlockStep : true;
       let visible = pose.visible;
       let grow = 1;
 

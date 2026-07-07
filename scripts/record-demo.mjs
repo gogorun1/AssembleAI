@@ -9,6 +9,21 @@ const outDir = '/opt/cursor/artifacts';
 const filename = process.env.RECORD_FILE ?? 'assembly-realism-demo.mp4';
 const stepCount = Number(process.env.RECORD_STEPS ?? 10);
 const clickDelayMs = Number(process.env.RECORD_DELAY_MS ?? 900);
+const initialHoldMs = Number(process.env.RECORD_INITIAL_HOLD_MS ?? 1500);
+
+const FFMPEG_MP4_ARGS = [
+  '-c:v',
+  'libx264',
+  '-profile:v',
+  'baseline',
+  '-level',
+  '3.0',
+  '-pix_fmt',
+  'yuv420p',
+  '-movflags',
+  '+faststart',
+  '-an'
+];
 
 await mkdir(outDir, { recursive: true });
 
@@ -32,7 +47,7 @@ try {
   await page.locator('canvas').first().waitFor({ state: 'visible', timeout: 30_000 });
   await page.getByText('1/14').waitFor({ state: 'visible', timeout: 10_000 });
   await page.click('body');
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(initialHoldMs);
 
   for (let i = 0; i < stepCount; i += 1) {
     await page.keyboard.press('ArrowRight');
@@ -50,7 +65,7 @@ try {
     const webmPath = path.join(outDir, `${filename}.webm`);
     const finalPath = path.join(outDir, filename);
     await rename(tempPath, webmPath);
-    await runFfmpeg(['-y', '-i', webmPath, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', finalPath]);
+    await runFfmpeg(['-y', '-i', webmPath, ...FFMPEG_MP4_ARGS, finalPath]);
     await unlink(webmPath).catch(() => undefined);
     console.log(`Saved ${finalPath}`);
   }

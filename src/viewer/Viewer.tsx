@@ -750,6 +750,8 @@ function PrimitiveMesh({
     >
       {primitive.shape === 'box' ? (
         <boxGeometry args={primitive.size} />
+      ) : primitive.shape === 'torus' ? (
+        <torusGeometry args={[primitive.size[0], primitive.size[1], primitive.size[2] ?? 20, 12]} />
       ) : (
         <cylinderGeometry args={[primitive.size[0], primitive.size[1], primitive.size[2], 32]} />
       )}

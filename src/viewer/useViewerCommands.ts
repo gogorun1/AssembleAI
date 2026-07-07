@@ -5,7 +5,7 @@ export type Vec3 = [number, number, number];
 
 export interface PartPrimitive {
   id: string;
-  shape: 'box' | 'cylinder';
+  shape: 'box' | 'cylinder' | 'torus';
   size: Vec3;
   position: Vec3;
   rotation?: Vec3;
@@ -57,6 +57,10 @@ function cylinder(id: string, size: Vec3, position: Vec3, rotation?: Vec3): Part
   return { id, shape: 'cylinder', size, position, rotation };
 }
 
+function torus(id: string, size: Vec3, position: Vec3, rotation?: Vec3): PartPrimitive {
+  return { id, shape: 'torus', size, position, rotation };
+}
+
 function makeWoodDowels(): PartPrimitive[] {
   const panelLevels = [
     { id: 'bottom', y: 0.07 },
@@ -78,7 +82,7 @@ function makeWoodDowels(): PartPrimitive[] {
         panelEdges.map((edge) =>
           cylinder(
             `dowel-${level.id}-${sideName(side)}-${edge.id}`,
-            [0.017, 0.017, 0.18],
+            [0.016, 0.014, 0.18],
             [side * 0.33, level.y, edge.z],
             [0, 0, 1.57]
           )
@@ -89,12 +93,35 @@ function makeWoodDowels(): PartPrimitive[] {
       railHoles.map((hole) =>
         cylinder(
           `dowel-rail-${sideName(side)}-${hole.id}`,
-          [0.017, 0.017, 0.18],
+          [0.016, 0.014, 0.18],
           [side * 0.34, hole.y, FRONT_EDGE_Z],
           [0, 0, 1.57]
         )
       )
     )
+  ];
+}
+
+function makeWoodDowelDetails(): PartDetailGroup[] {
+  return [
+    {
+      id: 'dowel-end-grain',
+      material: 'wood',
+      primitives: makeWoodDowels().flatMap((primitive) => {
+        const axis = primitive.rotation?.[2] ?? 0;
+        const along = Math.abs(axis - 1.57) < 0.1 ? 2 : 0;
+        const half = primitive.size[along === 2 ? 2 : 0] / 2;
+        const offset = half + 0.003;
+        const capA = [...primitive.position] as Vec3;
+        const capB = [...primitive.position] as Vec3;
+        capA[along] -= offset;
+        capB[along] += offset;
+        return [
+          cylinder(`${primitive.id}-cap-a`, [0.017, 0.017, 0.004], capA, primitive.rotation),
+          cylinder(`${primitive.id}-cap-b`, [0.017, 0.017, 0.004], capB, primitive.rotation)
+        ];
+      })
+    }
   ];
 }
 
@@ -114,7 +141,7 @@ function makeCamScrews(): PartPrimitive[] {
       edges.map((edge) =>
         cylinder(
           `cam-screw-${sideName(side)}-${level.id}-${edge.id}`,
-          [0.014, 0.014, 0.16],
+          [0.015, 0.011, 0.16],
           [side * SIDE_HARDWARE_X, level.y, edge.z],
           [0, 0, 1.57]
         )
@@ -139,7 +166,7 @@ function makeCamLocks(): PartPrimitive[] {
       edges.map((edge) =>
         cylinder(
           `cam-lock-${level.id}-${sideName(side)}-${edge.id}`,
-          [0.032, 0.032, 0.018],
+          [0.034, 0.034, 0.022],
           [side * 0.29, level.y, edge.z],
           [1.57, 0, 0]
         )
@@ -185,7 +212,7 @@ function makeShelfPins(): PartPrimitive[] {
       edges.map((edge) =>
         cylinder(
           `pin-${level.id}-${sideName(side)}-${edge.id}`,
-          [0.012, 0.012, 0.1],
+          [0.009, 0.009, 0.11],
           [side * 0.34, level.y, edge.z],
           [0, 0, 1.57]
         )
@@ -333,14 +360,27 @@ function makeCamScrewDetails(): PartDetailGroup[] {
   const screws = makeCamScrews();
   return [
     {
+      id: 'cam-screw-flanges',
+      material: 'metal',
+      primitives: screws.map((primitive) => {
+        const side = primitive.position[0] < 0 ? -1 : 1;
+        return cylinder(
+          `${primitive.id}-flange`,
+          [0.022, 0.022, 0.004],
+          [primitive.position[0] + side * 0.078, primitive.position[1], primitive.position[2]],
+          primitive.rotation
+        );
+      })
+    },
+    {
       id: 'cam-screw-heads',
       material: 'metal',
       primitives: screws.map((primitive) => {
         const side = primitive.position[0] < 0 ? -1 : 1;
         return cylinder(
           `${primitive.id}-head`,
-          [0.026, 0.026, 0.014],
-          [primitive.position[0] + side * 0.085, primitive.position[1], primitive.position[2]],
+          [0.028, 0.024, 0.012],
+          [primitive.position[0] + side * 0.086, primitive.position[1], primitive.position[2]],
           primitive.rotation
         );
       })
@@ -348,32 +388,129 @@ function makeCamScrewDetails(): PartDetailGroup[] {
     {
       id: 'cam-screw-slots',
       material: 'slot',
-      primitives: screws.map((primitive) => {
+      primitives: screws.flatMap((primitive) => {
         const side = primitive.position[0] < 0 ? -1 : 1;
-        return box(
-          `${primitive.id}-slot`,
-          [0.006, 0.006, 0.042],
-          [primitive.position[0] + side * 0.093, primitive.position[1], primitive.position[2]]
-        );
+        const headX = primitive.position[0] + side * 0.093;
+        return [
+          box(
+            `${primitive.id}-slot`,
+            [0.006, 0.022, 0.042],
+            [headX, primitive.position[1], primitive.position[2]]
+          ),
+          box(
+            `${primitive.id}-slot-cross`,
+            [0.022, 0.006, 0.042],
+            [headX, primitive.position[1], primitive.position[2]]
+          )
+        ];
       })
     }
   ];
 }
 
 function makeCamLockDetails(): PartDetailGroup[] {
+  const locks = makeCamLocks();
   return [
+    {
+      id: 'cam-lock-eccentric',
+      material: 'metal',
+      primitives: locks.map((primitive) => {
+        const side = primitive.position[0] < 0 ? -1 : 1;
+        return cylinder(
+          `${primitive.id}-lobe`,
+          [0.014, 0.014, 0.01],
+          [primitive.position[0] + side * 0.012, primitive.position[1], primitive.position[2] + 0.016],
+          primitive.rotation
+        );
+      })
+    },
     {
       id: 'cam-lock-slots',
       material: 'slot',
-      primitives: makeCamLocks().map((primitive) =>
+      primitives: locks.flatMap((primitive) => [
         box(
           `${primitive.id}-slot`,
-          [0.044, 0.006, 0.008],
-          [primitive.position[0], primitive.position[1], primitive.position[2] + 0.014]
+          [0.044, 0.006, 0.01],
+          [primitive.position[0], primitive.position[1], primitive.position[2] + 0.018]
+        ),
+        box(
+          `${primitive.id}-slot-cross`,
+          [0.006, 0.044, 0.01],
+          [primitive.position[0], primitive.position[1], primitive.position[2] + 0.018]
         )
-      )
+      ])
     }
   ];
+}
+
+function makeShelfPinDetails(): PartDetailGroup[] {
+  return [
+    {
+      id: 'shelf-pin-heads',
+      material: 'metal',
+      primitives: makeShelfPins().map((primitive) => {
+        const side = primitive.position[0] < 0 ? -1 : 1;
+        return cylinder(
+          `${primitive.id}-head`,
+          [0.016, 0.016, 0.008],
+          [primitive.position[0] + side * 0.058, primitive.position[1], primitive.position[2]],
+          primitive.rotation
+        );
+      })
+    }
+  ];
+}
+
+function makeBracketScrewDetails(): PartDetailGroup[] {
+  const screws = [
+    { id: 'bracket-screw-left', position: [-0.28, 4.18, BACK_Z - 0.052] as Vec3 },
+    { id: 'bracket-screw-right', position: [0.28, 4.18, BACK_Z - 0.052] as Vec3 }
+  ];
+  return [
+    {
+      id: 'bracket-screw-heads',
+      material: 'metal',
+      primitives: screws.map((screw) =>
+        cylinder(`${screw.id}-head`, [0.022, 0.02, 0.008], [screw.position[0], screw.position[1], screw.position[2] - 0.012], [1.57, 0, 0])
+      )
+    },
+    {
+      id: 'bracket-screw-slots',
+      material: 'slot',
+      primitives: screws.flatMap((screw) => [
+        box(`${screw.id}-slot-a`, [0.004, 0.014, 0.006], [screw.position[0], screw.position[1], screw.position[2] - 0.016]),
+        box(`${screw.id}-slot-b`, [0.014, 0.004, 0.006], [screw.position[0], screw.position[1], screw.position[2] - 0.016])
+      ])
+    }
+  ];
+}
+
+function makeWallBracketPrimitives(): PartPrimitive[] {
+  const brackets = [
+    { id: 'left', x: -0.2, wallX: -0.28 },
+    { id: 'right', x: 0.2, wallX: 0.28 }
+  ];
+
+  return brackets.flatMap((bracket) => [
+    box(`wall-bracket-${bracket.id}-flat`, [0.17, 0.038, 0.02], [bracket.x, 4.08, BACK_Z - 0.03]),
+    box(`wall-bracket-${bracket.id}-up`, [0.038, 0.18, 0.02], [bracket.wallX, 4.15, BACK_Z - 0.03]),
+    box(`wall-bracket-${bracket.id}-gusset`, [0.05, 0.05, 0.018], [bracket.x + (bracket.wallX - bracket.x) * 0.35, 4.11, BACK_Z - 0.03]),
+    cylinder(`wall-bracket-${bracket.id}-mount-hole`, [0.01, 0.01, 0.024], [bracket.wallX, 4.18, BACK_Z - 0.042], [1.57, 0, 0]),
+    cylinder(`wall-bracket-${bracket.id}-case-hole`, [0.008, 0.008, 0.024], [bracket.x, 4.08, BACK_Z - 0.042], [1.57, 0, 0])
+  ]);
+}
+
+function makeWasherPrimitives(): PartPrimitive[] {
+  const washers = [
+    { id: 'washer-left-wall', position: [-0.28, 4.18, BACK_Z - 0.074] as Vec3, radius: 0.014, tube: 0.004 },
+    { id: 'washer-right-wall', position: [0.28, 4.18, BACK_Z - 0.074] as Vec3, radius: 0.014, tube: 0.004 },
+    { id: 'washer-left-case', position: [-0.2, 4.08, BACK_Z - 0.052] as Vec3, radius: 0.011, tube: 0.003 },
+    { id: 'washer-right-case', position: [0.2, 4.08, BACK_Z - 0.052] as Vec3, radius: 0.011, tube: 0.003 }
+  ];
+
+  return washers.map((washer) =>
+    torus(washer.id, [washer.radius, washer.tube, 20], washer.position, [1.57, 0, 0])
+  );
 }
 
 function makeBackNailDetails(): PartDetailGroup[] {
@@ -597,7 +734,8 @@ export const partLayouts: Record<string, PartLayout> = {
       3: [0.03, 0.03, 0.08],
       6: [0.04, 0.04, 0.1]
     },
-    primitives: makeWoodDowels()
+    primitives: makeWoodDowels(),
+    details: makeWoodDowelDetails()
   },
   'back-nail': {
     partId: 'back-nail',
@@ -621,7 +759,8 @@ export const partLayouts: Record<string, PartLayout> = {
     stepOffsets: {
       13: [0.04, 0.02, 0.08]
     },
-    primitives: makeShelfPins()
+    primitives: makeShelfPins(),
+    details: makeShelfPinDetails()
   },
   'wall-bracket': {
     partId: 'wall-bracket',
@@ -629,12 +768,7 @@ export const partLayouts: Record<string, PartLayout> = {
     visibleFromStep: 12,
     explodedOffset: [-0.36, 0.7, -0.92],
     role: 'hardware',
-    primitives: [
-      box('wall-bracket-left-flat', [0.17, 0.035, 0.018], [-0.2, 4.08, BACK_Z - 0.03]),
-      box('wall-bracket-left-up', [0.035, 0.18, 0.018], [-0.28, 4.15, BACK_Z - 0.03]),
-      box('wall-bracket-right-flat', [0.17, 0.035, 0.018], [0.2, 4.08, BACK_Z - 0.03]),
-      box('wall-bracket-right-up', [0.035, 0.18, 0.018], [0.28, 4.15, BACK_Z - 0.03])
-    ]
+    primitives: makeWallBracketPrimitives()
   },
   'bracket-screw': {
     partId: 'bracket-screw',
@@ -643,9 +777,10 @@ export const partLayouts: Record<string, PartLayout> = {
     explodedOffset: [0.22, 0.78, -1.0],
     role: 'hardware',
     primitives: [
-      cylinder('bracket-screw-left', [0.014, 0.014, 0.03], [-0.28, 4.18, BACK_Z - 0.052], [1.57, 0, 0]),
-      cylinder('bracket-screw-right', [0.014, 0.014, 0.03], [0.28, 4.18, BACK_Z - 0.052], [1.57, 0, 0])
-    ]
+      cylinder('bracket-screw-left', [0.013, 0.011, 0.034], [-0.28, 4.18, BACK_Z - 0.052], [1.57, 0, 0]),
+      cylinder('bracket-screw-right', [0.013, 0.011, 0.034], [0.28, 4.18, BACK_Z - 0.052], [1.57, 0, 0])
+    ],
+    details: makeBracketScrewDetails()
   },
   washer: {
     partId: 'washer',
@@ -653,12 +788,7 @@ export const partLayouts: Record<string, PartLayout> = {
     visibleFromStep: 12,
     explodedOffset: [0.5, 0.68, -0.96],
     role: 'hardware',
-    primitives: [
-      cylinder('washer-left-wall', [0.026, 0.026, 0.008], [-0.28, 4.18, BACK_Z - 0.074], [1.57, 0, 0]),
-      cylinder('washer-right-wall', [0.026, 0.026, 0.008], [0.28, 4.18, BACK_Z - 0.074], [1.57, 0, 0]),
-      cylinder('washer-left-case', [0.02, 0.02, 0.008], [-0.2, 4.08, BACK_Z - 0.052], [1.57, 0, 0]),
-      cylinder('washer-right-case', [0.02, 0.02, 0.008], [0.2, 4.08, BACK_Z - 0.052], [1.57, 0, 0])
-    ],
+    primitives: makeWasherPrimitives(),
     details: makeWasherDetails()
   }
 };

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AssembleAI 官网 — 设计方向探索</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --paper:#F4F2ED; --ink:#1C2124; --ink-soft:#6D7379; --line:#E2DED6; --accent:#C04A28;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Archivo',sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; padding: 64px 32px; }
+.wrap { max-width: 880px; margin:0 auto; }
+.kicker { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:500; }
+h1 { font-size: clamp(30px,4.5vw,44px); font-weight:800; letter-spacing:-.02em; margin: 12px 0 12px; }
+.lede { color:var(--ink-soft); font-size:17px; margin-bottom:44px; max-width:60ch; }
+.card {
+  display:block; text-decoration:none; color:inherit;
+  background:#FEFDFB; border:1px solid var(--line); border-radius:16px;
+  padding: 28px 30px; margin-bottom: 18px;
+  transition: transform .14s, box-shadow .14s, border-color .14s;
+}
+.card:hover { transform: translateY(-2px); border-color:#CBC6BB; box-shadow: 0 2px 6px rgba(28,33,36,.05), 0 16px 40px rgba(28,33,36,.09); }
+.card .tag { font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+.card h2 { font-size:21px; font-weight:800; letter-spacing:-.01em; margin: 8px 0 6px; }
+.card p { color:var(--ink-soft); font-size:15px; }
+.card .open { display:inline-block; margin-top:12px; font-size:13.5px; font-weight:600; color:var(--accent); }
+.note { margin-top:40px; font-size:13.5px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:24px; }
+.note code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:#E9E6DF; padding:1px 6px; border-radius:5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="kicker">AssembleAI · 官网设计探索</span>
+  <h1>三个官网设计方向</h1>
+  <p class="lede">基于 demo 现有的设计语言(暖纸色、安全橙、mono 零件编号、说明书式插图)延展出三个不同气质的落地页方向,点击卡片即可预览完整页面。</p>
+
+  <a class="card" href="direction-a-manual.html">
+    <span class="tag">Direction A</span>
+    <h2>Product Bench — 产品工作台</h2>
+    <p>最贴近 demo 本身的方向:沿用 tokens.css 的暖纸色系与安全橙,经典 SaaS 结构(hero 截图 + 三步说明书卡片 + 对话 transcript + 特性网格)。稳妥、干净、可直接上线。</p>
+    <span class="open">打开预览 →</span>
+  </a>
+
+  <a class="card" href="direction-b-workshop.html">
+    <span class="tag">Direction B</span>
+    <h2>Night Workshop — 深色车间</h2>
+    <p>深色炭黑背景 + 发光安全橙,居中大标题配蓝图网格与语音声浪动画,突出「voice loop」管线叙事。更有科技发布会气场,适合 hackathon 展示与社交传播。</p>
+    <span class="open">打开预览 →</span>
+  </a>
+
+  <a class="card" href="direction-c-instruction-sheet.html">
+    <span class="tag">Direction C</span>
+    <h2>Instruction Sheet — 说明书海报</h2>
+    <p>整站做成一张「会说话的组装说明书」:粗黑描边、编号章节、零件清单表格、警告条与 IKEA 风插图。概念最强、记忆点最高,自带产品隐喻(This manual listens)。</p>
+    <span class="open">打开预览 →</span>
+  </a>
+
+  <p class="note">纯静态 HTML/CSS,零依赖。本地预览:<code>npx serve site</code> 或任意静态服务器。素材复用自 <code>public/manual-diagrams/</code> 与 demo 截图。</p>
+</div>
+</body>
+</html>

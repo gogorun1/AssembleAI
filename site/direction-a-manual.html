@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AssembleAI — Voice + 3D assembly copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --paper: #F4F2ED;
+  --paper-raised: #FEFDFB;
+  --paper-sunken: #E9E6DF;
+  --ink: #1C2124;
+  --ink-soft: #6D7379;
+  --line: #E2DED6;
+  --line-strong: #CBC6BB;
+  --accent: #C04A28;
+  --accent-ink: #8F321B;
+  --accent-wash: #F7E6DE;
+  --ok: #3E7A4C;
+  --tip-wash: #EAEFF1;
+  --tip-ink: #4A6572;
+  --font-display: 'Archivo', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --shadow-md: 0 2px 6px rgba(28,33,36,.05), 0 16px 40px rgba(28,33,36,.09);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: var(--font-display);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+.mono { font-family: var(--font-mono); }
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---------- nav ---------- */
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-inner {
+  display:flex; align-items:center; justify-content:space-between;
+  height: 64px;
+}
+.logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+.logo-mark {
+  width:28px; height:28px; border-radius:7px;
+  background: var(--accent);
+  display:grid; place-items:center;
+  color:#fff; font-family:var(--font-mono); font-size:13px; font-weight:600;
+}
+.nav-links { display:flex; gap:28px; align-items:center; }
+.nav-links a { text-decoration:none; color:var(--ink-soft); font-size:14px; font-weight:500; transition: color .14s; }
+.nav-links a:hover { color: var(--ink); }
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight:600; font-size:14px;
+  text-decoration:none;
+  border: 1px solid transparent;
+  transition: transform .14s cubic-bezier(.2,0,0,1), box-shadow .14s;
+  cursor:pointer;
+}
+.btn-primary { background: var(--ink); color: var(--paper-raised); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-ghost { border-color: var(--line-strong); color: var(--ink); background: var(--paper-raised); }
+.btn-ghost:hover { border-color: var(--ink); }
+
+/* ---------- hero ---------- */
+.hero { padding: 88px 0 64px; position:relative; overflow:hidden; }
+.hero-grid { display:grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items:center; }
+.hero h1 {
+  font-size: clamp(40px, 5.2vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -.03em;
+  font-weight: 800;
+  margin: 18px 0 20px;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p.lede { font-size: 19px; color: var(--ink-soft); max-width: 46ch; margin-bottom: 32px; }
+.hero-ctas { display:flex; gap:14px; flex-wrap:wrap; }
+.hero-note { margin-top:18px; font-family: var(--font-mono); font-size:12.5px; color:var(--ink-soft); }
+.hero-note b { color: var(--ink); font-weight:600; }
+
+.hero-visual { position:relative; }
+.hero-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  overflow:hidden;
+}
+.hero-card img { display:block; width:100%; }
+.hero-chrome {
+  display:flex; align-items:center; gap:6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-sunken);
+}
+.hero-chrome i { width:10px; height:10px; border-radius:50%; background: var(--line-strong); display:block; }
+.hero-chrome span { margin-left:10px; font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); }
+.float-chip {
+  position:absolute;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  padding: 12px 16px;
+  font-size: 13.5px;
+  display:flex; align-items:center; gap:10px;
+}
+.float-chip .dot { width:9px; height:9px; border-radius:50%; background: var(--accent); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{ box-shadow:0 0 0 0 rgba(192,74,40,.35);} 50%{ box-shadow:0 0 0 7px rgba(192,74,40,0);} }
+.chip-voice { top:-20px; left:-28px; }
+.chip-part { bottom:-18px; right:-16px; }
+.chip-part code { font-family:var(--font-mono); font-size:12px; background:var(--accent-wash); color:var(--accent-ink); border-radius:6px; padding:2px 7px; font-weight:600; }
+
+/* ---------- logo strip ---------- */
+.strip { border-top:1px solid var(--line); border-bottom:1px solid var(--line); background: var(--paper-sunken); }
+.strip-inner { display:flex; justify-content:space-between; align-items:center; gap:24px; padding: 18px 0; flex-wrap:wrap; }
+.strip-item { font-family: var(--font-mono); font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:9px; }
+.strip-item i { color: var(--accent); font-style:normal; }
+
+/* ---------- section scaffolding ---------- */
+section.block { padding: 96px 0; }
+.sect-head { max-width: 640px; margin-bottom: 56px; }
+.sect-head h2 { font-size: clamp(28px,3.4vw,42px); letter-spacing:-.02em; font-weight:800; line-height:1.12; margin:14px 0 14px; }
+.sect-head p { color: var(--ink-soft); font-size:17px; }
+
+/* ---------- steps (manual style) ---------- */
+.steps { display:grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.step-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  position:relative;
+  transition: border-color .14s, transform .14s;
+}
+.step-card:hover { border-color: var(--line-strong); transform: translateY(-3px); }
+.step-num {
+  font-family: var(--font-mono);
+  font-size: 52px; font-weight: 600; line-height:1;
+  color: var(--paper-sunken);
+  -webkit-text-stroke: 1.5px var(--line-strong);
+  margin-bottom: 4px;
+}
+.step-card img { width:100%; border-radius: var(--r-sm); border:1px solid var(--line); margin: 14px 0 18px; background:#fff; }
+.step-card h3 { font-size:19px; font-weight:700; letter-spacing:-.01em; margin-bottom:8px; }
+.step-card p { font-size:14.5px; color: var(--ink-soft); }
+.step-card .utter {
+  margin-top:16px;
+  font-family: var(--font-mono); font-size:12.5px;
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+  border-radius: 8px; padding: 9px 12px;
+  display:inline-block;
+}
+
+/* ---------- transcript demo ---------- */
+.convo-block { background: var(--paper-raised); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.convo-grid { display:grid; grid-template-columns: .9fr 1.1fr; gap:64px; align-items:center; }
+.transcript {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-md);
+}
+.transcript-head {
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-soft); padding-bottom:14px; margin-bottom:18px; border-bottom:1px dashed var(--line-strong);
+  display:flex; justify-content:space-between;
+}
+.msg { display:flex; gap:12px; margin-bottom:16px; }
+.msg .who {
+  flex:none; width:34px; height:34px; border-radius:50%;
+  display:grid; place-items:center; font-size:12px; font-weight:700; font-family:var(--font-mono);
+}
+.msg.user .who { background: var(--paper-sunken); border:1px solid var(--line-strong); color:var(--ink-soft); }
+.msg.ai .who { background: var(--accent); color:#fff; }
+.msg .bubble { font-size:14.5px; padding-top:6px; }
+.msg.user .bubble { color: var(--ink-soft); font-style:italic; }
+.msg .bubble mark { background: var(--accent-wash); color: var(--accent-ink); padding:1px 6px; border-radius:5px; font-weight:600; font-style:normal; font-family:var(--font-mono); font-size:12.5px; }
+.convo-copy h2 { font-size: clamp(26px,3vw,38px); font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:14px 0; }
+.convo-copy p { color:var(--ink-soft); font-size:16.5px; margin-bottom:14px; }
+.checklist { list-style:none; margin-top:22px; }
+.checklist li { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; font-size:15px; }
+.checklist li b { font-weight:600; }
+.checklist .tick { flex:none; width:20px; height:20px; border-radius:6px; background:var(--ok); color:#fff; display:grid; place-items:center; font-size:12px; margin-top:2px; }
+
+/* ---------- feature grid ---------- */
+.features { display:grid; grid-template-columns: repeat(3,1fr); gap:1px; background: var(--line); border:1px solid var(--line); border-radius: var(--r-lg); overflow:hidden; }
+.feature { background: var(--paper-raised); padding: 30px 28px; }
+.feature .ico {
+  width:40px; height:40px; border-radius:10px;
+  background: var(--accent-wash); color: var(--accent);
+  display:grid; place-items:center; margin-bottom:16px; font-size:18px;
+}
+.feature h3 { font-size:16.5px; font-weight:700; margin-bottom:7px; }
+.feature p { font-size:14px; color: var(--ink-soft); }
+.feature code { font-family: var(--font-mono); font-size:12px; background: var(--paper-sunken); padding:1px 6px; border-radius:5px; }
+
+/* ---------- CTA ---------- */
+.cta {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--r-lg);
+  padding: 72px 64px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.cta::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.cta > * { position:relative; }
+.cta h2 { font-size: clamp(28px,3.6vw,44px); font-weight:800; letter-spacing:-.02em; margin: 12px 0 14px; }
+.cta p { color:#B9BDC1; font-size:17px; max-width:52ch; margin: 0 auto 32px; }
+.cta .mono-cmd {
+  display:inline-block; font-family:var(--font-mono); font-size:14px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
+  padding: 12px 22px; border-radius: 10px; margin-bottom: 28px; color:#EDEBE6;
+}
+.cta .btn-accent { font-size:15px; padding: 13px 28px; }
+
+/* ---------- footer ---------- */
+footer { padding: 48px 0 40px; }
+.foot-inner { display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top: 32px; }
+.foot-inner p { font-size:13.5px; color: var(--ink-soft); }
+.foot-links { display:flex; gap:22px; }
+.foot-links a { font-size:13.5px; color:var(--ink-soft); text-decoration:none; }
+.foot-links a:hover { color: var(--ink); }
+
+@media (max-width: 900px) {
+  .hero-grid, .convo-grid { grid-template-columns: 1fr; gap:40px; }
+  .steps, .features { grid-template-columns: 1fr; }
+  .chip-voice { left: 4px; }
+  .chip-part { right: 4px; }
+  .nav-links a:not(.btn) { display:none; }
+  .cta { padding: 52px 28px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="#"><span class="logo-mark">A</span>AssembleAI</a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#voice">Voice demo</a>
+      <a href="#features">Features</a>
+      <a class="btn btn-primary" href="#cta">Try the demo</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker">Assembly manifest · BILLY bookcase</span>
+      <h1>Your hands hold the panel. <em>Your voice</em> holds the manual.</h1>
+      <p class="lede">AssembleAI is a voice-first 3D assembly copilot. Ask which screw to use or where a panel goes — the model moves and highlights the answer before it even finishes speaking.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-accent" href="#cta">Launch live demo</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <p class="hero-note"><b>Hold space</b> to talk · works offline · no account needed</p>
+    </div>
+    <div class="hero-visual">
+      <div class="float-chip chip-voice"><span class="dot"></span>“Which cam screw should I use?”</div>
+      <div class="hero-card">
+        <div class="hero-chrome"><i></i><i></i><i></i><span>assembleai — live demo</span></div>
+        <img src="assets/voice-input-sidebar-screenshot.webp" alt="AssembleAI demo: 3D bookcase viewer with highlighted cam screws and the voice input rail" />
+      </div>
+      <div class="float-chip chip-part">Cam screw <code>118331</code> · highlighted</div>
+    </div>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="wrap strip-inner">
+    <span class="strip-item"><i>●</i> 14-step BILLY manifest</span>
+    <span class="strip-item"><i>●</i> Web Speech STT + TTS</span>
+    <span class="strip-item"><i>●</i> react-three-fiber viewer</span>
+    <span class="strip-item"><i>●</i> EN / FR commands</span>
+    <span class="strip-item"><i>●</i> Photo check (VLM-ready)</span>
+  </div>
+</div>
+
+<section class="block" id="how">
+  <div class="wrap">
+    <div class="sect-head">
+      <span class="kicker">Step 1 of 3 · like a manual, but it listens</span>
+      <h2>The manual answers back.</h2>
+      <p>Every question gets a spatial answer first: the camera moves, the right part glows safety-orange, then a short spoken reply confirms what you already see.</p>
+    </div>
+    <div class="steps">
+      <article class="step-card">
+        <div class="step-num">01</div>
+        <img src="assets/dowels.png" alt="Manual line drawing: wood dowels inserted into panel edge holes" />
+        <h3>Ask with your hands full</h3>
+        <p>Hold space and speak. Push-to-talk voice capture works with the browser mic or a paired headset — no typing, no page flipping.</p>
+        <span class="utter">“Where does this panel go?”</span>
+      </article>
+      <article class="step-card">
+        <div class="step-num">02</div>
+        <img src="assets/cams.png" alt="Manual line drawing: screwdriver turning a cam lock" />
+        <h3>Watch the model respond</h3>
+        <p>The 3D bookcase advances, spins, or explodes to the exact step. The part in question is highlighted in the model, the parts rail, and the transcript — all in sync.</p>
+        <span class="utter">“Show me from the back.”</span>
+      </article>
+      <article class="step-card">
+        <div class="step-num">03</div>
+        <img src="assets/finish.png" alt="Manual line drawing: shelf lowered into an assembled bookcase" />
+        <h3>Avoid the classic mistakes</h3>
+        <p>Each step carries the common mistake people actually make — like driving cam screws flush. Ask, and it warns you before you drill.</p>
+        <span class="utter">“Did people mess this step up before?”</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="block convo-block" id="voice">
+  <div class="wrap convo-grid">
+    <div class="transcript">
+      <div class="transcript-head"><span>Conversation transcript</span><span>Step 4 / 14</span></div>
+      <div class="msg user"><span class="who">You</span><p class="bubble">“Which cam screw should I use?”</p></div>
+      <div class="msg ai"><span class="who">AI</span><p class="bubble">Use the cam screw <mark>118331</mark> with the washer. I’ve highlighted all four in the side panel — don’t drive them flush.</p></div>
+      <div class="msg user"><span class="who">You</span><p class="bubble">“Et cette vis, elle va où ?”</p></div>
+      <div class="msg ai"><span class="who">AI</span><p class="bubble">Cette vis <mark>118331</mark> se place dans les trous marqués du panneau latéral — regardez la surbrillance orange.</p></div>
+      <div class="msg user"><span class="who">You</span><p class="bubble">“What’s next?”</p></div>
+      <div class="msg ai"><span class="who">AI</span><p class="bubble">Step 5: attach the back panel. Moving to the <mark>back view</mark> now.</p></div>
+    </div>
+    <div class="convo-copy">
+      <span class="kicker">Voice loop · STT → intent → viewer → TTS</span>
+      <h2>It changes the model first, then explains.</h2>
+      <p>Speech recognition feeds a deterministic intent engine. Viewer and step state update immediately; the spoken reply just confirms what changed. That ordering is what makes it feel spatial instead of chatty.</p>
+      <ul class="checklist">
+        <li><span class="tick">✓</span><span><b>Orange Sync</b> — the 3D part, its part chip, and its transcript mention highlight together.</span></li>
+        <li><span class="tick">✓</span><span><b>Bilingual</b> — English and French utterances resolve through the same pipeline.</span></li>
+        <li><span class="tick">✓</span><span><b>Fully clickable fallback</b> — every voice action has a keyboard or mouse equivalent.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="features">
+  <div class="wrap">
+    <div class="sect-head">
+      <span class="kicker">Built for the stage and the workbench</span>
+      <h2>Demo-grade robustness, by design.</h2>
+      <p>Everything degrades gracefully: no mic, no WebGL, no network — the walkthrough still works end to end.</p>
+    </div>
+    <div class="features">
+      <div class="feature"><div class="ico">🎙</div><h3>Push-to-talk voice</h3><p>Hold space to speak. Web Speech API by default, or route a specific device (like Ray-Ban Meta glasses) through a server-side STT endpoint.</p></div>
+      <div class="feature"><div class="ico">🧊</div><h3>Manifest-driven 3D</h3><p>A hand-authored 14-step manifest drives the GLB viewer: cameras, highlights, explode levels, and per-step poses.</p></div>
+      <div class="feature"><div class="ico">📷</div><h3>Photo check</h3><p>Upload a photo and ask <em>“Did I do this right?”</em> — a Gemini-backed vision check detects the step and judges correctness.</p></div>
+      <div class="feature"><div class="ico">⌨️</div><h3>Typed commands</h3><p>An EN/FR command box submits through the same intent pipeline as voice — perfect for mic-free rooms.</p></div>
+      <div class="feature"><div class="ico">🎛</div><h3>Presenter mode</h3><p>One-click buttons for the six critical demo utterances, plus <code>Full reset</code> and <code>Rehearsal reset</code> for instant recovery.</p></div>
+      <div class="feature"><div class="ico">🛟</div><h3>Graceful fallbacks</h3><p>WebGL fallback line drawing, offline intent parsing, and a mock photo check keep the demo alive with zero network.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="cta">
+  <div class="wrap">
+    <div class="cta">
+      <span class="kicker" style="color:#E58A6B;">Open source demo</span>
+      <h2>Build the bookcase. Keep both hands on it.</h2>
+      <p>Clone the repo, run two commands, and hold space to talk. The whole walkthrough works offline — no keys, no accounts.</p>
+      <div><span class="mono-cmd">npm install&nbsp;&nbsp;&&&nbsp;&nbsp;npm run dev</span></div>
+      <div><a class="btn btn-accent" href="#">Get the code on GitHub</a></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <p>© 2026 AssembleAI — a voice-first assembly copilot demo.</p>
+    <div class="foot-links">
+      <a href="#">GitHub</a><a href="#">Product spec</a><a href="#">Roadmap</a><a href="#">Demo checklist</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

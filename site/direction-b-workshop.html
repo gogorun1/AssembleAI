@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AssembleAI — The assembly copilot that talks back</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #101314;
+  --bg-raised: #191D1F;
+  --bg-panel: #1F2427;
+  --ink: #EDEAE3;
+  --ink-soft: #9BA1A3;
+  --line: #2B3134;
+  --line-strong: #3C4347;
+  --accent: #E05A2B;
+  --accent-soft: #F0805A;
+  --accent-dim: rgba(224,90,43,.12);
+  --ok: #6FBF82;
+  --font-display: 'Archivo', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: var(--font-display);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1180px; margin:0 auto; padding: 0 32px; }
+.kicker {
+  font-family: var(--font-mono); font-size:12px; letter-spacing:.16em;
+  text-transform: uppercase; color: var(--accent-soft); font-weight:500;
+}
+
+/* nav */
+nav {
+  position: sticky; top:0; z-index:50;
+  background: rgba(16,19,20,.8);
+  backdrop-filter: blur(14px) saturate(1.3);
+  border-bottom: 1px solid var(--line);
+}
+.nav-inner { display:flex; align-items:center; justify-content:space-between; height:66px; }
+.logo { display:flex; align-items:center; gap:11px; font-weight:800; font-size:17px; color:var(--ink); text-decoration:none; letter-spacing:-.01em; }
+.logo-mark {
+  width:30px; height:30px; border-radius:8px;
+  background: linear-gradient(135deg, var(--accent), #A93A16);
+  display:grid; place-items:center; color:#fff;
+  font-family:var(--font-mono); font-size:14px; font-weight:600;
+  box-shadow: 0 0 18px rgba(224,90,43,.35);
+}
+.nav-links { display:flex; gap:30px; align-items:center; }
+.nav-links a { color: var(--ink-soft); text-decoration:none; font-size:14px; font-weight:500; transition:color .15s; }
+.nav-links a:hover { color: var(--ink); }
+.btn {
+  display:inline-flex; align-items:center; gap:9px;
+  padding: 11px 22px; border-radius: 10px;
+  font-weight:600; font-size:14px; text-decoration:none;
+  transition: all .15s cubic-bezier(.2,0,0,1); cursor:pointer; border:1px solid transparent;
+}
+.btn-accent { background: var(--accent); color:#fff; box-shadow: 0 0 24px rgba(224,90,43,.3); }
+.btn-accent:hover { background: var(--accent-soft); transform: translateY(-1px); }
+.btn-ghost { border-color: var(--line-strong); color: var(--ink); }
+.btn-ghost:hover { border-color: var(--ink-soft); background: var(--bg-raised); }
+
+/* hero */
+.hero {
+  padding: 110px 0 80px;
+  position:relative;
+  overflow:hidden;
+  text-align:center;
+}
+.hero::before {
+  content:'';
+  position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 900px 420px at 50% -8%, rgba(224,90,43,.16), transparent 65%),
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: auto, 56px 56px, 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 90% at 50% 0%, #000 30%, transparent 78%);
+  pointer-events:none;
+}
+.hero > .wrap { position:relative; }
+.hero .badge {
+  display:inline-flex; align-items:center; gap:9px;
+  font-family: var(--font-mono); font-size:12px;
+  border:1px solid var(--line-strong); border-radius:999px;
+  padding: 7px 16px; color: var(--ink-soft); margin-bottom:28px;
+  background: rgba(25,29,31,.6);
+}
+.hero .badge i { width:7px; height:7px; border-radius:50%; background:var(--ok); display:block; animation: blink 1.8s infinite; font-style:normal; }
+@keyframes blink { 50% { opacity:.35; } }
+.hero h1 {
+  font-size: clamp(44px, 6.4vw, 82px);
+  font-weight: 900;
+  letter-spacing: -.035em;
+  line-height: 1.0;
+  margin-bottom: 22px;
+}
+.hero h1 .voice {
+  background: linear-gradient(100deg, var(--accent-soft), var(--accent));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero p.lede { color: var(--ink-soft); font-size: 19px; max-width: 56ch; margin: 0 auto 36px; }
+.hero-ctas { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom: 20px; }
+.hero-hint { font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); }
+.hero-hint kbd {
+  font-family:var(--font-mono); border:1px solid var(--line-strong); border-bottom-width:2px;
+  border-radius:6px; padding: 2px 9px; font-size:11.5px; color:var(--ink); background:var(--bg-raised);
+}
+
+/* hero screenshot */
+.stage { margin-top: 56px; position:relative; }
+.stage-frame {
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  overflow:hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 30px 80px rgba(0,0,0,.55), 0 0 90px rgba(224,90,43,.12);
+  background: var(--bg-raised);
+}
+.stage-bar { display:flex; align-items:center; gap:7px; padding: 11px 16px; border-bottom:1px solid var(--line); }
+.stage-bar i { width:11px; height:11px; border-radius:50%; background: var(--line-strong); display:block; }
+.stage-bar span { margin-left:12px; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); }
+.stage-frame img { width:100%; display:block; }
+.wave {
+  position:absolute; left:50%; transform:translateX(-50%);
+  top:-26px;
+  display:flex; gap:4px; align-items:center; height:52px;
+  background: var(--bg-panel);
+  border:1px solid var(--line-strong);
+  border-radius: 999px; padding: 0 22px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+}
+.wave b { width:4px; border-radius:3px; background: var(--accent); display:block; animation: wave 1.1s ease-in-out infinite; }
+.wave b:nth-child(1){height:12px;animation-delay:0s}
+.wave b:nth-child(2){height:22px;animation-delay:.12s}
+.wave b:nth-child(3){height:30px;animation-delay:.24s}
+.wave b:nth-child(4){height:18px;animation-delay:.36s}
+.wave b:nth-child(5){height:26px;animation-delay:.48s}
+.wave b:nth-child(6){height:14px;animation-delay:.6s}
+.wave span { margin-left:12px; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); white-space:nowrap; }
+@keyframes wave { 0%,100%{transform:scaleY(.55)} 50%{transform:scaleY(1)} }
+
+/* pipeline */
+.pipeline { padding: 100px 0 40px; }
+.pipe-rail {
+  display:grid; grid-template-columns: repeat(4, 1fr);
+  gap: 18px; margin-top: 52px;
+  counter-reset: pipe;
+}
+.pipe {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 26px 24px;
+  position:relative;
+  transition: border-color .15s, background .15s;
+}
+.pipe:hover { border-color: var(--accent); background: var(--bg-panel); }
+.pipe::after {
+  content:'→';
+  position:absolute; right:-19px; top:50%; transform:translateY(-50%);
+  color: var(--line-strong); font-size:18px; z-index:2;
+}
+.pipe:last-child::after { display:none; }
+.pipe .tag {
+  font-family: var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color: var(--accent-soft); display:block; margin-bottom:12px;
+}
+.pipe h3 { font-size:17px; font-weight:700; margin-bottom:8px; letter-spacing:-.01em; }
+.pipe p { font-size:13.5px; color: var(--ink-soft); }
+.pipe code { font-family:var(--font-mono); font-size:12px; color: var(--ink); background: var(--bg); border:1px solid var(--line); padding:1px 6px; border-radius:5px; }
+
+/* split features */
+.split { padding: 90px 0; }
+.split-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.panel {
+  background: var(--bg-raised);
+  border:1px solid var(--line);
+  border-radius: 18px;
+  padding: 34px;
+  position:relative; overflow:hidden;
+}
+.panel.wide { grid-column: 1 / -1; display:grid; grid-template-columns: 1fr 1fr; gap:40px; align-items:center; }
+.panel h3 { font-size: 21px; font-weight:800; letter-spacing:-.015em; margin: 12px 0 10px; }
+.panel p { color: var(--ink-soft); font-size:15px; }
+.panel img { width:100%; border-radius: 12px; border:1px solid var(--line-strong); display:block; }
+.panel .diagram-wrap { background:#F6F3EC; border-radius:12px; border:1px solid var(--line-strong); padding:6px; }
+.quote-list { list-style:none; margin-top:20px; display:flex; flex-direction:column; gap:10px; }
+.quote-list li {
+  font-family: var(--font-mono); font-size:13px;
+  border:1px solid var(--line); border-radius: 10px;
+  padding: 11px 15px; color: var(--ink);
+  background: var(--bg); display:flex; align-items:center; gap:11px;
+  transition: border-color .15s;
+}
+.quote-list li:hover { border-color: var(--accent); }
+.quote-list li i { color: var(--accent); font-style:normal; }
+.mini-stats { display:flex; gap:36px; margin-top:26px; }
+.mini-stats div b { display:block; font-size:30px; font-weight:800; letter-spacing:-.02em; }
+.mini-stats div span { font-size:12.5px; color:var(--ink-soft); font-family: var(--font-mono); }
+
+/* cta */
+.cta { padding: 40px 0 110px; text-align:center; }
+.cta-card {
+  border:1px solid var(--line-strong);
+  border-radius: 22px;
+  padding: 74px 40px;
+  position:relative; overflow:hidden;
+  background:
+    radial-gradient(ellipse 640px 300px at 50% 115%, rgba(224,90,43,.22), transparent 70%),
+    var(--bg-raised);
+}
+.cta-card h2 { font-size: clamp(30px,4vw,52px); font-weight:900; letter-spacing:-.03em; margin: 14px 0 16px; }
+.cta-card p { color:var(--ink-soft); font-size:17px; max-width:50ch; margin:0 auto 30px; }
+.cmd {
+  display:inline-flex; align-items:center; gap:14px;
+  font-family:var(--font-mono); font-size:14px;
+  background: var(--bg); border:1px solid var(--line-strong);
+  border-radius: 12px; padding: 13px 24px; margin-bottom: 30px; color: var(--ink);
+}
+.cmd i { color: var(--ok); font-style:normal; }
+
+footer { border-top:1px solid var(--line); padding: 36px 0; }
+.foot { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+.foot p { color: var(--ink-soft); font-size:13.5px; }
+.foot a { color: var(--ink-soft); text-decoration:none; font-size:13.5px; margin-left:22px; }
+.foot a:hover { color: var(--ink); }
+
+@media (max-width: 940px) {
+  .pipe-rail { grid-template-columns: 1fr 1fr; }
+  .pipe::after { display:none; }
+  .split-grid, .panel.wide { grid-template-columns: 1fr; }
+  .nav-links a:not(.btn) { display:none; }
+  .wave { display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="#"><span class="logo-mark">A</span>AssembleAI</a>
+    <div class="nav-links">
+      <a href="#pipeline">Pipeline</a>
+      <a href="#features">Features</a>
+      <a href="#cta">Run it</a>
+      <a class="btn btn-accent" href="#cta">Launch demo</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge"><i></i>Live · offline-safe · BILLY 40×28×202 manifest loaded</span>
+    <h1>Stop reading manuals.<br /><span class="voice">Start talking to them.</span></h1>
+    <p class="lede">AssembleAI is a voice-driven 3D assembly copilot. Speak a question and the model answers spatially — camera moves, the right part glows, and a short reply confirms it. Your hands never leave the furniture.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-accent" href="#cta">Try the live demo</a>
+      <a class="btn btn-ghost" href="#pipeline">How the loop works</a>
+    </div>
+    <p class="hero-hint">Hold <kbd>Space</kbd> and ask: “Which cam screw should I use?”</p>
+
+    <div class="stage">
+      <div class="wave"><b></b><b></b><b></b><b></b><b></b><b></b><span>listening…</span></div>
+      <div class="stage-frame">
+        <div class="stage-bar"><i></i><i></i><i></i><span>assembleai · step 1/14 · voice: listening</span></div>
+        <img src="assets/step-card-tip-screenshot.webp" alt="AssembleAI demo interface: 3D viewer with parts bins, step card, and presenter mode rail" />
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="pipeline" id="pipeline">
+  <div class="wrap">
+    <span class="kicker">The voice loop</span>
+    <h2 style="font-size:clamp(28px,3.6vw,44px);font-weight:900;letter-spacing:-.025em;margin-top:12px;">Model moves first. Speech confirms.</h2>
+    <div class="pipe-rail">
+      <div class="pipe"><span class="tag">01 · Capture</span><h3>Push-to-talk</h3><p>Hold space. Web Speech API or a server-side <code>/api/stt</code> endpoint for any microphone — even Ray-Ban Meta glasses.</p></div>
+      <div class="pipe"><span class="tag">02 · Resolve</span><h3>Intent engine</h3><p>Deterministic parser covers the demo script offline; swap in an LLM endpoint with one env var.</p></div>
+      <div class="pipe"><span class="tag">03 · Respond</span><h3>Spatial answer</h3><p>Camera, highlights, explode level, and step state update instantly via the manifest-driven viewer.</p></div>
+      <div class="pipe"><span class="tag">04 · Confirm</span><h3>Spoken reply</h3><p>TTS speaks a one-liner after the model has already changed. You hear what you already see.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="split" id="features">
+  <div class="wrap split-grid">
+    <div class="panel wide">
+      <div>
+        <span class="kicker">Orange Sync</span>
+        <h3>One part, three highlights, zero ambiguity.</h3>
+        <p>Ask about a part and it lights up everywhere at once: on the 3D model, in the parts rail, and inside the transcript. Mono part codes match the printed manual, so <span style="font-family:var(--font-mono);color:var(--accent-soft);">118331</span> means the same thing on screen and in the bag of screws.</p>
+        <div class="mini-stats">
+          <div><b>14</b><span>manifest steps</span></div>
+          <div><b>6</b><span>critical utterances</span></div>
+          <div><b>2</b><span>languages (EN/FR)</span></div>
+        </div>
+      </div>
+      <div class="diagram-wrap"><img src="assets/side-screws.png" alt="Manual-style diagram of screws being driven into a side panel" /></div>
+    </div>
+
+    <div class="panel">
+      <span class="kicker">Photo check</span>
+      <h3>“Did I do this right?”</h3>
+      <p>Upload a photo mid-build. A Gemini-backed vision check detects which step you're on and flags what looks off — with a manifest-aware offline mock when there's no network.</p>
+    </div>
+
+    <div class="panel">
+      <span class="kicker">Ask anything</span>
+      <h3>The demo script, spoken.</h3>
+      <ul class="quote-list">
+        <li><i>›</i>“Which cam screw should I use?”</li>
+        <li><i>›</i>“Show me from the back.”</li>
+        <li><i>›</i>“Did people mess this step up before?”</li>
+        <li><i>›</i>“Et cette vis, elle va où ?”</li>
+      </ul>
+    </div>
+
+    <div class="panel wide">
+      <div class="diagram-wrap"><img src="assets/back.png" alt="Manual-style diagram of the back panel being nailed on" /></div>
+      <div>
+        <span class="kicker">Stage-proof</span>
+        <h3>Built to never die on stage.</h3>
+        <p>No mic? Typed commands. No WebGL? Fallback line drawing. No network? Offline intent parsing and a mock photo check. Presenter Mode gives one-click buttons for every critical utterance, plus full and rehearsal resets.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="cta">
+  <div class="wrap">
+    <div class="cta-card">
+      <span class="kicker">Open source · hackathon-honest</span>
+      <h2>Two commands. Then just talk.</h2>
+      <p>No accounts, no API keys required. The full BILLY walkthrough runs offline in Chrome.</p>
+      <div><span class="cmd"><i>$</i>npm install && npm run dev</span></div>
+      <div><a class="btn btn-accent" href="#">View on GitHub</a></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <p>© 2026 AssembleAI — voice-first assembly copilot.</p>
+    <div>
+      <a href="#">GitHub</a><a href="#">Spec</a><a href="#">Roadmap</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
